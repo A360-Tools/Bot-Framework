@@ -1,0 +1,50 @@
+{
+  "person": {
+    "name": "John",
+    "age": 30,
+    "address": {
+      "city": "New York",
+      "zip": "10001",
+      "coordinates": {
+        "latitude": 40.7128,
+        "longitude": -74.0060
+      }
+    },
+    "phoneNumbers": [
+      "123-456-7890",
+      "987-654-3210"
+    ],
+    "friends": [
+      {
+        "friendName": "Alice",
+        "friendAge": 28,
+        "interests": [
+          "Reading",
+          "Hiking"
+        ]
+      },
+      {
+        "friendName": "Bob",
+        "friendAge": 32,
+        "interests": [
+          "Cooking",
+          "Gaming"
+        ]
+      }
+    ]
+  },
+  "company": {
+    "name": "TechCorp",
+    "location": "Silicon Valley",
+    "employees": [
+      {
+        "employeeName": "Mary",
+        "employeeAge": 25
+      },
+      {
+        "employeeName": "James",
+        "employeeAge": 35
+      }
+    ]
+  }
+}

@@ -1,0 +1,6 @@
+{
+  "label": "Bot Framework",
+  "description": "Provides action for following bot development standards",
+  "sessionLabel": "Logger session",
+  "sessionDescription": "Bot framework logger session storing information related to log levels and their path, screenshot etc."
+}

@@ -1,0 +1,85 @@
+buildscript {
+    repositories {
+        gradlePluginPortal()
+        flatDir {
+            dirs 'libs'
+        }
+        dependencies {
+            classpath name: 'package-compileonly-sdk', version: '1.3.0'
+            classpath "gradle.plugin.com.github.johnrengelman:shadow:7.1.1"
+        }
+    }
+}
+
+plugins {
+    id 'java'
+}
+
+configure(allprojects) {
+
+    apply plugin: 'com.github.johnrengelman.shadow'
+    apply plugin: "com.automationanywhere.command-codegen"
+
+    ext {
+        groupName = 'com.automationanywhere'
+        testNgVersion = '6.14.3'
+        loggerVersion = '2.20.0'
+        jnaVersion = '5.3.1'
+        version '3.0.0'
+    }
+    group "$groupName"
+
+    sourceCompatibility = JavaVersion.VERSION_11
+
+    compileJava.options.encoding = 'UTF-8'
+    compileTestJava.options.encoding = 'UTF-8'
+
+    repositories {
+        mavenCentral()
+        flatDir {
+            dirs 'libs'
+        }
+    }
+
+    packageJson {
+        artifactName = project.name
+        group = "$groupName"
+        author = "Sumit Kumar"
+        generatePackageWithDateTime = true
+    }
+
+    jar.dependsOn commandCodeGen
+
+    shadowJar {
+        archiveBaseName = project.name
+        classifier = null
+        mergeServiceFiles('META-INF/spring.*')
+        mergeServiceFiles('META-INF/services/java.sql.Driver')
+        zip64 = true
+        exclude 'META-INF/MANIFEST.MF'
+        exclude 'META-INF/*.SF'
+        exclude 'META-INF/*.DSA'
+        exclude 'META-INF/*.RSA'
+    }
+
+    dependencies {
+        annotationProcessor name: 'package-compileonly-sdk', version: '1.3.0'
+
+        compileOnly name: 'package-compileonly-sdk', version: '1.3.0'
+        compileOnly group: "org.apache.logging.log4j", name: "log4j-api", version: "$loggerVersion"
+        compileOnly group: "net.java.dev.jna", name: "jna-platform", version: "$jnaVersion"
+
+        implementation name: 'package-runtime-sdk', version: '1.0.0'
+
+        testImplementation name: 'package-compileonly-sdk', version: '1.0.0'
+        testImplementation group: "org.testng", name: "testng", version: "$testNgVersion"
+
+        implementation 'commons-io:commons-io:2.11.0'
+        implementation 'org.apache.poi:poi:5.2.2'
+        implementation 'org.apache.commons:commons-csv:1.10.0'
+        implementation 'org.json:json:20230618'
+        implementation 'org.apache.logging.log4j:log4j-core:2.20.0'
+        implementation 'org.apache.poi:poi-ooxml:5.2.3'
+    }
+
+}

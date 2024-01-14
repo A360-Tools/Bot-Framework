@@ -1,0 +1,14 @@
+<root>
+    <config>
+        <dev>
+            <item id="1" value="value1">text1</item>
+            <item id="2" value="value2 ">text2</item>
+            <item id="3" value="value3">text3</item>
+            <item id="4" value="value3">İnanç Esasları</item>
+        </dev>
+        <prod>
+            <item id="4" value="value4">text4</item>
+            <item id="5" value="value5">text5</item>
+        </prod>
+    </config>
+</root>
