@@ -6,7 +6,10 @@ import com.automationanywhere.botcommand.data.impl.StringValue;
 import com.automationanywhere.botcommand.exception.BotCommandException;
 import com.automationanywhere.botcommand.utilities.file.FileValidator;
 import com.automationanywhere.commandsdk.annotations.*;
-import com.automationanywhere.commandsdk.annotations.rules.*;
+import com.automationanywhere.commandsdk.annotations.rules.FileExtension;
+import com.automationanywhere.commandsdk.annotations.rules.ListType;
+import com.automationanywhere.commandsdk.annotations.rules.NotEmpty;
+import com.automationanywhere.commandsdk.annotations.rules.SelectModes;
 import com.automationanywhere.commandsdk.model.AllowedTarget;
 import com.automationanywhere.commandsdk.model.AttributeType;
 import com.automationanywhere.commandsdk.model.DataType;
@@ -88,10 +91,9 @@ public class JSONReader {
             @NotEmpty
             String charsetName,
 
-            @Idx(index = "1.2.1", type = AttributeType.CODE)
+            @Idx(index = "1.2.1", type = AttributeType.TEXTAREA)
             @Pkg(label = "Text", description = "JSON content as text")
             @NotEmpty
-            @CodeType("JavaScript")
             String jsonText,
 
             @Idx(index = "3", type = AttributeType.SELECT, options = {
@@ -126,7 +128,7 @@ public class JSONReader {
             switch (inputMethod) {
                 case INPUT_TYPE_FILE:
                     FileValidator fileValidator = new FileValidator(jsonFilePath);
-                    String[] allowedExtensions = {"json" };
+                    String[] allowedExtensions = {"json"};
                     fileValidator.validateFile(allowedExtensions);
                     Charset charset = Charset.forName(charsetName);
 
