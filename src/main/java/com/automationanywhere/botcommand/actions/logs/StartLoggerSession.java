@@ -14,6 +14,7 @@ import org.apache.logging.log4j.Level;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 import static com.automationanywhere.commandsdk.model.AttributeType.FILE;
 
@@ -100,7 +101,7 @@ public class StartLoggerSession {
         CustomLogger customLogger;
         switch (logLevelsAndFileOption) {
             case COMMON_FILE_ALL_LEVEL:
-                customLogger = new CustomLogger("CustomLogger", logFilePath,
+                customLogger = new CustomLogger("CustomLogger_" + UUID.randomUUID(), logFilePath,
                         rollingFileSizeMB.longValue(), screenshotFolderPath);
                 break;
             case CONFIGURABLE_FILE_ALL_LEVEL:
@@ -108,7 +109,7 @@ public class StartLoggerSession {
                 levelFilePathMap.put(Level.INFO, infoLogFilePath);
                 levelFilePathMap.put(Level.WARN, warnLogFilePath);
                 levelFilePathMap.put(Level.ERROR, errorLogFilePath);
-                customLogger = new CustomLogger("CustomLogger", levelFilePathMap,
+                customLogger = new CustomLogger("CustomLogger_" + UUID.randomUUID(), levelFilePathMap,
                         rollingFileSizeMB.longValue(), screenshotFolderPath);
                 break;
             default:

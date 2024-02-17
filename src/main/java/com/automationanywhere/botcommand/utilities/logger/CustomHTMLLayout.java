@@ -135,7 +135,7 @@ public class CustomHTMLLayout extends AbstractStringLayout {
 
     }
 
-    public class Columns {
+    public static class Columns {
         public static final String SOURCE = "Source";
         public static final String MESSAGE = "Message";
         public static final String VARIABLES = "Variables";

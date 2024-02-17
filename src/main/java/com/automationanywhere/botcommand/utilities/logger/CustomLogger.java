@@ -3,7 +3,6 @@ package com.automationanywhere.botcommand.utilities.logger;
 import com.automationanywhere.toolchain.runtime.session.CloseableSessionObject;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.logging.log4j.Level;
-import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.core.LoggerContext;
 import org.apache.logging.log4j.core.config.builder.api.AppenderComponentBuilder;
@@ -43,7 +42,7 @@ public class CustomLogger implements CloseableSessionObject {
                 .add(builder.newAppenderRef("COMBINED")));
 
         this.loggerContext = initializeLoggerContext(builder);
-        this.logger = LogManager.getLogger(loggerName);
+        this.logger = loggerContext.getLogger(loggerName);
     }
 
     // Constructor for multiple log files based on the level
@@ -69,7 +68,7 @@ public class CustomLogger implements CloseableSessionObject {
                 .add(builder.newAppenderRef(Level.ERROR.name()))
         );
         this.loggerContext = initializeLoggerContext(builder);
-        this.logger = LogManager.getLogger(loggerName);
+        this.logger = loggerContext.getLogger(loggerName);
     }
 
     private void setupLoggerConfiguration(ConfigurationBuilder<BuiltConfiguration> builder) {

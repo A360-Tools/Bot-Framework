@@ -9,34 +9,24 @@ import java.util.List;
 import java.util.Map;
 
 public class DataConversion {
-    public static Map<String, Value> getMergedDictionary(List<Value> list, Map<String, Value> map) {
-        if (list != null && list.size() > 0) {
-
-            for (Value element : list) {
-                Map<String, Value> customValuesMap = ((DictionaryValue) element).get();
-                String key = customValuesMap.containsKey("NAME") ? ((StringValue) customValuesMap.get("NAME")).get() : "";
-                Value value = (customValuesMap.getOrDefault("VALUE", null) == null) ? null : (customValuesMap.get("VALUE"));
-                map.put(key, value);
-            }
-
+    public static Map<String, Value> getMergedDictionary(List<Value> list, Map<String, Value> existingMap) {
+        if (list == null || list.isEmpty()) {
+            return existingMap;
         }
 
-        return map;
+        for (Value element : list) {
+            if (!(element instanceof DictionaryValue)) continue; // Safety check
+
+            Map<String, Value> customValuesMap = ((DictionaryValue) element).get();
+            String key = customValuesMap.containsKey("NAME") ? ((StringValue) customValuesMap.get("NAME")).get() : "";
+            Value value = customValuesMap.get("VALUE"); // getOrDefault is not needed as null is the default
+            existingMap.put(key, value);
+        }
+
+        return existingMap;
     }
 
     public static Map<String, Value> getMergedDictionary(List<Value> list) {
-        Map<String, Value> map = new LinkedHashMap<>();
-        if (list != null && list.size() > 0) {
-
-            for (Value element : list) {
-                Map<String, Value> customValuesMap = ((DictionaryValue) element).get();
-                String key = customValuesMap.containsKey("NAME") ? ((StringValue) customValuesMap.get("NAME")).get() : "";
-                Value value = (customValuesMap.getOrDefault("VALUE", null) == null) ? null : (customValuesMap.get("VALUE"));
-                map.put(key, value);
-            }
-
-        }
-
-        return map;
+        return getMergedDictionary(list, new LinkedHashMap<>());
     }
 }

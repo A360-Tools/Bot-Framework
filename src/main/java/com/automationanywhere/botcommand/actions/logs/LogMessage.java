@@ -57,23 +57,33 @@ public class LogMessage {
     private Value colValue;
     @GlobalSessionContext
     private com.automationanywhere.bot.service.GlobalSessionContext globalSessionContext;
+    private String testBotUri; // For testing purposes
 
     public static String generateRandomScreenshotPath(String folderPath) {
         String fileName = "screenshot_" + UUID.randomUUID() + ".png";
         Path path = Paths.get(folderPath, fileName);
-        return path.toString();
+        return path.toAbsolutePath().toString();
     }
 
-    public void setGlobalSessionContext(com.automationanywhere.bot.service.GlobalSessionContext globalSessionContext) {
-        this.globalSessionContext = globalSessionContext;
+    public void setTestBotUri(String testBotUri) {
+        this.testBotUri = testBotUri;
     }
 
     public String getFormattedBotUri() {
+        if (this.testBotUri != null) {
+            return this.testBotUri; // Return the test URI if set
+        }
+
+        // Original implementation
         String botUri = this.globalSessionContext.getBotUri();
         botUri = URLDecoder.decode(botUri, StandardCharsets.UTF_8);
         botUri = botUri.substring(botUri.indexOf("Automation Anywhere") + "Automation Anywhere".length(), botUri.indexOf(63));
         botUri = botUri.replace("/", "\\");
         return botUri;
+    }
+
+    public void setGlobalSessionContext(com.automationanywhere.bot.service.GlobalSessionContext globalSessionContext) {
+        this.globalSessionContext = globalSessionContext;
     }
 
     @Execute
