@@ -18,7 +18,7 @@ public class CloseApplicationsTest {
     public void action_ClosesProcessesSuccessfully() {
         // Arrange
         CloseApplications closeApplications = new CloseApplications();
-        List<Value> taskList = Arrays.asList(new StringValue("Chrome"), new StringValue("Notepad"));
+        List<Value> taskList = Arrays.asList(new StringValue("Excel"), new StringValue("Notepad"));
         closeApplications.action(taskList);
     }
 }

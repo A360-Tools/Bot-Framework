@@ -25,7 +25,7 @@ configure(allprojects) {
         testNgVersion = '7.9.0'
         loggerVersion = '2.20.0'
         jnaVersion = '5.3.1'
-        version '3.0.0'
+        version '3.0.2'
     }
     group "$groupName"
 

@@ -12,7 +12,6 @@ import com.automationanywhere.commandsdk.model.DataType;
 import java.util.ArrayList;
 import java.util.List;
 
-
 /**
  * @author Sumit Kumar
  */

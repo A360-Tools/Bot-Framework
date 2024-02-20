@@ -33,43 +33,32 @@ public class LoggerTest {
     private static final String LEVEL_WARN = "WARN";
     private static final String LOG_VARIABLE = "YES";
     private static final String DO_NOT_LOG_VARIABLE = "NO";
-    private StartLoggerSession startLoggerSession;
+    private StartLoggerSession LoggerSession;
     private LogMessage logMessage;
     private String logFilePath;
     private String screenshotFolderPath;
+    private Map<String, Value> sourceMap;
+    private List<Value> entryList;
 
     @BeforeClass
     public void setUp() {
         // Initialize your classes
-        startLoggerSession = new StartLoggerSession();
+        LoggerSession = new StartLoggerSession();
         logMessage = new LogMessage();
         logMessage.setTestBotUri("Automation Anywhere/bots/path/to/test bot");
 
         // Set up file paths for testing
         logFilePath = "src/test/target/test-artifacts/logs/log.html";
         screenshotFolderPath = "src/test/target/test-artifacts/logs/screenshot";
-
-    }
-
-    @Test
-    public void testLogging() throws Exception {
-        // Initialize logger session with test-specific configurations
-        SessionValue sessionValue = startLoggerSession.start(COMMON_FILE_ALL_LEVEL, logFilePath,
-                logFilePath, logFilePath, logFilePath, screenshotFolderPath, 10);
-
-        // Ensure the session was initialized properly
-        Assert.assertNotNull(sessionValue);
-
-        // Create a source map with some variables representing variables sent via common variables(number
-        // ,string,boolean,datetime)
-        Map<String, Value> sourceMap = new HashMap<>();
+        // Create a source map with some variables representing variables sent via common variables(number,string,boolean,datetime)
+        sourceMap = new HashMap<>();
         sourceMap.put("my string", new StringValue("Hello, World!"));
         sourceMap.put("my number", new NumberValue(100));
         sourceMap.put("my boolean", new BooleanValue(true));
         sourceMap.put("my date", new DateTimeValue(ZonedDateTime.now()));
 
         // Create a list of dictionary values representing variables sent via entry list
-        List<Value> entryList = new ArrayList<>();
+        entryList = new ArrayList<>();
 
         Map<String, Value> variable1 = new HashMap<>();
         variable1.put("NAME", new StringValue("my string variable"));
@@ -113,6 +102,16 @@ public class LoggerTest {
         variable4.put("NAME", new StringValue("my table variable"));
         variable4.put("VALUE", tv);
         entryList.add(new DictionaryValue(variable4));
+    }
+
+    @Test
+    public void testLogging() throws Exception {
+        // Initialize logger session with test-specific configurations
+        SessionValue sessionValue = LoggerSession.start(COMMON_FILE_ALL_LEVEL, logFilePath,
+                logFilePath, logFilePath, logFilePath, screenshotFolderPath, 10);
+        // Ensure the session was initialized properly
+        Assert.assertNotNull(sessionValue);
+
         // Log a test message
         logMessage.action((CustomLogger) sessionValue.getSession(), "INFO", "This is a test log message", true, LOG_VARIABLE,
                 entryList, sourceMap);

@@ -71,7 +71,7 @@ public class LogMessage {
 
     public String getFormattedBotUri() {
         if (this.testBotUri != null) {
-            return this.testBotUri; // Return the test URI if set
+            return this.testBotUri;
         }
 
         // Original implementation

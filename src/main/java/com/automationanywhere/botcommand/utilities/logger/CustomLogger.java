@@ -24,7 +24,6 @@ public class CustomLogger implements CloseableSessionObject {
 
     private final Logger logger;
     private final LoggerContext loggerContext;
-
     private final String screenshotFolderPath;
 
     // Constructor for a single log file for all levels
