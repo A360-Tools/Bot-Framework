@@ -100,8 +100,10 @@ public class DeleteFilesFolders {
             Boolean skipFolders,
 
             @Idx(index = "6.1", type = AttributeType.TEXT)
-            @Pkg(label = "Folder path matching this pattern will be skipped during scanning", description = "Any " +
-                    "sub folder or file within this folder will also be ignored")
+            @Pkg(label = "Folder path matching this regex pattern will be skipped during scanning",
+                    description =
+                            "Matching will be done on absolute path in OS file separator format.Any sub folder or " +
+                                    "file within this folder will also be ignored")
             @NotEmpty
             String skipFolderPathPattern,
 
@@ -111,7 +113,8 @@ public class DeleteFilesFolders {
             Boolean skipFiles,
 
             @Idx(index = "7.1", type = AttributeType.TEXT)
-            @Pkg(label = "File path matching this pattern will be skipped during deletion")
+            @Pkg(label = "File path matching this regex pattern will be skipped during deletion", description =
+                    "^.+\\.txt$ to skip all text files. Matching will be done on absolute path in OS file separator format.")
             @NotEmpty
             String skipFilePathPattern,
 

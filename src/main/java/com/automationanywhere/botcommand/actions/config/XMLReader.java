@@ -62,6 +62,7 @@ public class XMLReader {
             @Idx(index = "1.1.1", type = AttributeType.FILE)
             @Pkg(label = "XML File Path")
             @FileExtension("xml")
+            @NotEmpty
             String xmlFilePath,
 
             @Idx(index = "1.1.2", type = AttributeType.TEXT)
@@ -81,11 +82,13 @@ public class XMLReader {
 
             @Idx(index = "1.2.1", type = AttributeType.TEXTAREA)
             @Pkg(label = "XML Text Value", description = "Provide XML content as text.")
+            @NotEmpty
             String xmlText,
 
             @Idx(index = "2", type = AttributeType.TEXT)
             @Pkg(label = "Xpath to target elements", description = "Xpath to parse matching elements, e.g.: " +
                     "//config/dev/*")
+            @NotEmpty
             String xPathToNodes,
 
             @Idx(index = "3", type = AttributeType.SELECT, options = {

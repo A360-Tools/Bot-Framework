@@ -73,7 +73,7 @@ public class CreateFolders {
             @Pkg(label = "Append created folder details to existing config")
             Boolean appendToExistingDictionary,
 
-            @Idx(index = "4.1", type = AttributeType.DICTIONARY)
+            @Idx(index = "4.1", type = AttributeType.VARIABLE)
             @Pkg(label = "Existing config dictionary", description = "Appends created folder" +
                     " details: Key= folder name | value = folder path")
             Map<String, Value> configDictionary,
