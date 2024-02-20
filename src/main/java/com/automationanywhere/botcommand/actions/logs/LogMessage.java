@@ -39,6 +39,7 @@ import java.util.UUID;
         icon = "log_message.svg",
         name = "log_message",
         group_label = "Logs",
+        documentation_url = "",
         text_color = "#4285f4",
         allowed_agent_targets = AllowedTarget.HEADLESS
 )

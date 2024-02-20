@@ -22,6 +22,7 @@ import java.util.Map;
         name = "documentation_sequence",
         group_label = "Documentation",
         text_color = "#4285f4",
+        documentation_url = "",
         background_color = "#4285f4",
         allowed_agent_targets = AllowedTarget.HEADLESS,
         nestable = true

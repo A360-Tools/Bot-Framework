@@ -23,8 +23,9 @@ import java.util.Map;
         icon = "about.svg",
         name = "documentation_about",
         group_label = "Documentation",
+        documentation_url = "",
         text_color = "#2196f3",
-        
+
         allowed_agent_targets = AllowedTarget.HEADLESS,
         comment = true
 

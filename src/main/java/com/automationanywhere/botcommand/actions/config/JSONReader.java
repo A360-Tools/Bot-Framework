@@ -39,6 +39,7 @@ import java.util.Map;
         text_color = "#fbc02d",
         return_label = "Output: config dictionary", return_type = DataType.DICTIONARY, return_sub_type =
         DataType.STRING, return_name = "Config", return_Direct = true,
+        documentation_url = "",
         allowed_agent_targets = AllowedTarget.HEADLESS,
         return_required = true
 )

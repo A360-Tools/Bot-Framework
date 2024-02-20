@@ -20,6 +20,7 @@ import com.automationanywhere.commandsdk.model.DataType;
         text_color = "#2F4F4F",
         icon = "log_session.svg",
         node_label = "{{session}}",
+        documentation_url = "",
         allowed_agent_targets = AllowedTarget.HEADLESS)
 public class StopLoggerSession {
 

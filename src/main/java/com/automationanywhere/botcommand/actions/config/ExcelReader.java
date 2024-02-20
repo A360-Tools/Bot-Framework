@@ -32,6 +32,7 @@ import static com.automationanywhere.commandsdk.model.AttributeType.CREDENTIAL;
         text_color = "#1f9c61",
         return_label = "Output: config dictionary", return_type = DataType.DICTIONARY, return_sub_type =
         DataType.STRING, return_name = "Config", return_Direct = true,
+        documentation_url = "",
         allowed_agent_targets = AllowedTarget.HEADLESS,
         return_required = true
 )
@@ -106,7 +107,7 @@ public class ExcelReader {
             Boolean isTrimValues
     ) {
         FileValidator fileValidator = new FileValidator(inputFilePath);
-        String[] allowedExtensions = {"xls", "xlsx" };
+        String[] allowedExtensions = {"xls", "xlsx"};
         fileValidator.validateFile(allowedExtensions);
         boolean hasHeader = parsingMethod.equalsIgnoreCase(COLUMN_HEADER);
 

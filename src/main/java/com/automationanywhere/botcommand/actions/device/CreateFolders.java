@@ -31,6 +31,7 @@ import java.util.Map;
         icon = "create_folders.svg", name = "device_create_folders",
         group_label = "Device",
         text_color = "#0088ff",
+        documentation_url = "",
         allowed_agent_targets = AllowedTarget.HEADLESS
 )
 public class CreateFolders {

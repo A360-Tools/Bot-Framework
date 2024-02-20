@@ -35,6 +35,7 @@ import static com.automationanywhere.commandsdk.model.AttributeType.FILE;
         return_settings = {ReturnSettingsType.SESSION_TARGET},
         return_type = DataType.SESSION,
         return_name = "Logger",
+        documentation_url = "",
         allowed_agent_targets = AllowedTarget.HEADLESS,
         return_required = true)
 public class StartLoggerSession {

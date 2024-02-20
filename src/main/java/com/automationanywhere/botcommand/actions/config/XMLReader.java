@@ -39,6 +39,7 @@ import java.util.Map;
         return_label = "Output: config dictionary", return_type = DataType.DICTIONARY, return_sub_type =
         DataType.STRING, return_name = "Config", return_Direct = true,
         allowed_agent_targets = AllowedTarget.HEADLESS,
+        documentation_url = "",
         return_required = true
 )
 public class XMLReader {

@@ -21,6 +21,7 @@ import java.util.Map;
         icon = "caution.svg",
         name = "documentation_caution_sequence",
         group_label = "Documentation",
+        documentation_url = "",
         text_color = "#ffa500",
         allowed_agent_targets = AllowedTarget.HEADLESS,
         nestable = true

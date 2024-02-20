@@ -19,6 +19,7 @@ import com.automationanywhere.commandsdk.model.AttributeType;
         icon = "comment.svg",
         name = "documentation_comment",
         group_label = "Documentation",
+        documentation_url = "",
         text_color = "#608d56",
         allowed_agent_targets = AllowedTarget.HEADLESS,
         comment = true
