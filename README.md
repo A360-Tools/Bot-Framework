@@ -1,7 +1,7 @@
-# RPA Bot Framework Package
+# A360 Bot Framework Package
 
 ## Overview
-This repository houses an advanced RPA Bot Framework Package designed to streamline bot development, enhance logging, and facilitate comprehensive documentation within automated workflows. Tailored for efficiency, consistency, and ease of use, this package addresses common challenges in bot deployment and maintenance, making it an indispensable tool for modern automation projects.
+RPA Bot Framework Package is designed to streamline bot development, enhance logging, and facilitate comprehensive documentation within automated workflows for A360. Tailored for efficiency, consistency, and ease of use, this package addresses common challenges in bot deployment and maintenance, making it an indispensable tool for modern automation projects.
 
 ## Key Features
 
