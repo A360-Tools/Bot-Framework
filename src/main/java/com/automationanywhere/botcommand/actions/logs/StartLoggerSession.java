@@ -35,7 +35,7 @@ import static com.automationanywhere.commandsdk.model.AttributeType.FILE;
         return_settings = {ReturnSettingsType.SESSION_TARGET},
         return_type = DataType.SESSION,
         return_name = "Logger",
-        documentation_url = "",
+        documentation_url = "https://github.com/A360-Tools/Bot-Framework/blob/main/docs/logs/StartLoggerSession.md",
         allowed_agent_targets = AllowedTarget.HEADLESS,
         return_required = true)
 public class StartLoggerSession {

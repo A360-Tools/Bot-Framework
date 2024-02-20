@@ -39,7 +39,7 @@ import java.util.Map;
         text_color = "#fbc02d",
         return_label = "Output: config dictionary", return_type = DataType.DICTIONARY, return_sub_type =
         DataType.STRING, return_name = "Config", return_Direct = true,
-        documentation_url = "",
+        documentation_url = "https://github.com/A360-Tools/Bot-Framework/blob/main/docs/config/JSONReader.md",
         allowed_agent_targets = AllowedTarget.HEADLESS,
         return_required = true
 )

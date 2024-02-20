@@ -32,7 +32,7 @@ import static com.automationanywhere.commandsdk.model.AttributeType.CREDENTIAL;
         text_color = "#1f9c61",
         return_label = "Output: config dictionary", return_type = DataType.DICTIONARY, return_sub_type =
         DataType.STRING, return_name = "Config", return_Direct = true,
-        documentation_url = "",
+        documentation_url = "https://github.com/A360-Tools/Bot-Framework/blob/main/docs/config/ExcelReader.md",
         allowed_agent_targets = AllowedTarget.HEADLESS,
         return_required = true
 )

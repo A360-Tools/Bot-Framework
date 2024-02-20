@@ -22,7 +22,7 @@ import java.util.Map;
         name = "documentation_sequence",
         group_label = "Documentation",
         text_color = "#4285f4",
-        documentation_url = "",
+        documentation_url = "https://github.com/A360-Tools/Bot-Framework/blob/main/docs/documentation/Sequence.md",
         background_color = "#4285f4",
         allowed_agent_targets = AllowedTarget.HEADLESS,
         nestable = true

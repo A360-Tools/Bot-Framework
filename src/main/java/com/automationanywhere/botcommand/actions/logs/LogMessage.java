@@ -39,7 +39,7 @@ import java.util.UUID;
         icon = "log_message.svg",
         name = "log_message",
         group_label = "Logs",
-        documentation_url = "",
+        documentation_url = "https://github.com/A360-Tools/Bot-Framework/blob/main/docs/logs/LogMessage.md",
         text_color = "#4285f4",
         allowed_agent_targets = AllowedTarget.HEADLESS
 )

@@ -22,7 +22,7 @@ import java.util.List;
         icon = "close.svg", name = "device_close_application",
         group_label = "Device",
         allowed_agent_targets = AllowedTarget.HEADLESS,
-        documentation_url = "",
+        documentation_url = "https://github.com/A360-Tools/Bot-Framework/blob/main/docs/device/CloseApplications.md",
         text_color = "#e04f5f"
 )
 public class CloseApplications {

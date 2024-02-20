@@ -23,7 +23,7 @@ import java.util.Map;
         icon = "about.svg",
         name = "documentation_about",
         group_label = "Documentation",
-        documentation_url = "",
+        documentation_url = "https://github.com/A360-Tools/Bot-Framework/blob/main/docs/documentation/About.md",
         text_color = "#2196f3",
 
         allowed_agent_targets = AllowedTarget.HEADLESS,

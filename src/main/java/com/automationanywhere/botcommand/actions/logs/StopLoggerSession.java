@@ -20,7 +20,7 @@ import com.automationanywhere.commandsdk.model.DataType;
         text_color = "#2F4F4F",
         icon = "log_session.svg",
         node_label = "{{session}}",
-        documentation_url = "",
+        documentation_url = "https://github.com/A360-Tools/Bot-Framework/blob/main/docs/logs/StopLoggerSession.md",
         allowed_agent_targets = AllowedTarget.HEADLESS)
 public class StopLoggerSession {
 

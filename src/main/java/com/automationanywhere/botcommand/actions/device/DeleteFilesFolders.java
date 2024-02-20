@@ -31,7 +31,7 @@ import java.util.Set;
         description = "Remove files/folders based on rule set",
         icon = "delete_folders.svg", name = "device_delete_files_folders",
         group_label = "Device",
-        documentation_url = "",
+        documentation_url = "https://github.com/A360-Tools/Bot-Framework/blob/main/docs/device/DeleteFilesFolders.md",
         text_color = "#e04f5f",
         allowed_agent_targets = AllowedTarget.HEADLESS
 )

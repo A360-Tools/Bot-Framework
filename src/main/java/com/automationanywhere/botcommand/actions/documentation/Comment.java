@@ -19,7 +19,7 @@ import com.automationanywhere.commandsdk.model.AttributeType;
         icon = "comment.svg",
         name = "documentation_comment",
         group_label = "Documentation",
-        documentation_url = "",
+        documentation_url = "https://github.com/A360-Tools/Bot-Framework/blob/main/docs/documentation/Comment.md",
         text_color = "#608d56",
         allowed_agent_targets = AllowedTarget.HEADLESS,
         comment = true

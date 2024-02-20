@@ -34,7 +34,7 @@ import java.util.Map;
         return_label = "Output: config dictionary", return_type = DataType.DICTIONARY, return_sub_type =
         DataType.STRING, return_name = "Config", return_Direct = true,
         allowed_agent_targets = AllowedTarget.HEADLESS,
-        documentation_url = "",
+        documentation_url = "https://github.com/A360-Tools/Bot-Framework/blob/main/docs/config/CSVReader.md",
         return_required = true
 )
 public class CSVReader {
