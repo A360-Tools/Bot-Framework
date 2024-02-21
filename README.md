@@ -5,36 +5,43 @@ Designed to streamline bot development, enhance logging, and facilitate comprehe
 
 ![Screenshot 2024-02-21 072347](https://github.com/A360-Tools/Bot-Framework/assets/82057278/d9358fbf-25d5-4fdc-aeb8-cf614a01d464)
 
+## Use Cases
+- **Framework Templating**: Ideal for organizations looking to standardize bot development practices across multiple teams.
+- **Detailed Logging**: Suited for complex workflows where detailed traceability and error tracking are crucial.
+- **Process Documentation**: Perfect for documenting automated processes within the bot, ensuring clarity and ease of maintenance.
+
 ## Key Features
 
+### [Robust Logging](https://github.com/A360-Tools/Bot-Framework/blob/main/docs/logs/LogMessage.md)
+- Global session logger for comprehensive logging across subtasks.
+- Automatic capture of source task details, environment details for enhanced traceability.
+- Visualization of complex/nested variables for efficient debugging and tracking.
+- Log file rollover based on file size.
+- Log file separation based on log level.
+- Screenshot capture alongside log messages for a complete logging experience.
 ![Animation](https://github.com/A360-Tools/Bot-Framework/assets/82057278/6f8c9268-d411-4b62-93c2-74cca016e13e)
 
-### Generate Framework Template
+### [Generate Framework Template](https://github.com/A360-Tools/Bot-Framework/tree/main/docs)
 - Standardizes bot structures across teams.
 - Ensures consistent logging practices for uniformity in deployment and maintenance.
 
-### Robust Logging
-- Global session logger for comprehensive logging across subtasks.
-- Automatic capture of source task details and complex variables for enhanced traceability.
-- Screenshot capture alongside log messages for a complete logging experience.
-
-### Enhanced Documentation
+### [Enhanced Documentation](https://github.com/A360-Tools/Bot-Framework/tree/main/docs/documentation)
 - In-task documentation capabilities with screenshot incorporation.
 - Error-prone activity highlights with detailed explanations and visual aids.
 - Simplified process comprehension through design screenshots, aiding replication and understanding.
 
-### Config Data Reading
+### [Config Data Reading](https://github.com/A360-Tools/Bot-Framework/tree/main/docs/config)
 - Reads configuration data from CSV, Excel, JSON, and XML formats into dictionaries.
-- Excel-independent functionality for broader applicability and convenience.
+- Excel application -independent functionality for broader applicability and convenience.
 
-### Auto Delete Logs
+### [Auto Delete Logs](https://github.com/A360-Tools/Bot-Framework/blob/main/docs/device/DeleteFilesFolders.md)
 - Automated log deletion based on log age to optimize log management.
 - Customizable log retention through pattern matching for directories and files, aligning with organizational policies.
 
-### Close Process/Application
+### [Close Process/Application](https://github.com/A360-Tools/Bot-Framework/blob/main/docs/device/CloseApplications.md)
 - Simplifies the termination of processes or applications by name, enhancing system resource management.
 
-### Utility Commands
+## Activity Summary
 - **Config Read CSV/Excel/JSON/XML**: Streamlines the import of configuration data into dictionaries from various file formats.
 - **Device Close Application**: Facilitates the closing of applications with close and terminate requests.
 - **Device Create Folders**: Automates the creation of directories, ensuring the existence of necessary parent directories.
@@ -42,13 +49,6 @@ Designed to streamline bot development, enhance logging, and facilitate comprehe
 - **Documentation About/Caution Sequence/Comment/Sequence**: Offers a range of documentation utilities from basic commenting to detailed sequence documentation with caution highlights and screenshots.
 - **Log Message**: Provides session-based logging with options for detailed messages and screenshots.
 - **Logs Start/Stop Session**: Manages the lifecycle of logging sessions, from initiation to termination.
-
-## Use Cases
-- **Framework Templating**: Ideal for organizations looking to standardize bot development practices across multiple teams.
-- **Detailed Logging**: Suited for complex workflows where detailed traceability and error tracking are crucial.
-- **Process Documentation**: Perfect for documenting automated processes within the bot, ensuring clarity and ease of maintenance.
-- **Configuration Management**: Simplifies the integration of external configuration data into bots, enhancing flexibility and adaptability.
-- **Resource Management**: Streamlines the management of system resources by providing utilities for closing applications and managing filesystem resources.
 
 ## Building the Project
 You can build this project using Gradle with the following command:
