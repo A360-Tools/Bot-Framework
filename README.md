@@ -16,6 +16,7 @@ Designed to streamline bot development, enhance logging, and facilitate comprehe
 - Global session logger for comprehensive logging across subtasks.
 - Automatic capture of source task details, environment details for enhanced traceability.
 - Visualization of complex/nested variables for efficient debugging and tracking.
+- HTML log format to allow log monitoring via any device and risk of accidental file locks.
 - Log file rollover based on file size.
 - Log file separation based on log level.
 - Screenshot capture alongside log messages for a complete logging experience.
