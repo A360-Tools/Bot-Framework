@@ -7,6 +7,8 @@ Designed to streamline bot development, enhance logging, and facilitate comprehe
 
 ## Key Features
 
+![Animation](https://github.com/A360-Tools/Bot-Framework/assets/82057278/6f8c9268-d411-4b62-93c2-74cca016e13e)
+
 ### Generate Framework Template
 - Standardizes bot structures across teams.
 - Ensures consistent logging practices for uniformity in deployment and maintenance.
