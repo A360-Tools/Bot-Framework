@@ -72,10 +72,15 @@ public class LoggerTest {
 
         Map<String, Value> variable3 = new HashMap<>();
         List<Value> listValue = new ArrayList<>();
+        Map<String, Value> dictValue = new HashMap<>();
+        dictValue.put("my key", new StringValue("my value"));
+        dictValue.put("my Date", new DateTimeValue(ZonedDateTime.now()));
+        dictValue.put("my Number", new NumberValue(100));
         ListValue lv = new ListValue();
         listValue.add(new StringValue("Item 1"));
         listValue.add(new StringValue("Item 2"));
         listValue.add(new StringValue("Item 3"));
+        listValue.add(new DictionaryValue(dictValue));
         lv.set(listValue);
         variable3.put("NAME", new StringValue("my list variable"));
         variable3.put("VALUE", lv);
@@ -112,9 +117,22 @@ public class LoggerTest {
         // Ensure the session was initialized properly
         Assert.assertNotNull(sessionValue);
 
-        // Log a test message
-        logMessage.action((CustomLogger) sessionValue.getSession(), "INFO", "This is a test log message", true, LOG_VARIABLE,
-                entryList, sourceMap);
+        // Log test message
+        int i = 0;
+        while (i < 10) {
+            logMessage.action((CustomLogger) sessionValue.getSession(), LEVEL_INFO, "This is a test info message", true,
+                    LOG_VARIABLE,
+                    entryList, sourceMap);
+            logMessage.action((CustomLogger) sessionValue.getSession(), LEVEL_WARN, "This is a test warn message", true,
+                    LOG_VARIABLE,
+                    entryList, sourceMap);
+            logMessage.action((CustomLogger) sessionValue.getSession(), LEVEL_ERROR, "This is a test error message",
+                    true,
+                    LOG_VARIABLE,
+                    entryList, sourceMap);
+            ++i;
+        }
+
 
         // Verify the log file contains the expected output
         String content = new String(Files.readAllBytes(Paths.get(logFilePath)));

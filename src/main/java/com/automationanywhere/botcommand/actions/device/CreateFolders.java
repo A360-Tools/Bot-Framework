@@ -77,8 +77,9 @@ public class CreateFolders {
             @Idx(index = "4.1", type = AttributeType.VARIABLE)
             @Pkg(label = "Existing config dictionary", description = "Appends created folder" +
                     " details: Key= folder name | value = folder path")
-            Map<String, Value> configDictionary,
             @VariableType(DataType.DICTIONARY)
+            Map<String, Value> configDictionary,
+
 
             @Idx(index = "4.2", type = AttributeType.TEXT)
             @Pkg(label = "Key suffix", description = "Adds suffix to the keys of generated folders",

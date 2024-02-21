@@ -53,6 +53,7 @@ public class StartLoggerSession {
             @Pkg(label = "Append option for different levels of log", default_value = COMMON_FILE_ALL_LEVEL,
                     default_value_type = DataType.STRING)
             @SelectModes
+            @NotEmpty
             String logLevelsAndFileOption,
 
             @Idx(index = "1.1.1", type = FILE)
