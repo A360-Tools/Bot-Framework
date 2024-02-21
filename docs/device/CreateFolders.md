@@ -6,6 +6,8 @@
 paths. It ensures the creation of any necessary parent directories and allows for optional overwriting of existing
 folders.
 
+![image](https://github.com/A360-Tools/Bot-Framework/assets/82057278/a8645e97-62fc-4ccb-8b1d-ea55577f1997)
+
 ## Parameters
 
 ### Creation Mode
