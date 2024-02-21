@@ -3,6 +3,7 @@
 ## Overview
 
 The `ExcelReader` class is designed to read values from an Excel file and store them in a dictionary format.
+![image](https://github.com/A360-Tools/Bot-Framework/assets/82057278/bd3c7888-f318-49e6-bb6d-a90191249d45)
 
 ## Features
 
