@@ -5,6 +5,8 @@
 `About` provides a mechanism to document the functionality, inputs, outputs, expected application version, and settings
 required to run a given task within a bot. It serves as an informational node and is ignored during bot execution.
 
+![image](https://github.com/A360-Tools/Bot-Framework/assets/82057278/f4fc8d69-fddf-4d49-94d0-e68823dfee6e)
+
 ## Documentation Content
 
 ### Documentation
