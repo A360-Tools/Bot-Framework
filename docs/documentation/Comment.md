@@ -5,6 +5,8 @@
 `Comment` provides a mechanism to include descriptive annotations within a bot's workflow, enhancing clarity and
 understanding. It supports the inclusion of text and an optional helper image for visual guidance.
 
+![image](https://github.com/A360-Tools/Bot-Framework/assets/82057278/9d55028e-740a-433b-a1cb-af7e2d346402)
+
 ## Parameters
 
 ### Comment Text
