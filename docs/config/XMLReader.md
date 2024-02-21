@@ -2,8 +2,10 @@
 
 ## Overview
 
-`XMLReader` reads XML content, parses specified elements using XPath, and outputs a dictionary with customizable keys
+Reads XML content, parses specified elements using XPath, and outputs a dictionary with customizable keys
 and values.
+
+![image](https://github.com/A360-Tools/Bot-Framework/assets/82057278/68a7dcdd-40d2-4f5f-a78a-21f4da117039)
 
 ## Parameters
 
