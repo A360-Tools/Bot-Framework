@@ -21,6 +21,29 @@ Designed to streamline bot development, enhance logging, and facilitate comprehe
 - Screenshot capture alongside log messages for a complete logging experience.
 ![Animation](https://github.com/A360-Tools/Bot-Framework/assets/82057278/6f8c9268-d411-4b62-93c2-74cca016e13e)
 
+### [Config Data Reading](https://github.com/A360-Tools/Bot-Framework/tree/main/docs/config)
+- Reads configuration data from CSV, Excel, JSON, and XML formats into dictionaries.
+- Excel application -independent functionality for broader applicability and convenience.
+  
+  ![image](https://github.com/A360-Tools/Bot-Framework/assets/82057278/08014370-a4b5-4001-9736-2e77fcc1bb90)
+  
+  ![image](https://github.com/A360-Tools/Bot-Framework/assets/82057278/bd3c7888-f318-49e6-bb6d-a90191249d45)
+  
+  ![image](https://github.com/A360-Tools/Bot-Framework/assets/82057278/800d1bf7-7bda-4a1d-8f1a-6ea7821988bc)
+  
+  ![image](https://github.com/A360-Tools/Bot-Framework/assets/82057278/68a7dcdd-40d2-4f5f-a78a-21f4da117039)
+
+### [Auto Delete Logs](https://github.com/A360-Tools/Bot-Framework/blob/main/docs/device/DeleteFilesFolders.md)
+- Automated log deletion based on log age to optimize log management.
+- Customizable log retention through pattern matching for directories and files, aligning with organizational policies.
+
+  ![image](https://github.com/A360-Tools/Bot-Framework/assets/82057278/2606731b-cb4c-482a-9363-ef3b00158f7d)
+
+### [Close Process/Application](https://github.com/A360-Tools/Bot-Framework/blob/main/docs/device/CloseApplications.md)
+- Simplifies the termination of processes or applications by name, enhancing system resource management.
+
+  ![image](https://github.com/A360-Tools/Bot-Framework/assets/82057278/144ef622-7068-4a86-8574-4585749628dc)
+
 ### [Generate Framework Template](https://github.com/A360-Tools/Bot-Framework/tree/main/docs)
 - Standardizes bot structures across teams.
 - Ensures consistent logging practices for uniformity in deployment and maintenance.
@@ -30,16 +53,14 @@ Designed to streamline bot development, enhance logging, and facilitate comprehe
 - Error-prone activity highlights with detailed explanations and visual aids.
 - Simplified process comprehension through design screenshots, aiding replication and understanding.
 
-### [Config Data Reading](https://github.com/A360-Tools/Bot-Framework/tree/main/docs/config)
-- Reads configuration data from CSV, Excel, JSON, and XML formats into dictionaries.
-- Excel application -independent functionality for broader applicability and convenience.
+  ![image](https://github.com/A360-Tools/Bot-Framework/assets/82057278/f4fc8d69-fddf-4d49-94d0-e68823dfee6e)
 
-### [Auto Delete Logs](https://github.com/A360-Tools/Bot-Framework/blob/main/docs/device/DeleteFilesFolders.md)
-- Automated log deletion based on log age to optimize log management.
-- Customizable log retention through pattern matching for directories and files, aligning with organizational policies.
+  ![image](https://github.com/A360-Tools/Bot-Framework/assets/82057278/235b9976-93c2-4001-9740-08c386ad6597)
 
-### [Close Process/Application](https://github.com/A360-Tools/Bot-Framework/blob/main/docs/device/CloseApplications.md)
-- Simplifies the termination of processes or applications by name, enhancing system resource management.
+  ![image](https://github.com/A360-Tools/Bot-Framework/assets/82057278/9d55028e-740a-433b-a1cb-af7e2d346402)
+
+  ![image](https://github.com/A360-Tools/Bot-Framework/assets/82057278/133d4bf1-1113-42b4-8d7f-184e2e137b5a)
+
 
 ## Activity Summary
 - **Config Read CSV/Excel/JSON/XML**: Streamlines the import of configuration data into dictionaries from various file formats.
