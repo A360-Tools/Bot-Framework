@@ -5,6 +5,8 @@
 `Start Logger Session` initializes a new logging session, enabling the creation of log files with optional separate
 configurations for different log levels.
 
+![image](https://github.com/A360-Tools/Bot-Framework/assets/82057278/1ff80209-110d-448d-a9c3-245b90f0dea6)
+
 ## Parameters
 
 ### Append Option for Different Levels of Log
