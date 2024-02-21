@@ -2,8 +2,9 @@
 
 ## Overview
 
-The `JSONReader` class is designed to read data from a JSON source, which can be either a file or a text input, and
-convert this data into a dictionary format.
+Read data from a JSON source, which can be either a file or a text input, and convert this data into a dictionary.
+
+![image](https://github.com/A360-Tools/Bot-Framework/assets/82057278/800d1bf7-7bda-4a1d-8f1a-6ea7821988bc)
 
 ## Features
 
