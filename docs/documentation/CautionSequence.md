@@ -5,6 +5,8 @@
 `Caution Steps` is designed to highlight critical sections within a task, providing a means to document important
 actions that require special attention and optionally include screenshots for clarity.
 
+![image](https://github.com/A360-Tools/Bot-Framework/assets/82057278/235b9976-93c2-4001-9740-08c386ad6597)
+
 ## Parameters
 
 ### Title
