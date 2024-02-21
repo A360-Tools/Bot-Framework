@@ -2,7 +2,7 @@
 
 ## 1. Overview
 
-The `CSVReader` class is designed to read values from a CSV file and save them into a dictionary.
+Read values from a CSV file and save them into a dictionary.
 ![image](https://github.com/A360-Tools/Bot-Framework/assets/82057278/08014370-a4b5-4001-9736-2e77fcc1bb90)
 
 ### 1.1 Features
