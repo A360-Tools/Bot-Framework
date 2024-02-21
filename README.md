@@ -1,9 +1,9 @@
 # A360 Bot Framework Package
 
 ## Overview
-Designed to streamline bot development, enhance logging, and facilitate comprehensive documentation within automated workflows for A360. Tailored for efficiency, consistency, and ease of use, this package addresses common challenges in bot deployment and maintenance, making it an indispensable tool for modern automation projects.
+Designed to streamline bot development, enhance logging, and facilitate comprehensive documentation within tasks for A360. Tailored for efficiency, consistency, and ease of use, this package addresses common challenges in bot development and maintenance, making it an indispensable tool for modern automation projects.
 
-![Screenshot 2024-02-21 072347](https://github.com/A360-Tools/Bot-Framework/assets/82057278/d9358fbf-25d5-4fdc-aeb8-cf614a01d464)
+![main](https://github.com/A360-Tools/Bot-Framework/assets/82057278/8d29c730-b988-4721-b375-f937f623f158)
 
 ## Use Cases
 - **Framework Templating**: Ideal for organizations looking to standardize bot development practices across multiple teams.
@@ -13,13 +13,14 @@ Designed to streamline bot development, enhance logging, and facilitate comprehe
 ## Key Features
 
 ### [Robust Logging](https://github.com/A360-Tools/Bot-Framework/blob/main/docs/logs/LogMessage.md)
+![Animation](https://github.com/A360-Tools/Bot-Framework/assets/82057278/6f8c9268-d411-4b62-93c2-74cca016e13e)
 - Global session logger for comprehensive logging across subtasks.
 - Automatic capture of source task details, environment details for enhanced traceability.
 - Visualization of complex/nested variables for efficient debugging and tracking.
+- HTML format for logs to enable monitoring from various devices while minimizing the risk of unintended file locking.
 - Log file rollover based on file size.
 - Log file separation based on log level.
 - Screenshot capture alongside log messages for a complete logging experience.
-![Animation](https://github.com/A360-Tools/Bot-Framework/assets/82057278/6f8c9268-d411-4b62-93c2-74cca016e13e)
 
 ### [Config Data Reading](https://github.com/A360-Tools/Bot-Framework/tree/main/docs/config)
 - Reads configuration data from CSV, Excel, JSON, and XML formats into dictionaries.
