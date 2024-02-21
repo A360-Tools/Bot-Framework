@@ -3,6 +3,8 @@
 ## Overview
 `Log Message` records a message to the session log file and optionally captures a screenshot, enriching log diagnostics.
 
+![image](https://github.com/A360-Tools/Bot-Framework/assets/82057278/8110493b-9bea-478c-9d78-cd864ee581c2)
+
 ## Parameters
 
 ### Logger Session
