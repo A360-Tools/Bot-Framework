@@ -3,6 +3,8 @@
 ## Overview
 Designed to streamline bot development, enhance logging, and facilitate comprehensive documentation within automated workflows for A360. Tailored for efficiency, consistency, and ease of use, this package addresses common challenges in bot deployment and maintenance, making it an indispensable tool for modern automation projects.
 
+![Screenshot 2024-02-21 072347](https://github.com/A360-Tools/Bot-Framework/assets/82057278/d9358fbf-25d5-4fdc-aeb8-cf614a01d464)
+
 ## Key Features
 
 ### Generate Framework Template
