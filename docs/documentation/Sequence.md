@@ -5,6 +5,8 @@
 `Steps` organizes a sequence of commands within a bot, providing structured documentation and the option to include
 screenshots for enhanced clarity and visual guidance.
 
+![image](https://github.com/A360-Tools/Bot-Framework/assets/82057278/133d4bf1-1113-42b4-8d7f-184e2e137b5a)
+
 ## Parameters
 
 ### Title
