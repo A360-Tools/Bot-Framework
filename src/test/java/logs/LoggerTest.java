@@ -136,7 +136,8 @@ public class LoggerTest {
 
         // Verify the log file contains the expected output
         String content = new String(Files.readAllBytes(Paths.get(logFilePath)));
-        Assert.assertTrue(content.contains("This is a test log message"));
-
+        Assert.assertTrue(content.contains("This is a test info message"));
+        Assert.assertTrue(content.contains("This is a test warn message"));
+        Assert.assertTrue(content.contains("This is a test error message"));
     }
 }
