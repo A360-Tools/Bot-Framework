@@ -12,6 +12,10 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
+/**
+ * @author Sumit Kumar
+ */
+
 public class CaptureScreen {
 
     public static void captureDesktop(String filePath, boolean isOverwriteFile) {
@@ -26,7 +30,6 @@ public class CaptureScreen {
             if (!isOverwriteFile && file.exists()) {
                 throw new BotCommandException("Screenshot path already exists " + path);
             }
-
 
             Robot robot = new Robot();
             Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();

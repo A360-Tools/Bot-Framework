@@ -113,50 +113,55 @@ public class CSVReader {
             String delimiter
 
     ) {
-        FileValidator fileValidator = new FileValidator(inputFilePath);
-        String[] allowedExtensions = {"csv"};
-        fileValidator.validateFile(allowedExtensions);
-        boolean hasHeader = parsingMethod.equalsIgnoreCase(COLUMN_HEADER);
-        CSVFormat csvFormat;
-        if (hasHeader) {
-            csvFormat = CSVFormat.Builder
-                    .create()
-                    .setHeader()
-                    .setDelimiter(delimiter)
-                    .setIgnoreHeaderCase(true)
-                    .setIgnoreEmptyLines(true)
-                    .build();
-        } else {
-            csvFormat = CSVFormat.Builder
-                    .create()
-                    .setIgnoreEmptyLines(true)
-                    .setDelimiter(delimiter)
-                    .build();
-        }
-        Charset charset = Charset.forName(charsetName);
-        try (Reader reader = new BufferedReader(new FileReader(inputFilePath, charset));
-             CSVParser csvParser = new CSVParser(reader, csvFormat)) {
-
-            Map<String, Value> csvDictionary = new LinkedHashMap<>();
-
-            for (CSVRecord csvRecord : csvParser) {
-                String key;
-                String value;
-                if (hasHeader) {
-                    key = csvRecord.get(keyColumnName);
-                    value = csvRecord.get(valueColumnName);
-                } else {
-                    key = csvRecord.get(keyIndex.intValue());
-                    value = csvRecord.get(valueIndex.intValue());
-                }
-                if (key == null || key.isEmpty())
-                    continue;
-                value = isTrimValues ? value.strip() : value;
-                csvDictionary.put(key, new StringValue(value));
+        try {
+            FileValidator fileValidator = new FileValidator(inputFilePath);
+            String[] allowedExtensions = {"csv"};
+            fileValidator.validateFile(allowedExtensions);
+            boolean hasHeader = parsingMethod.equalsIgnoreCase(COLUMN_HEADER);
+            CSVFormat csvFormat;
+            if (hasHeader) {
+                csvFormat = CSVFormat.Builder
+                        .create()
+                        .setHeader()
+                        .setDelimiter(delimiter)
+                        .setIgnoreHeaderCase(true)
+                        .setIgnoreEmptyLines(true)
+                        .build();
+            } else {
+                csvFormat = CSVFormat.Builder
+                        .create()
+                        .setIgnoreEmptyLines(true)
+                        .setDelimiter(delimiter)
+                        .build();
             }
+            Charset charset = Charset.forName(charsetName);
+            try (Reader reader = new BufferedReader(new FileReader(inputFilePath, charset));
+                 CSVParser csvParser = new CSVParser(reader, csvFormat)) {
 
-            return new DictionaryValue(csvDictionary);
+                Map<String, Value> csvDictionary = new LinkedHashMap<>();
 
+                for (CSVRecord csvRecord : csvParser) {
+                    String key;
+                    String value;
+                    if (hasHeader) {
+                        key = csvRecord.get(keyColumnName);
+                        value = csvRecord.get(valueColumnName);
+                    } else {
+                        key = csvRecord.get(keyIndex.intValue());
+                        value = csvRecord.get(valueIndex.intValue());
+                    }
+                    if (key == null || key.isEmpty()) {
+                        continue;
+                    }
+                    value = isTrimValues ? value.strip() : value;
+                    csvDictionary.put(key, new StringValue(value));
+                }
+
+                return new DictionaryValue(csvDictionary);
+
+            } catch (Exception e) {
+                throw new BotCommandException("Error occurred while opening file: " + e.getMessage());
+            }
         } catch (Exception e) {
             throw new BotCommandException("Error occurred: " + e.getMessage());
         }

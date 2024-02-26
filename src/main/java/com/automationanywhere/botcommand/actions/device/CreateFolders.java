@@ -92,14 +92,17 @@ public class CreateFolders {
     ) {
         try {
             Map<String, Value> returnDictionary = new HashMap<>();
-            if (configDictionary == null)
+            if (configDictionary == null) {
                 configDictionary = new HashMap<>();
+            }
 
-            if (suffix == null)
+            if (suffix == null) {
                 suffix = "";
+            }
 
-            if (prefix == null)
+            if (prefix == null) {
                 suffix = "";
+            }
 
             for (Value folderPathValue : folderPaths) {
                 String folderPath = Paths.get(folderPathValue.get().toString()).toString();

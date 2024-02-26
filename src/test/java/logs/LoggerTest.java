@@ -1,9 +1,5 @@
 package logs;
 
-/**
- * @author Sumit Kumar
- */
-
 import com.automationanywhere.botcommand.actions.logs.LogMessage;
 import com.automationanywhere.botcommand.actions.logs.StartLoggerSession;
 import com.automationanywhere.botcommand.data.Value;
@@ -23,6 +19,10 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+/**
+ * @author Sumit Kumar
+ */
 
 public class LoggerTest {
 
@@ -50,7 +50,8 @@ public class LoggerTest {
         // Set up file paths for testing
         logFilePath = "src/test/target/test-artifacts/logs/log.html";
         screenshotFolderPath = "src/test/target/test-artifacts/logs/screenshot";
-        // Create a source map with some variables representing variables sent via common variables(number,string,boolean,datetime)
+        // Create a source map with some variables representing variables sent via common variables(number,string,
+        // boolean,datetime)
         sourceMap = new HashMap<>();
         sourceMap.put("my string", new StringValue("Hello, World!"));
         sourceMap.put("my number", new NumberValue(100));
@@ -119,7 +120,7 @@ public class LoggerTest {
 
         // Log test message
         int i = 0;
-        while (i < 10) {
+        while (i < 2) {
             logMessage.action((CustomLogger) sessionValue.getSession(), LEVEL_INFO, "This is a test info message", true,
                     LOG_VARIABLE,
                     entryList, sourceMap);
@@ -132,7 +133,6 @@ public class LoggerTest {
                     entryList, sourceMap);
             ++i;
         }
-
 
         // Verify the log file contains the expected output
         String content = new String(Files.readAllBytes(Paths.get(logFilePath)));

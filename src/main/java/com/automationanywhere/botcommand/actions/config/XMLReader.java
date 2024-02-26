@@ -97,7 +97,8 @@ public class XMLReader {
                     @Idx.Option(index = "3.2", pkg = @Pkg(label = "Element's attribute", value =
                             KEY_OPTION_TAG_ATTRIBUTE))
             })
-            @Pkg(label = "Populate Dictionary keys from", default_value = KEY_OPTION_TAG_NAME, default_value_type = DataType.STRING)
+            @Pkg(label = "Populate Dictionary keys from", default_value = KEY_OPTION_TAG_NAME, default_value_type =
+                    DataType.STRING)
             @SelectModes
             @NotEmpty
             String dictionaryKeys,
@@ -109,7 +110,8 @@ public class XMLReader {
 
             @Idx(index = "4", type = AttributeType.SELECT, options = {
                     @Idx.Option(index = "4.1", pkg = @Pkg(label = "Element's text", value = VALUE_OPTION_TAG_TEXT)),
-                    @Idx.Option(index = "4.2", pkg = @Pkg(label = "Element's attribute value", value = VALUE_OPTION_TAG_ATTRIBUTE_VALUE))
+                    @Idx.Option(index = "4.2", pkg = @Pkg(label = "Element's attribute value", value =
+                            VALUE_OPTION_TAG_ATTRIBUTE_VALUE))
             })
             @Pkg(label = "Populate Dictionary values from", default_value = VALUE_OPTION_TAG_TEXT, default_value_type =
                     DataType.STRING)
@@ -188,8 +190,9 @@ public class XMLReader {
                 default:
                     throw new BotCommandException("Invalid key parsing method: " + dictionaryKeys);
             }
-            if (key == null || key.isEmpty())
+            if (key == null || key.isEmpty()) {
                 continue;
+            }
 
             switch (dictionaryValues.toUpperCase()) {
                 case VALUE_OPTION_TAG_TEXT:

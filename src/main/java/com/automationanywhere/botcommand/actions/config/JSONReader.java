@@ -124,8 +124,9 @@ public class JSONReader {
     ) {
         try {
             Map<String, Value> jsonDictionary;
-            if (jsonPathSegments == null || parsingMethod.equalsIgnoreCase(PARSING_TYPE_ALL))
+            if (jsonPathSegments == null || parsingMethod.equalsIgnoreCase(PARSING_TYPE_ALL)) {
                 jsonPathSegments = List.of();
+            }
             switch (inputMethod) {
                 case INPUT_TYPE_FILE:
                     FileValidator fileValidator = new FileValidator(jsonFilePath);
@@ -159,8 +160,9 @@ public class JSONReader {
                 String pathSegmentString = pathSegment.get().toString();
                 if (currentNode instanceof JSONObject) {
                     currentNode = ((JSONObject) currentNode).get(pathSegmentString);
-                } else
+                } else {
                     break;
+                }
             }
             //traverse all available keys within this json node
             traverseJson("", currentNode, jsonDictionary, false, isTrimValues);
@@ -184,8 +186,9 @@ public class JSONReader {
             JSONArray jsonArray = (JSONArray) jsonNode;
             for (int i = 0; i < jsonArray.length(); i++) {
                 Object arrayElement = jsonArray.get(i);
-                if (isParentNodeObject)
+                if (isParentNodeObject) {
                     prefix = prefix.substring(0, prefix.length() - 1);
+                }
                 traverseJson(prefix + "[" + i + "].", arrayElement, jsonDictionary, false, isTrimValues);
             }
         } else {

@@ -11,7 +11,6 @@ import com.automationanywhere.commandsdk.model.DataType;
 import com.automationanywhere.commandsdk.model.ReturnSettingsType;
 import org.apache.logging.log4j.Level;
 
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -95,32 +94,36 @@ public class StartLoggerSession {
             @GreaterThan("0")
             Number rollingFileSizeMB
 
-    ) throws IOException {
+    ) {
+        try {
+            if (screenshotFolderPath == null || screenshotFolderPath.isEmpty()) {
+                throw new BotCommandException("Invalid screenshot folder path");
+            }
 
-        if (screenshotFolderPath == null || screenshotFolderPath.isEmpty())
-            throw new BotCommandException("Invalid screenshot folder path");
+            CustomLogger customLogger;
+            switch (logLevelsAndFileOption) {
+                case COMMON_FILE_ALL_LEVEL:
+                    customLogger = new CustomLogger("CustomLogger_" + UUID.randomUUID(), logFilePath,
+                            rollingFileSizeMB.longValue(), screenshotFolderPath);
+                    break;
+                case CONFIGURABLE_FILE_ALL_LEVEL:
+                    Map<Level, String> levelFilePathMap = new HashMap<>();
+                    levelFilePathMap.put(Level.INFO, infoLogFilePath);
+                    levelFilePathMap.put(Level.WARN, warnLogFilePath);
+                    levelFilePathMap.put(Level.ERROR, errorLogFilePath);
+                    customLogger = new CustomLogger("CustomLogger_" + UUID.randomUUID(), levelFilePathMap,
+                            rollingFileSizeMB.longValue(), screenshotFolderPath);
+                    break;
+                default:
+                    throw new BotCommandException("Invalid log level and file option");
+            }
 
-        CustomLogger customLogger;
-        switch (logLevelsAndFileOption) {
-            case COMMON_FILE_ALL_LEVEL:
-                customLogger = new CustomLogger("CustomLogger_" + UUID.randomUUID(), logFilePath,
-                        rollingFileSizeMB.longValue(), screenshotFolderPath);
-                break;
-            case CONFIGURABLE_FILE_ALL_LEVEL:
-                Map<Level, String> levelFilePathMap = new HashMap<>();
-                levelFilePathMap.put(Level.INFO, infoLogFilePath);
-                levelFilePathMap.put(Level.WARN, warnLogFilePath);
-                levelFilePathMap.put(Level.ERROR, errorLogFilePath);
-                customLogger = new CustomLogger("CustomLogger_" + UUID.randomUUID(), levelFilePathMap,
-                        rollingFileSizeMB.longValue(), screenshotFolderPath);
-                break;
-            default:
-                throw new BotCommandException("Invalid log level and file option");
+            return SessionValue
+                    .builder()
+                    .withSessionObject(customLogger)
+                    .build();
+        } catch (Exception e) {
+            throw new BotCommandException("Error occurred while creating new session: " + e.getMessage());
         }
-
-        return SessionValue
-                .builder()
-                .withSessionObject(customLogger)
-                .build();
     }
 }

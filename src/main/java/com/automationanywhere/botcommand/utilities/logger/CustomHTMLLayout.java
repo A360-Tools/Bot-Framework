@@ -32,7 +32,8 @@ public class CustomHTMLLayout extends AbstractStringLayout {
 
     static {
         try {
-            header = IOUtils.toByteArray(Objects.requireNonNull(CustomHTMLLayout.class.getResourceAsStream(templatePath)));
+            header =
+                    IOUtils.toByteArray(Objects.requireNonNull(CustomHTMLLayout.class.getResourceAsStream(templatePath)));
             machine = InetAddress.getLocalHost().getHostName();
             user = System.getProperty("user.name");
         } catch (IOException e) {
@@ -63,11 +64,12 @@ public class CustomHTMLLayout extends AbstractStringLayout {
 
         //parse the message and extract column details for current row
         Object[] parameters = event.getMessage().getParameters();
-        if (parameters != null && parameters.length > 0 && parameters[0] instanceof Map) {
-            Map<String, Object> messageObject = (Map<String, Object>) parameters[0];
+        if (parameters != null && parameters.length > 0 && parameters[ 0 ] instanceof Map) {
+            Map<String, Object> messageObject = (Map<String, Object>) parameters[ 0 ];
             message = Optional.ofNullable(messageObject.get(Columns.MESSAGE)).map(Object::toString).orElse("");
             sourceBotPath = Optional.ofNullable(messageObject.get(Columns.SOURCE)).map(Object::toString).orElse("");
-            screenshotPath = Optional.ofNullable(messageObject.get(Columns.SCREENSHOT)).map(Object::toString).orElse("");
+            screenshotPath = Optional.ofNullable(messageObject.get(Columns.SCREENSHOT)).map(Object::toString).orElse(
+                    "");
 
             if (messageObject.get(Columns.VARIABLES) != null && messageObject.get(Columns.VARIABLES) instanceof Map) {
                 Map<String, Value> variableMap = (Map<String, Value>) messageObject.get(Columns.VARIABLES);
@@ -104,15 +106,15 @@ public class CustomHTMLLayout extends AbstractStringLayout {
     }
 
     @Override
-    public byte[] getHeader() {
-        // Add header content similar to Log4j2's HtmlLayout
-        return header;
-    }
-
-    @Override
     public byte[] getFooter() {
         // Add footer content similar to Log4j2's HtmlLayout
         return footer;
+    }
+
+    @Override
+    public byte[] getHeader() {
+        // Add header content similar to Log4j2's HtmlLayout
+        return header;
     }
 
     public static class Builder implements org.apache.logging.log4j.core.util.Builder<CustomHTMLLayout> {

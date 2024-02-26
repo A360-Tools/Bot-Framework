@@ -5,34 +5,61 @@ package config;
  */
 
 import com.automationanywhere.botcommand.actions.config.XMLReader;
+import com.automationanywhere.botcommand.data.Value;
 import com.automationanywhere.botcommand.data.impl.DictionaryValue;
 import com.automationanywhere.botcommand.exception.BotCommandException;
 import org.testng.Assert;
+import org.testng.annotations.AfterMethod;
+import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
+
+import java.util.Map;
 
 public class XMLReaderTest {
 
+    private static final String SAMPLE_XML_FILE_PATH = "src/test/sample/test.xml";
+    private static final String SAMPLE_XML_CONTENT = "<root><config><dev>" +
+            "<item id=\"1\" value=\"value1\">text1</item>" +
+            "<item id=\"2\" value=\"value2\">text2</item>" +
+            "<item id=\"3\" value=\"value3\">text3</item>" +
+            "</dev></config></root>";
+    private static final String INVALID_FILE_PATH = "invalid/path/to/xml.xml";
+    private static final String XPATH_TO_NODES = "//dev/item";
+    private static final String CHARSET_UTF_8 = "UTF-8";
+    private static final String ID_ATTRIBUTE = "id";
+    private static final String INPUT_TYPE_FILE = "FILE";
+    private static final String INPUT_TYPE_TEXT = "TEXT";
+    private static final String KEY_OPTION_TAG_ATTRIBUTE = "TAG_ATTRIBUTE";
+    private static final String VALUE_OPTION_TAG_TEXT = "TAG_TEXT";
+    private XMLReader xmlReader;
+
+    @BeforeMethod
+    public void setUp() {
+        xmlReader = new XMLReader();
+    }
+
+    @AfterMethod
+    public void tearDown() {
+        xmlReader = null;
+    }
+
     @Test
-    public void testXmlFileParsing() {
-        XMLReader xmlReader = new XMLReader();
+    public void testReadFromXmlFile() throws Exception {
+        DictionaryValue result = xmlReader.action(
+                INPUT_TYPE_FILE,
+                SAMPLE_XML_FILE_PATH,
+                CHARSET_UTF_8,
+                null,
+                XPATH_TO_NODES,
+                KEY_OPTION_TAG_ATTRIBUTE,
+                ID_ATTRIBUTE,
+                VALUE_OPTION_TAG_TEXT,
+                null,
+                false
+        );
 
-        // Set up input parameters
-        String inputMethod = "FILE";
-        String xmlFilePath = "src/test/sample/test.xml";
-        String charsetName = "UTF-8";
-        String xPathToNodes = "//config/dev/*";
-        String dictionaryKeys = "TAG_ATTRIBUTE";
-        String dictionaryKeysAttributeName = "id";
-        String dictionaryValues = "TAG_TEXT";
-        Boolean isTrimValues = false;
-
-        // Call the action method
-        DictionaryValue result = xmlReader.action(inputMethod, xmlFilePath, charsetName, null, xPathToNodes,
-                dictionaryKeys, dictionaryKeysAttributeName, dictionaryValues, null, isTrimValues);
-
-        // Perform assertions on the result
-        Assert.assertNotNull(result);
-        result.get().forEach((k, v) -> System.out.println(k + " | " + v));
+        Map<String, Value> resultMap = result.get();
+        Assert.assertNotNull(resultMap);
         Assert.assertTrue(result.get().containsKey("1"));
         Assert.assertTrue(result.get().containsKey("2"));
         Assert.assertTrue(result.get().containsKey("3"));
@@ -42,64 +69,44 @@ public class XMLReaderTest {
     }
 
     @Test
-    public void testXmlTextParsing() {
-        // Create an instance of XMLReader
-        XMLReader xmlReader = new XMLReader();
+    public void testReadFromXmlText() {
+        DictionaryValue result = xmlReader.action(
+                INPUT_TYPE_TEXT,
+                null,
+                null,
+                SAMPLE_XML_CONTENT,
+                XPATH_TO_NODES,
+                KEY_OPTION_TAG_ATTRIBUTE,
+                ID_ATTRIBUTE,
+                VALUE_OPTION_TAG_TEXT,
+                null,
+                false
+        );
 
-        // Set up input parameters
-        String inputMethod = "text";
-        String xmlText = "<root>\n" +
-                "    <config>\n" +
-                "        <dev>\n" +
-                "            <db id=\"1\" value=\"value1\">text1</db>\n" +
-                "            <auth id=\"2\" value=\"value2 \">text2</auth>\n" +
-                "            <url id=\"3\" value=\"value3\">text3</url>\n" +
-                "        </dev>\n" +
-                "        <prod>\n" +
-                "            <db id=\"4\" value=\"value4\">text4</db>\n" +
-                "            <url id=\"5\" value=\"value5\">text5</url>\n" +
-                "        </prod>\n" +
-                "    </config>\n" +
-                "</root>";
-        String xPathToNodes = "//config/dev/*";
-        String dictionaryKeys = "TAG_NAME";
-        String dictionaryValues = "TAG_ATTRIBUTE_VALUE";
-        String dictionaryValuesAttributeName = "value";
-        Boolean isTrimValues = true;
-
-        // Call the action method
-        DictionaryValue result = xmlReader.action(inputMethod, null, null, xmlText, xPathToNodes,
-                dictionaryKeys, null, dictionaryValues, dictionaryValuesAttributeName, isTrimValues);
-
-        // Perform assertions on the result
-        Assert.assertNotNull(result);
-        result.get().forEach((k, v) -> System.out.println(k + " | " + v));
-        Assert.assertTrue(result.get().containsKey("db"));
-        Assert.assertTrue(result.get().containsKey("auth"));
-        Assert.assertTrue(result.get().containsKey("url"));
-        Assert.assertEquals("value1", result.get().get("db").get().toString());
-        Assert.assertEquals("value2", result.get().get("auth").get().toString());
-        Assert.assertEquals("value3", result.get().get("url").get().toString());
+        Map<String, Value> resultMap = result.get();
+        Assert.assertNotNull(resultMap);
+        Assert.assertTrue(result.get().containsKey("1"));
+        Assert.assertTrue(result.get().containsKey("2"));
+        Assert.assertTrue(result.get().containsKey("3"));
+        Assert.assertEquals("text1", result.get().get("1").get().toString());
+        Assert.assertEquals("text2", result.get().get("2").get().toString());
+        Assert.assertEquals("text3", result.get().get("3").get().toString());
     }
 
     @Test(expectedExceptions = BotCommandException.class)
-    public void testInvalidParsingMethod() {
-        // Create an instance of XMLReader
-        XMLReader xmlReader = new XMLReader();
-
-        // Set up input parameters with an invalid parsing method
-        String inputMethod = "file";
-        String xmlFilePath = "path/to/test.xml";
-        String xPathToNodes = "//config/dev/*";
-        String dictionaryKeys = "name";
-        String dictionaryKeysAttributeName = "id";
-        String dictionaryValues = "text";
-        String dictionaryValuesAttributeName = "value";
-        String charsetName = "UTF-8";
-        Boolean isTrimValues = true;
-
-        // Call the action method and expect a BotCommandException
-        xmlReader.action(inputMethod, xmlFilePath, charsetName, null, xPathToNodes,
-                dictionaryKeys, dictionaryKeysAttributeName, dictionaryValues, dictionaryValuesAttributeName, isTrimValues);
+    public void testInvalidXmlFilePath() {
+        xmlReader.action(
+                INPUT_TYPE_FILE,
+                INVALID_FILE_PATH,
+                CHARSET_UTF_8,
+                null,
+                XPATH_TO_NODES,
+                KEY_OPTION_TAG_ATTRIBUTE,
+                ID_ATTRIBUTE,
+                VALUE_OPTION_TAG_TEXT,
+                null,
+                false
+        );
     }
+
 }

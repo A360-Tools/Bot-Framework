@@ -10,33 +10,85 @@ import com.automationanywhere.botcommand.data.impl.DictionaryValue;
 import com.automationanywhere.botcommand.data.impl.StringValue;
 import com.automationanywhere.botcommand.exception.BotCommandException;
 import org.testng.Assert;
+import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import static org.testng.Assert.assertNotNull;
+/**
+ * @author Sumit Kumar
+ */
 
 public class JSONReaderTest {
+
+    private static final String JSON_FILE_PATH = "src/test/sample/test.json";
+    private static final String CHARSET_UTF_8 = "UTF-8";
+    private static final String JSON_TEXT = "{\n" +
+            "  \"person\": {\n" +
+            "    \"name\": \"John\",\n" +
+            "    \"age\": 30,\n" +
+            "    \"address\": {\n" +
+            "      \"city\": \"New York\",\n" +
+            "      \"zip\": \"10001\",\n" +
+            "      \"coordinates\": {\n" +
+            "        \"latitude\": 40.7128,\n" +
+            "        \"longitude\": -74.0060\n" +
+            "      }\n" +
+            "    },\n" +
+            "    \"phoneNumbers\": [\"123-456-7890\", \"987-654-3210\"],\n" +
+            "    \"friends\": [\n" +
+            "      {\n" +
+            "        \"friendName\": \"Alice\",\n" +
+            "        \"friendAge\": 28,\n" +
+            "        \"interests\": [\"Reading\", \"Hiking\"]\n" +
+            "      },\n" +
+            "      {\n" +
+            "        \"friendName\": \"Bob\",\n" +
+            "        \"friendAge\": 32,\n" +
+            "        \"interests\": [\"Cooking\", \"Gaming\"]\n" +
+            "      }\n" +
+            "    ]\n" +
+            "  },\n" +
+            "  \"company\": {\n" +
+            "    \"name\": \"TechCorp\",\n" +
+            "    \"location\": \"Silicon Valley\",\n" +
+            "    \"employees\": [\n" +
+            "      {\n" +
+            "        \"employeeName\": \"Mary\",\n" +
+            "        \"employeeAge\": 25\n" +
+            "      },\n" +
+            "      {\n" +
+            "        \"employeeName\": \"James\",\n" +
+            "        \"employeeAge\": 35\n" +
+            "      }\n" +
+            "    ]\n" +
+            "  }\n" +
+            "}";
+    private static final String INVALID_METHOD = "invalid_method";
+    private static final String INVALID_PATH = "";
+    private JSONReader jsonReader;
+
+    @BeforeClass
+    public void setUp() {
+        jsonReader = new JSONReader();
+    }
+
     @Test
     public void testJsonFileParsingAllObjectNode() {
-        // Given
-        JSONReader jsonReader = new JSONReader();
-        String inputMethod = "FILE";
-        String jsonFilePath = "src/test/sample/test.json";
-        String charsetName = "UTF-8";
-        String parsingMethod = "ALL";
-        Boolean isTrimValues = true;
+        DictionaryValue result = jsonReader.action(
+                "FILE",
+                JSON_FILE_PATH,
+                CHARSET_UTF_8,
+                null,
+                "ALL",
+                null,
+                true
+        );
 
-        // When
-        DictionaryValue result = jsonReader.action(inputMethod, jsonFilePath,
-                charsetName, null, parsingMethod, null, isTrimValues);
-
-        // Then
+        assertResult(result, 22);
         Map<String, Value> resultMap = result.get();
-        assertNotNull(result, "Result should not be null");
-        result.get().forEach((k, v) -> System.out.println(k + " | " + v));
         Assert.assertEquals(resultMap.size(), 22);
         Assert.assertTrue(resultMap.containsKey("person.address.city"));
         Assert.assertTrue(resultMap.containsKey("person.address.zip"));
@@ -48,28 +100,31 @@ public class JSONReaderTest {
         Assert.assertEquals(resultMap.get("person.address.coordinates.latitude").toString(), "40.7128");
     }
 
+    private static void assertResult(DictionaryValue result, int expectedSize) {
+        Assert.assertNotNull(result, "Result should not be null");
+        Map<String, Value> resultMap = result.get();
+        resultMap.forEach((k, v) -> System.out.println(k + " | " + v)); // For debug purposes
+        Assert.assertEquals(resultMap.size(), expectedSize);
+    }
+
     @Test
     public void testJsonFileParsingSpecificObjectNode() {
-        // Given
-        JSONReader jsonReader = new JSONReader();
-        String inputMethod = "FILE";
-        String jsonFilePath = "src/test/sample/test.json";
-        String charsetName = "UTF-8";
-        String parsingMethod = "SPECIFIC";
         List<Value> jsonPathSegments = new ArrayList<>();
         jsonPathSegments.add(new StringValue("person"));
         jsonPathSegments.add(new StringValue("address"));
-        Boolean isTrimValues = true;
 
+        DictionaryValue result = jsonReader.action(
+                "FILE",
+                JSON_FILE_PATH,
+                CHARSET_UTF_8,
+                null,
+                "SPECIFIC",
+                jsonPathSegments,
+                true
+        );
 
-        // When
-        DictionaryValue result = jsonReader.action(inputMethod, jsonFilePath,
-                charsetName, null, parsingMethod, jsonPathSegments, isTrimValues);
-
-        // Then
+        assertResult(result, 4);
         Map<String, Value> resultMap = result.get();
-        assertNotNull(result, "Result should not be null");
-        result.get().forEach((k, v) -> System.out.println(k + " | " + v));
         Assert.assertEquals(resultMap.size(), 4);
         Assert.assertTrue(resultMap.containsKey("city"));
         Assert.assertTrue(resultMap.containsKey("zip"));
@@ -83,24 +138,22 @@ public class JSONReaderTest {
 
     @Test
     public void testJsonFileParsingSpecificArrayNode() {
-        // Given
-        JSONReader jsonReader = new JSONReader();
-        String inputMethod = "FILE";
-        String jsonFilePath = "src/test/sample/test.json";
-        String charsetName = "UTF-8";
-        String parsingMethod = "SPECIFIC";
         List<Value> jsonPathSegments = new ArrayList<>();
         jsonPathSegments.add(new StringValue("person"));
         jsonPathSegments.add(new StringValue("friends"));
-        Boolean isTrimValues = true;
-        // When
-        DictionaryValue result = jsonReader.action(inputMethod, jsonFilePath,
-                charsetName, null, parsingMethod, jsonPathSegments, isTrimValues);
 
-        // Then
+        DictionaryValue result = jsonReader.action(
+                "FILE",
+                JSON_FILE_PATH,
+                CHARSET_UTF_8,
+                null,
+                "SPECIFIC",
+                jsonPathSegments,
+                true
+        );
+
+        assertResult(result, 8);
         Map<String, Value> resultMap = result.get();
-        assertNotNull(result, "Result should not be null");
-        result.get().forEach((k, v) -> System.out.println(k + " | " + v));
         Assert.assertEquals(resultMap.size(), 8);
         Assert.assertTrue(resultMap.containsKey("[0].friendName"));
         Assert.assertTrue(resultMap.containsKey("[0].friendAge"));
@@ -110,64 +163,21 @@ public class JSONReaderTest {
 
     @Test
     public void testJsonTextParsingSpecificObjectNode() {
-        // Given
-        JSONReader jsonReader = new JSONReader();
-        String inputMethod = "TEXT";
-        String parsingMethod = "SPECIFIC";
         List<Value> jsonPathSegments = new ArrayList<>();
         jsonPathSegments.add(new StringValue("person"));
         jsonPathSegments.add(new StringValue("address"));
-        Boolean isTrimValues = true;
-        String jsonText = "{\n" +
-                "  \"person\": {\n" +
-                "    \"name\": \"John\",\n" +
-                "    \"age\": 30,\n" +
-                "    \"address\": {\n" +
-                "      \"city\": \"New York\",\n" +
-                "      \"zip\": \"10001\",\n" +
-                "      \"coordinates\": {\n" +
-                "        \"latitude\": 40.7128,\n" +
-                "        \"longitude\": -74.0060\n" +
-                "      }\n" +
-                "    },\n" +
-                "    \"phoneNumbers\": [\"123-456-7890\", \"987-654-3210\"],\n" +
-                "    \"friends\": [\n" +
-                "      {\n" +
-                "        \"friendName\": \"Alice\",\n" +
-                "        \"friendAge\": 28,\n" +
-                "        \"interests\": [\"Reading\", \"Hiking\"]\n" +
-                "      },\n" +
-                "      {\n" +
-                "        \"friendName\": \"Bob\",\n" +
-                "        \"friendAge\": 32,\n" +
-                "        \"interests\": [\"Cooking\", \"Gaming\"]\n" +
-                "      }\n" +
-                "    ]\n" +
-                "  },\n" +
-                "  \"company\": {\n" +
-                "    \"name\": \"TechCorp\",\n" +
-                "    \"location\": \"Silicon Valley\",\n" +
-                "    \"employees\": [\n" +
-                "      {\n" +
-                "        \"employeeName\": \"Mary\",\n" +
-                "        \"employeeAge\": 25\n" +
-                "      },\n" +
-                "      {\n" +
-                "        \"employeeName\": \"James\",\n" +
-                "        \"employeeAge\": 35\n" +
-                "      }\n" +
-                "    ]\n" +
-                "  }\n" +
-                "}";
 
+        DictionaryValue result = jsonReader.action(
+                "TEXT",
+                null,
+                null,
+                JSON_TEXT,
+                "SPECIFIC",
+                jsonPathSegments,
+                true
+        );
 
-        // When
-        DictionaryValue result = jsonReader.action(inputMethod, null,
-                null, jsonText, parsingMethod, jsonPathSegments, isTrimValues);
-
-        // Then
-        assertNotNull(result, "Result should not be null");
-        result.get().forEach((k, v) -> System.out.println(k + " | " + v));
+        assertResult(result, 4);
         Map<String, Value> resultMap = result.get();
         Assert.assertEquals(resultMap.size(), 4);
         Assert.assertTrue(resultMap.containsKey("city"));
@@ -182,26 +192,29 @@ public class JSONReaderTest {
 
     @Test(expectedExceptions = BotCommandException.class)
     public void testInvalidParsingMethod() {
-        // Given
-        JSONReader jsonReader = new JSONReader();
-
-        // When
-        jsonReader.action("invalid_method", "", "UTF-8", "", "invalid", null, false);
-
-        // Then expect BotCommandException
+        jsonReader.action(
+                INVALID_METHOD,
+                INVALID_PATH,
+                CHARSET_UTF_8,
+                JSON_TEXT,
+                "ALL",
+                null,
+                false
+        );
     }
 
     @Test(expectedExceptions = BotCommandException.class)
     public void testJsonPathSegmentNotFound() {
-        // Given
-        JSONReader jsonReader = new JSONReader();
-        String jsonText = "{ \"name\": \"Bob\", \"age\": 40 }";
-        String charsetName = "UTF-8";
         List<Value> jsonPathSegments = List.of(new StringValue("invalidSegment"));
-        Boolean isTrimValues = true;
 
-        // When
-        jsonReader.action("text", "", charsetName, jsonText, "SPECIFIC", jsonPathSegments, isTrimValues);
-        // Then expect BotCommandException
+        jsonReader.action(
+                "TEXT",
+                INVALID_PATH,
+                CHARSET_UTF_8,
+                JSON_TEXT,
+                "SPECIFIC",
+                jsonPathSegments,
+                true
+        );
     }
 }

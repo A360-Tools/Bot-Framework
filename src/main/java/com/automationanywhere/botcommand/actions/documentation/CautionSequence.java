@@ -21,7 +21,8 @@ import java.util.Map;
         icon = "caution.svg",
         name = "documentation_caution_sequence",
         group_label = "Documentation",
-        documentation_url = "https://github.com/A360-Tools/Bot-Framework/blob/main/docs/documentation/CautionSequence.md",
+        documentation_url = "https://github.com/A360-Tools/Bot-Framework/blob/main/docs/documentation/CautionSequence" +
+                ".md",
         text_color = "#ffa500",
         allowed_agent_targets = AllowedTarget.HEADLESS,
         nestable = true

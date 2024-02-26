@@ -46,16 +46,6 @@ public class FileValidator {
         }
     }
 
-    public void validateDirectory() {
-        validateCommonConditions();
-
-        // Additional directory-specific validations
-        if (!Files.isDirectory(path)) {
-            throw new IllegalArgumentException("Specified path is not a directory: " + path);
-        }
-
-    }
-
     private void validateCommonConditions() {
         if (!Files.exists(path)) {
             throw new IllegalArgumentException("File does not exist at the specified path: " + path);
@@ -64,6 +54,16 @@ public class FileValidator {
         if (!Files.isReadable(path)) {
             throw new IllegalArgumentException("Cannot read the specified file: " + path);
         }
+    }
+
+    public void validateDirectory() {
+        validateCommonConditions();
+
+        // Additional directory-specific validations
+        if (!Files.isDirectory(path)) {
+            throw new IllegalArgumentException("Specified path is not a directory: " + path);
+        }
+
     }
 }
 

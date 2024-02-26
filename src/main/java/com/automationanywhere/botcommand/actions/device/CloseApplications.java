@@ -1,6 +1,7 @@
 package com.automationanywhere.botcommand.actions.device;
 
 import com.automationanywhere.botcommand.data.Value;
+import com.automationanywhere.botcommand.exception.BotCommandException;
 import com.automationanywhere.botcommand.utilities.process.TaskKiller;
 import com.automationanywhere.commandsdk.annotations.*;
 import com.automationanywhere.commandsdk.annotations.rules.ListType;
@@ -38,13 +39,18 @@ public class CloseApplications {
             List<Value> killTaskList
 
     ) {
-        if (killTaskList == null)
-            return;
-        List<String> processes = new ArrayList<>();
-        for (Value value : killTaskList) {
-            processes.add(value.get().toString().trim());
+        try {
+            if (killTaskList == null) {
+                return;
+            }
+            List<String> processes = new ArrayList<>();
+            for (Value value : killTaskList) {
+                processes.add(value.get().toString().trim());
+            }
+            TaskKiller.killProcesses(processes, false);
+            TaskKiller.killProcesses(processes, true);
+        } catch (Exception e) {
+            throw new BotCommandException("Error occurred while terminating applications: " + e.getMessage());
         }
-        TaskKiller.killProcesses(processes, false);
-        TaskKiller.killProcesses(processes, true);
     }
 }

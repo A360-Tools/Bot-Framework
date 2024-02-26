@@ -10,13 +10,18 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+/**
+ * @author Sumit Kumar
+ */
+
 public class HTMLGenerator {
 
     private static final String NULL = "NULL";
 
     public static String generateHTML(Map<String, Value> valueMap) {
-        if (valueMap.entrySet().isEmpty())
+        if (valueMap.entrySet().isEmpty()) {
             return "";
+        }
         String uninqueID = UUID.randomUUID().toString();
         StringBuilder htmlBuilder = new StringBuilder();
         htmlBuilder
@@ -188,21 +193,23 @@ public class HTMLGenerator {
 
     private static void visitScalarValue(Value scalarValue, StringBuilder htmlBuilder) {
         String objectStringvalue = "";
-        if (scalarValue instanceof CredentialObject)
+        if (scalarValue instanceof CredentialObject) {
             objectStringvalue = ((CredentialObject) scalarValue).get().getInsecureString();
-        else if (scalarValue instanceof NumberValue
+        } else if (scalarValue instanceof NumberValue
                 || scalarValue instanceof StringValue
                 || scalarValue instanceof DateTimeValue
-                || scalarValue instanceof BooleanValue)
+                || scalarValue instanceof BooleanValue) {
             objectStringvalue = scalarValue.get().toString();
+        }
         htmlBuilder.append("<textarea disabled>")
                 .append(StringEscapeUtils.escapeHtml4(objectStringvalue))
                 .append("</textarea>");
     }
 
     public static String getScreenshotHTML(String screenshotPath) {
-        if (screenshotPath.isEmpty())
+        if (screenshotPath.isEmpty()) {
             return "";
+        }
         String uninqueID = UUID.randomUUID().toString();
 
         String htmlBuilder = "<label class='btn' for='" +

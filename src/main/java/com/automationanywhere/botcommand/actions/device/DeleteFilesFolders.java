@@ -17,9 +17,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 
 
 /**
@@ -45,10 +43,6 @@ public class DeleteFilesFolders {
     private static final String PROCESS_ALL_TYPES = "ALL";
     private static final String ERROR_THROW = "THROW";
     private static final String ERROR_IGNORE = "IGNORE";
-
-    private static boolean isImmediateChild(File file, File directory) {
-        return file.getParentFile() != null && file.getParentFile().equals(directory);
-    }
 
     @Execute
     public void action(
@@ -115,7 +109,8 @@ public class DeleteFilesFolders {
 
             @Idx(index = "7.1", type = AttributeType.TEXT)
             @Pkg(label = "File path matching this regex pattern will be skipped during deletion", description =
-                    "^.+\\.txt$ to skip all text files. Matching will be done on absolute path in OS file separator format.")
+                    "^.+\\.txt$ to skip all text files. Matching will be done on absolute path in OS file separator " +
+                            "format.")
             @NotEmpty
             String skipFilePathPattern,
 
@@ -123,8 +118,9 @@ public class DeleteFilesFolders {
                     @Idx.Option(index = "8.1", pkg = @Pkg(label = "Throw error", value = ERROR_THROW)),
                     @Idx.Option(index = "8.2", pkg = @Pkg(label = "Ignore", value = ERROR_IGNORE))
             })
-            @Pkg(label = "If certain files/folders cannot be deleted", default_value_type = DataType.STRING, description =
-                    "Behavior in case a file is locked/missing permission", default_value = ERROR_IGNORE)
+            @Pkg(label = "If certain files/folders cannot be deleted", default_value_type = DataType.STRING,
+                    description =
+                            "Behavior in case a file is locked/missing permission", default_value = ERROR_IGNORE)
             @NotEmpty
             String unableToDeleteBehavior
     ) {
@@ -138,11 +134,21 @@ public class DeleteFilesFolders {
             }
 
             long thresholdMilliseconds = calculateThresholdMilliseconds(thresholdUnit, thresholdNumber);
-            //get all possible files and folders with optional sub folders/files
+            //get all possible files and folders with optional sub folders/files and remove base folder path
             Collection<File> filesAndDirs = FileUtils.listFilesAndDirs(basePath.toFile(),
                     TrueFileFilter.INSTANCE, getFilter(recursive));
+            filesAndDirs.remove(new File(inputFolderPath));
 
-            processFilesAndDirs(filesAndDirs, directoriesToPreserve, thresholdMilliseconds,
+            //create a mapping of file/directories and their eligibility to delete based on last modified date
+            //this is needed to ensure deleting of file does not impact program as folder modified date will get updated
+            Map<File, Boolean> eligibleForDeletionMap = new HashMap<>();
+            for (File file : filesAndDirs) {
+                // Check if the file or directory is older(modified) than the threshold and populate the map
+                boolean isOlder = FileUtils.isFileOlder(file, thresholdMilliseconds);
+                eligibleForDeletionMap.put(file, isOlder);
+            }
+
+            processFilesAndDirs(filesAndDirs, directoriesToPreserve, eligibleForDeletionMap,
                     selectMethod, skipFiles, skipFilePathPattern, unableToDeleteBehavior);
 
         } catch (Exception exception) {
@@ -164,7 +170,8 @@ public class DeleteFilesFolders {
             if (dir.getAbsolutePath().matches(skipFolderPathPattern)) {
                 if (recursive) {
                     //get all sub directories
-                    Collection<File> subDirs = FileUtils.listFilesAndDirs(dir, FalseFileFilter.INSTANCE, TrueFileFilter.INSTANCE);
+                    Collection<File> subDirs = FileUtils.listFilesAndDirs(dir, FalseFileFilter.INSTANCE,
+                            TrueFileFilter.INSTANCE);
                     directoriesToPreserve.addAll(subDirs);
                 } else {
                     directoriesToPreserve.add(dir);
@@ -202,7 +209,7 @@ public class DeleteFilesFolders {
     }
 
     private void processFilesAndDirs(Collection<File> filesAndDirs, Set<File> directoriesToPreserve,
-                                     long thresholdMilliseconds, String selectMethod, boolean skipFiles,
+                                     Map<File, Boolean> eligibleForDeletionMap, String selectMethod, boolean skipFiles,
                                      String skipFilePathPattern, String unableToDeleteBehavior) {
         for (File file : filesAndDirs) {
             if (shouldSkipFile(file, directoriesToPreserve, skipFiles, skipFilePathPattern)) {
@@ -210,7 +217,9 @@ public class DeleteFilesFolders {
             }
 
             try {
-                processFile(file, thresholdMilliseconds, selectMethod);
+                if (eligibleForDeletionMap.getOrDefault(file, false)) {
+                    deleteFile(file, selectMethod);
+                }
             } catch (FileNotFoundException ignored) {
             } catch (IOException e) {
                 handleUnableToDeleteBehavior(unableToDeleteBehavior, e);
@@ -218,19 +227,8 @@ public class DeleteFilesFolders {
         }
     }
 
-    private void processFile(File file, long thresholdMilliseconds, String selectMethod) throws IOException {
-        if (FileUtils.isFileOlder(file, thresholdMilliseconds)) {
-            deleteFile(file, selectMethod);
-        }
-    }
-
-    private void deleteFile(File file, String selectMethod) throws IOException {
-        if (PROCESS_ALL_TYPES.equalsIgnoreCase(selectMethod) || (file.isFile() && PROCESS_ONLY_FILE_TYPE.equalsIgnoreCase(selectMethod))) {
-            FileUtils.forceDelete(file);
-        }
-    }
-
-    private boolean shouldSkipFile(File file, Set<File> directoriesToPreserve, boolean skipFiles, String skipFilePathPattern) {
+    private boolean shouldSkipFile(File file, Set<File> directoriesToPreserve, boolean skipFiles,
+                                   String skipFilePathPattern) {
         if (directoriesToPreserve.contains(file)) {
             return true;
         }
@@ -242,10 +240,19 @@ public class DeleteFilesFolders {
         return skipFiles && file.isFile() && file.getAbsolutePath().matches(skipFilePathPattern);
     }
 
+    private void deleteFile(File file, String selectMethod) throws IOException {
+        if (PROCESS_ALL_TYPES.equalsIgnoreCase(selectMethod) || (file.isFile() && PROCESS_ONLY_FILE_TYPE.equalsIgnoreCase(selectMethod))) {
+            FileUtils.forceDelete(file);
+        }
+    }
 
     private void handleUnableToDeleteBehavior(String unableToDeleteBehavior, IOException e) throws BotCommandException {
         if (ERROR_THROW.equalsIgnoreCase(unableToDeleteBehavior)) {
             throw new BotCommandException(e.getMessage());
         }
+    }
+
+    private static boolean isImmediateChild(File file, File directory) {
+        return file.getParentFile() != null && file.getParentFile().equals(directory);
     }
 }

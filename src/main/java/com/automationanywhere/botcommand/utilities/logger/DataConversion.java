@@ -8,14 +8,24 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * @author Sumit Kumar
+ */
+
 public class DataConversion {
+    public static Map<String, Value> getMergedDictionary(List<Value> list) {
+        return getMergedDictionary(list, new LinkedHashMap<>());
+    }
+
     public static Map<String, Value> getMergedDictionary(List<Value> list, Map<String, Value> existingMap) {
         if (list == null || list.isEmpty()) {
             return existingMap;
         }
 
         for (Value element : list) {
-            if (!(element instanceof DictionaryValue)) continue; // Safety check
+            if (!(element instanceof DictionaryValue)) {
+                continue; // Safety check
+            }
 
             Map<String, Value> customValuesMap = ((DictionaryValue) element).get();
             String key = customValuesMap.containsKey("NAME") ? ((StringValue) customValuesMap.get("NAME")).get() : "";
@@ -24,9 +34,5 @@ public class DataConversion {
         }
 
         return existingMap;
-    }
-
-    public static Map<String, Value> getMergedDictionary(List<Value> list) {
-        return getMergedDictionary(list, new LinkedHashMap<>());
     }
 }

@@ -1,46 +1,99 @@
 package device;
 
 import com.automationanywhere.botcommand.actions.device.DeleteFilesFolders;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.filefilter.TrueFileFilter;
+import org.testng.Assert;
+import org.testng.annotations.AfterMethod;
+import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
+import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Collection;
 
 /**
  * @author Sumit Kumar
  */
+
 public class DeleteFilesFoldersTest {
+    private static final String TEST_DIRECTORY_PATH = "src/test/target/temp/deleteFolderTest/";
+    private static final String PROCESS_ALL_TYPES = "ALL";
+    private static final String PROCESS_ONLY_FILE_TYPE = "FILE";
+    private static final String THRESHOLD_UNIT_DAY = "DAY";
+    private static final String ERROR_IGNORE = "IGNORE";
+    private DeleteFilesFolders deleteFilesFolders;
+
+    @BeforeMethod
+    public void setUp() throws IOException {
+        deleteFilesFolders = new DeleteFilesFolders();
+        FileUtils.forceMkdir(new File(TEST_DIRECTORY_PATH));
+        FileUtils.cleanDirectory(new File(TEST_DIRECTORY_PATH));
+        prepareTestEnvironment();
+    }
+
+    private void prepareTestEnvironment() throws IOException {
+        Path testDirectory = Path.of(TEST_DIRECTORY_PATH);
+        // Create some test files and directories
+        Files.createFile(testDirectory.resolve("testFile1.txt"));
+        Path subDirectory = Files.createDirectory(testDirectory.resolve("subDirectory"));
+        Files.createFile(subDirectory.resolve("testFile2.txt"));
+    }
+
+    @AfterMethod
+    public void tearDown() throws IOException {
+        cleanupTestEnvironment();
+    }
+
+    // Additional test methods for other scenarios...
+
+    private void cleanupTestEnvironment() throws IOException {
+        FileUtils.deleteDirectory(new File(TEST_DIRECTORY_PATH));
+    }
 
     @Test
-    public void testDeleteFilesFolders() throws IOException {
-
-
-        // Set up test parameters
-        String inputFolderPath = "D:\\test";
-        String selectMethod = "FILE";
-        Boolean recursive = true;
-        Number thresholdNumber = 1;
-        String thresholdUnit = "DAY";
+    public void testDeleteFilesAndDirectories() {
+        Boolean recursive = Boolean.TRUE;
+        Number thresholdNumber = 0;
         Boolean skipFolders = false;
-        String skipFolderPathPattern = ".*copy.*";
-        Boolean skipFiles = true;
-        String skipFilePathPattern = "^.+\\.txt$";
-        String unableToDeleteBehavior = "ignore";
+        String skipFolderPathPattern = "";
+        Boolean skipFiles = false;
+        String skipFilePathPattern = "";
 
-        // Create instance of DeleteFilesFolders
-        DeleteFilesFolders deleteFilesFolders = new DeleteFilesFolders();
+        deleteFilesFolders.action(TEST_DIRECTORY_PATH, PROCESS_ALL_TYPES, recursive, thresholdNumber,
+                THRESHOLD_UNIT_DAY,
+                skipFolders, skipFolderPathPattern, skipFiles, skipFilePathPattern, ERROR_IGNORE);
 
-        // Call the action method with the test parameters
-        deleteFilesFolders.action(
-                inputFolderPath,
-                selectMethod,
-                recursive,
-                thresholdNumber,
-                thresholdUnit,
-                skipFolders,
-                skipFolderPathPattern,
-                skipFiles,
-                skipFilePathPattern,
-                unableToDeleteBehavior
-        );
+        File testDirectory = new File(TEST_DIRECTORY_PATH);
+        Assert.assertTrue(testDirectory.exists());
+        Collection<File> filesAndDirs = FileUtils.listFilesAndDirs(testDirectory,
+                TrueFileFilter.INSTANCE, TrueFileFilter.INSTANCE);
+        filesAndDirs.remove(testDirectory);
+        Assert.assertEquals(filesAndDirs.size(), 0, "Test directory should be " +
+                "empty after deletion");
+    }
+
+    @Test
+    public void testNotDeleteFilesAndDirectories() {
+        Boolean recursive = Boolean.TRUE;
+        Number thresholdNumber = 1;
+        Boolean skipFolders = false;
+        String skipFolderPathPattern = "";
+        Boolean skipFiles = false;
+        String skipFilePathPattern = "";
+
+        deleteFilesFolders.action(TEST_DIRECTORY_PATH, PROCESS_ALL_TYPES, recursive, thresholdNumber,
+                THRESHOLD_UNIT_DAY,
+                skipFolders, skipFolderPathPattern, skipFiles, skipFilePathPattern, ERROR_IGNORE);
+
+        File testDirectory = new File(TEST_DIRECTORY_PATH);
+        Assert.assertTrue(testDirectory.exists());
+        Collection<File> filesAndDirs = FileUtils.listFilesAndDirs(testDirectory,
+                TrueFileFilter.INSTANCE, TrueFileFilter.INSTANCE);
+        filesAndDirs.remove(testDirectory);
+        Assert.assertEquals(filesAndDirs.size(), 3, "Test directory should be " +
+                "intact as threshold does not match");
     }
 }

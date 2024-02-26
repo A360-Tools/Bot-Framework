@@ -44,8 +44,38 @@ public class CustomLogger implements CloseableSessionObject {
         this.logger = loggerContext.getLogger(loggerName);
     }
 
+    private void setupLoggerConfiguration(ConfigurationBuilder<BuiltConfiguration> builder) {
+        builder.setConfigurationName("CustomLogger");
+        builder.setPackages("com.automationanywhere.botcommand.utilities.logger");
+    }
+
+    private AppenderComponentBuilder getCustomAppenderBuilder(ConfigurationBuilder<BuiltConfiguration> builder,
+                                                              String appenderName,
+                                                              String filePath, long sizeLimitMB) {
+        LayoutComponentBuilder layoutBuilder = builder.newLayout("CustomHTMLLayout")
+                .addAttribute("charset", "UTF-8");
+        String filePattern =
+                FilenameUtils.getFullPath(filePath) + FilenameUtils.getBaseName(filePath) + "_%i." +
+                        FilenameUtils.getExtension(filePath);
+        return builder.newAppender(appenderName, "RollingFile")
+                .addAttribute("fileName", filePath)
+                .addAttribute("filePattern", filePattern)
+                .addComponent(layoutBuilder)
+                .addComponent(builder.newComponent("Policies")
+                        .addComponent(builder.newComponent("SizeBasedTriggeringPolicy").addAttribute("size",
+                                sizeLimitMB + "MB")))
+                .addComponent(builder.newComponent("DefaultRolloverStrategy").addAttribute("fileIndex", "nomax"));
+    }
+
+    private LoggerContext initializeLoggerContext(ConfigurationBuilder<BuiltConfiguration> builder) {
+        LoggerContext context = LoggerContext.getContext(false);
+        context.start(builder.build());
+        return context;
+    }
+
     // Constructor for multiple log files based on the level
-    public CustomLogger(String loggerName, Map<Level, String> levelFilePathMap, long sizeLimitMB, String screenshotFolderPath) throws IOException {
+    public CustomLogger(String loggerName, Map<Level, String> levelFilePathMap, long sizeLimitMB,
+                        String screenshotFolderPath) throws IOException {
         this.screenshotFolderPath = screenshotFolderPath;
         Path directoryPath = Paths.get(screenshotFolderPath);
         Files.createDirectories(directoryPath);
@@ -70,41 +100,8 @@ public class CustomLogger implements CloseableSessionObject {
         this.logger = loggerContext.getLogger(loggerName);
     }
 
-    private void setupLoggerConfiguration(ConfigurationBuilder<BuiltConfiguration> builder) {
-        builder.setConfigurationName("CustomLogger");
-        builder.setPackages("com.automationanywhere.botcommand.utilities.logger");
-    }
-
-    private AppenderComponentBuilder getCustomAppenderBuilder(ConfigurationBuilder<BuiltConfiguration> builder,
-                                                              String appenderName,
-                                                              String filePath, long sizeLimitMB) {
-        LayoutComponentBuilder layoutBuilder = builder.newLayout("CustomHTMLLayout")
-                .addAttribute("charset", "UTF-8");
-        String filePattern =
-                FilenameUtils.getFullPath(filePath) + FilenameUtils.getBaseName(filePath) + "_%i." +
-                        FilenameUtils.getExtension(filePath);
-        return builder.newAppender(appenderName, "RollingFile")
-                .addAttribute("fileName", filePath)
-                .addAttribute("filePattern", filePattern)
-                .addComponent(layoutBuilder)
-                .addComponent(builder.newComponent("Policies")
-                        .addComponent(builder.newComponent("SizeBasedTriggeringPolicy").addAttribute("size", sizeLimitMB + "MB")))
-                .addComponent(builder.newComponent("DefaultRolloverStrategy").addAttribute("fileIndex", "nomax"));
-    }
-
-    private LoggerContext initializeLoggerContext(ConfigurationBuilder<BuiltConfiguration> builder) {
-        LoggerContext context = LoggerContext.getContext(false);
-        context.start(builder.build());
-        return context;
-    }
-
     public Logger getLogger() {
         return logger;
-    }
-
-    @Override
-    public boolean isClosed() {
-        return loggerContext.isStopped();
     }
 
     @Override
@@ -112,6 +109,11 @@ public class CustomLogger implements CloseableSessionObject {
         if (!isClosed()) {
             loggerContext.stop();
         }
+    }
+
+    @Override
+    public boolean isClosed() {
+        return loggerContext.isStopped();
     }
 
     public String getScreenshotFolderPath() {

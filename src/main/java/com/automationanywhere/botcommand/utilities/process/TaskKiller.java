@@ -6,19 +6,11 @@ import org.apache.commons.io.FilenameUtils;
 import java.util.List;
 import java.util.Optional;
 
-public class TaskKiller {
+/**
+ * @author Sumit Kumar
+ */
 
-    private static Optional<ProcessHandle> findByExactCommand(String processName) {
-        String baseProcessName = FilenameUtils.getBaseName(processName);
-        return ProcessHandle.allProcesses()
-                .filter(process -> {
-                    Optional<String> cmd = process.info().command();
-                    return cmd.isPresent() &&
-                            FilenameUtils.getBaseName(cmd.get())
-                                    .equalsIgnoreCase(baseProcessName);
-                })
-                .findFirst();
-    }
+public class TaskKiller {
 
     public static void killProcesses(List<String> processNames, boolean forceKill) {
         try {
@@ -41,5 +33,17 @@ public class TaskKiller {
         } catch (Exception e) {
             throw new BotCommandException("Error killing processes: " + e.getMessage());
         }
+    }
+
+    private static Optional<ProcessHandle> findByExactCommand(String processName) {
+        String baseProcessName = FilenameUtils.getBaseName(processName);
+        return ProcessHandle.allProcesses()
+                .filter(process -> {
+                    Optional<String> cmd = process.info().command();
+                    return cmd.isPresent() &&
+                            FilenameUtils.getBaseName(cmd.get())
+                                    .equalsIgnoreCase(baseProcessName);
+                })
+                .findFirst();
     }
 }

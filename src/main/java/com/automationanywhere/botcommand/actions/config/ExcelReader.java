@@ -106,57 +106,64 @@ public class ExcelReader {
             @NotEmpty
             Boolean isTrimValues
     ) {
-        FileValidator fileValidator = new FileValidator(inputFilePath);
-        String[] allowedExtensions = {"xls", "xlsx"};
-        fileValidator.validateFile(allowedExtensions);
-        boolean hasHeader = parsingMethod.equalsIgnoreCase(COLUMN_HEADER);
+        try {
+            FileValidator fileValidator = new FileValidator(inputFilePath);
+            String[] allowedExtensions = {"xls", "xlsx"};
+            fileValidator.validateFile(allowedExtensions);
+            boolean hasHeader = parsingMethod.equalsIgnoreCase(COLUMN_HEADER);
 
-        String filePasswordInsecureString = null;
-        if (isPasswordProtected)
-            filePasswordInsecureString = filePassword.getInsecureString();
-
-        try (FileInputStream inputStream = new FileInputStream(inputFilePath);
-             Workbook workbook = WorkbookFactory.create(inputStream, filePasswordInsecureString)) {
-
-            Map<String, Value> excelDictionary = new LinkedHashMap<>();
-
-            Sheet sheet = workbook.getSheet(sheetName);
-            if (sheet == null)
-                throw new BotCommandException("Sheet with name " + sheetName + " not found");
-            DataFormatter dataFormatter = new DataFormatter();
-            int keyIdx;
-            int valueIdx;
-            if (hasHeader) {
-                Row headerRow = sheet.getRow(0);
-                keyIdx = findColumnIndex(headerRow, keyColumnName);
-                valueIdx = findColumnIndex(headerRow, valueColumnName);
-            } else {
-                keyIdx = keyIndex.intValue();
-                valueIdx = valueIndex.intValue();
+            String filePasswordInsecureString = null;
+            if (isPasswordProtected) {
+                filePasswordInsecureString = filePassword.getInsecureString();
             }
 
-            boolean headerSkipped = false;
-            for (Row row : sheet) {
-                if (!headerSkipped && hasHeader) {
-                    headerSkipped = true;
-                    continue;
-                }
-                if (keyIdx >= 0 && valueIdx >= 0) {
-                    Cell keyCell = row.getCell(keyIdx, Row.MissingCellPolicy.CREATE_NULL_AS_BLANK);
-                    Cell valueCell = row.getCell(valueIdx, Row.MissingCellPolicy.CREATE_NULL_AS_BLANK);
+            try (FileInputStream inputStream = new FileInputStream(inputFilePath);
+                 Workbook workbook = WorkbookFactory.create(inputStream, filePasswordInsecureString)) {
 
-                    String key = dataFormatter.formatCellValue(keyCell);
-                    if (key == null || key.isEmpty())
+                Map<String, Value> excelDictionary = new LinkedHashMap<>();
+
+                Sheet sheet = workbook.getSheet(sheetName);
+                if (sheet == null) {
+                    throw new BotCommandException("Sheet with name " + sheetName + " not found");
+                }
+                DataFormatter dataFormatter = new DataFormatter();
+                int keyIdx;
+                int valueIdx;
+                if (hasHeader) {
+                    Row headerRow = sheet.getRow(0);
+                    keyIdx = findColumnIndex(headerRow, keyColumnName);
+                    valueIdx = findColumnIndex(headerRow, valueColumnName);
+                } else {
+                    keyIdx = keyIndex.intValue();
+                    valueIdx = valueIndex.intValue();
+                }
+
+                boolean headerSkipped = false;
+                for (Row row : sheet) {
+                    if (!headerSkipped && hasHeader) {
+                        headerSkipped = true;
                         continue;
-                    String value = dataFormatter.formatCellValue(valueCell);
-                    value = isTrimValues ? value.strip() : value;
+                    }
+                    if (keyIdx >= 0 && valueIdx >= 0) {
+                        Cell keyCell = row.getCell(keyIdx, Row.MissingCellPolicy.CREATE_NULL_AS_BLANK);
+                        Cell valueCell = row.getCell(valueIdx, Row.MissingCellPolicy.CREATE_NULL_AS_BLANK);
 
-                    excelDictionary.put(key, new StringValue(value));
+                        String key = dataFormatter.formatCellValue(keyCell);
+                        if (key == null || key.isEmpty()) {
+                            continue;
+                        }
+                        String value = dataFormatter.formatCellValue(valueCell);
+                        value = isTrimValues ? value.strip() : value;
+
+                        excelDictionary.put(key, new StringValue(value));
+                    }
                 }
+
+                return new DictionaryValue(excelDictionary);
+
+            } catch (Exception e) {
+                throw new BotCommandException("Error occurred while opening file: " + e.getMessage());
             }
-
-            return new DictionaryValue(excelDictionary);
-
         } catch (Exception e) {
             throw new BotCommandException("Error occurred: " + e.getMessage());
         }
