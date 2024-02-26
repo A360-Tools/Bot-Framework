@@ -15,30 +15,33 @@ import org.apache.commons.io.filefilter.TrueFileFilter;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 
-
-/**
- * @author Sumit Kumar
- */
 @BotCommand
-@CommandPkg(label = "Clean Directory",
+@CommandPkg(
+        label = "Clean Directory",
         node_label = "{{inputFolderPath}} by deleting {{selectMethod}} {{recursive}}",
         description = "Remove files/folders based on rule set",
-        icon = "delete_folders.svg", name = "device_delete_files_folders",
+        icon = "delete_folders.svg",
+        name = "device_delete_files_folders",
         group_label = "Device",
         documentation_url = "https://github.com/A360-Tools/Bot-Framework/blob/main/docs/device/DeleteFilesFolders.md",
         text_color = "#e04f5f",
         allowed_agent_targets = AllowedTarget.HEADLESS
 )
 public class DeleteFilesFolders {
-
     private static final String THRESHOLD_UNIT_DAY = "DAY";
     private static final String THRESHOLD_UNIT_HOUR = "HOUR";
     private static final String THRESHOLD_UNIT_MINUTE = "MINUTE";
     private static final String THRESHOLD_UNIT_SECOND = "SECOND";
+    private static final Map<String, Long> TIME_UNIT_CONVERSION = Map.of(
+            THRESHOLD_UNIT_DAY, TimeUnit.DAYS.toMillis(1),
+            THRESHOLD_UNIT_HOUR, TimeUnit.HOURS.toMillis(1),
+            THRESHOLD_UNIT_MINUTE, TimeUnit.MINUTES.toMillis(1),
+            THRESHOLD_UNIT_SECOND, TimeUnit.SECONDS.toMillis(1)
+    );
     private static final String PROCESS_ONLY_FILE_TYPE = "FILE";
     private static final String PROCESS_ALL_TYPES = "ALL";
     private static final String ERROR_THROW = "THROW";
@@ -125,134 +128,59 @@ public class DeleteFilesFolders {
             String unableToDeleteBehavior
     ) {
         try {
-            validateInput(inputFolderPath);
+            new FileValidator(inputFolderPath).validateDirectory();
+            Long thresholdMillis = TIME_UNIT_CONVERSION.getOrDefault(thresholdUnit.toUpperCase(),
+                    TimeUnit.DAYS.toMillis(30));
+            long thresholdMilliseconds =
+                    System.currentTimeMillis() - thresholdNumber.longValue() * thresholdMillis;
 
-            Path basePath = Paths.get(inputFolderPath);
-            Set<File> directoriesToPreserve = new HashSet<>();
-            if (skipFolders) {
-                directoriesToPreserve = getDirectoriesToPreserve(basePath, recursive, skipFolderPathPattern);
-            }
-
-            long thresholdMilliseconds = calculateThresholdMilliseconds(thresholdUnit, thresholdNumber);
-            //get all possible files and folders with optional sub folders/files and remove base folder path
-            Collection<File> filesAndDirs = FileUtils.listFilesAndDirs(basePath.toFile(),
-                    TrueFileFilter.INSTANCE, getFilter(recursive));
-            filesAndDirs.remove(new File(inputFolderPath));
-
+            File basePath = Paths.get(inputFolderPath).toFile();
+            IOFileFilter filter = recursive ? TrueFileFilter.INSTANCE : FalseFileFilter.INSTANCE;
+            Collection<File> filesAndDirs = FileUtils.listFilesAndDirs(basePath, TrueFileFilter.INSTANCE, filter);
+            filesAndDirs.remove(basePath);
             //create a mapping of file/directories and their eligibility to delete based on last modified date
             //this is needed to ensure deleting of file does not impact program as folder modified date will get updated
-            Map<File, Boolean> eligibleForDeletionMap = new HashMap<>();
+            Map<File, Boolean> matchesDeleteThreshold = new HashMap<>();
             for (File file : filesAndDirs) {
                 // Check if the file or directory is older(modified) than the threshold and populate the map
                 boolean isOlder = FileUtils.isFileOlder(file, thresholdMilliseconds);
-                eligibleForDeletionMap.put(file, isOlder);
+                matchesDeleteThreshold.put(file, isOlder);
             }
+            Set<File> directoriesToPreserve = skipFolders ? getDirectoriesToPreserve(basePath, recursive,
+                    skipFolderPathPattern) : Collections.emptySet();
 
-            processFilesAndDirs(filesAndDirs, directoriesToPreserve, eligibleForDeletionMap,
-                    selectMethod, skipFiles, skipFilePathPattern, unableToDeleteBehavior);
-
+            for (File file : filesAndDirs) {
+                if (!directoriesToPreserve.contains(file)
+                        && matchesDeleteThreshold.getOrDefault(file, false)
+                        && !shouldSkipFile(file, skipFiles, skipFilePathPattern)) {
+                    try {
+                        if (PROCESS_ALL_TYPES.equalsIgnoreCase(selectMethod) || (file.isFile() && PROCESS_ONLY_FILE_TYPE.equalsIgnoreCase(selectMethod))) {
+                            FileUtils.forceDelete(file);
+                        }
+                    } catch (FileNotFoundException ignored) {
+                    } catch (IOException e) {
+                        if (ERROR_THROW.equalsIgnoreCase(unableToDeleteBehavior)) {
+                            throw new BotCommandException(e.getMessage());
+                        }
+                    }
+                }
+            }
         } catch (Exception exception) {
             throw new BotCommandException(exception.getMessage());
         }
     }
 
-    private void validateInput(String inputFolderPath) {
-        FileValidator fileValidator = new FileValidator(inputFolderPath);
-        fileValidator.validateDirectory();
-    }
-
-    private Set<File> getDirectoriesToPreserve(Path basePath, boolean recursive, String skipFolderPathPattern) {
+    private Set<File> getDirectoriesToPreserve(File basePath, boolean recursive, String skipFolderPathPattern) {
         Set<File> directoriesToPreserve = new HashSet<>();
-        IOFileFilter filter = getFilter(recursive);
-        //only find directories and optionally subdirectories
-        Collection<File> dirs = FileUtils.listFilesAndDirs(basePath.toFile(), FalseFileFilter.INSTANCE, filter);
-        for (File dir : dirs) {
-            if (dir.getAbsolutePath().matches(skipFolderPathPattern)) {
-                if (recursive) {
-                    //get all sub directories
-                    Collection<File> subDirs = FileUtils.listFilesAndDirs(dir, FalseFileFilter.INSTANCE,
-                            TrueFileFilter.INSTANCE);
-                    directoriesToPreserve.addAll(subDirs);
-                } else {
-                    directoriesToPreserve.add(dir);
-                }
-            }
-        }
+        IOFileFilter filter = recursive ? TrueFileFilter.INSTANCE : FalseFileFilter.INSTANCE;
+        Collection<File> dirs = FileUtils.listFilesAndDirs(basePath, FalseFileFilter.INSTANCE, filter);
+        dirs.stream()
+                .filter(dir -> dir.getAbsolutePath().matches(skipFolderPathPattern))
+                .forEach(directoriesToPreserve::add);
         return directoriesToPreserve;
     }
 
-    private long calculateThresholdMilliseconds(String thresholdUnit, Number thresholdNumber) {
-        long thresholdMilliseconds;
-        long systemMilliseconds = System.currentTimeMillis();
-        switch (thresholdUnit.toUpperCase()) {
-            case THRESHOLD_UNIT_DAY:
-                thresholdMilliseconds = systemMilliseconds - thresholdNumber.longValue() * 24 * 60 * 60 * 1000;
-                break;
-            case THRESHOLD_UNIT_HOUR:
-                thresholdMilliseconds = systemMilliseconds - thresholdNumber.longValue() * 60 * 60 * 1000;
-                break;
-            case THRESHOLD_UNIT_MINUTE:
-                thresholdMilliseconds = systemMilliseconds - thresholdNumber.longValue() * 60 * 1000;
-                break;
-            case THRESHOLD_UNIT_SECOND:
-                thresholdMilliseconds = systemMilliseconds - thresholdNumber.longValue() * 1000;
-                break;
-            default:
-                throw new IllegalArgumentException("Invalid threshold unit: " + thresholdUnit);
-        }
-
-        return thresholdMilliseconds;
-    }
-
-    private IOFileFilter getFilter(boolean recursive) {
-        return recursive ? TrueFileFilter.INSTANCE : FalseFileFilter.INSTANCE;
-    }
-
-    private void processFilesAndDirs(Collection<File> filesAndDirs, Set<File> directoriesToPreserve,
-                                     Map<File, Boolean> eligibleForDeletionMap, String selectMethod, boolean skipFiles,
-                                     String skipFilePathPattern, String unableToDeleteBehavior) {
-        for (File file : filesAndDirs) {
-            if (shouldSkipFile(file, directoriesToPreserve, skipFiles, skipFilePathPattern)) {
-                continue;
-            }
-
-            try {
-                if (eligibleForDeletionMap.getOrDefault(file, false)) {
-                    deleteFile(file, selectMethod);
-                }
-            } catch (FileNotFoundException ignored) {
-            } catch (IOException e) {
-                handleUnableToDeleteBehavior(unableToDeleteBehavior, e);
-            }
-        }
-    }
-
-    private boolean shouldSkipFile(File file, Set<File> directoriesToPreserve, boolean skipFiles,
-                                   String skipFilePathPattern) {
-        if (directoriesToPreserve.contains(file)) {
-            return true;
-        }
-
-        if (directoriesToPreserve.stream().anyMatch(directory -> isImmediateChild(file, directory))) {
-            return true;
-        }
-
+    private boolean shouldSkipFile(File file, boolean skipFiles, String skipFilePathPattern) {
         return skipFiles && file.isFile() && file.getAbsolutePath().matches(skipFilePathPattern);
-    }
-
-    private void deleteFile(File file, String selectMethod) throws IOException {
-        if (PROCESS_ALL_TYPES.equalsIgnoreCase(selectMethod) || (file.isFile() && PROCESS_ONLY_FILE_TYPE.equalsIgnoreCase(selectMethod))) {
-            FileUtils.forceDelete(file);
-        }
-    }
-
-    private void handleUnableToDeleteBehavior(String unableToDeleteBehavior, IOException e) throws BotCommandException {
-        if (ERROR_THROW.equalsIgnoreCase(unableToDeleteBehavior)) {
-            throw new BotCommandException(e.getMessage());
-        }
-    }
-
-    private static boolean isImmediateChild(File file, File directory) {
-        return file.getParentFile() != null && file.getParentFile().equals(directory);
     }
 }
