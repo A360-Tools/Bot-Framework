@@ -24,6 +24,8 @@ public class DeleteFilesFoldersTest {
     private static final String PROCESS_ONLY_FILE_TYPE = "FILE";
     private static final String THRESHOLD_UNIT_DAY = "DAY";
     private static final String ERROR_IGNORE = "IGNORE";
+    private static final String THRESHOLD_CRITERIA_CREATION = "CREATION";
+    private static final String THRESHOLD_CRITERIA_MODIFICATION = "MODIFICATION";
     private DeleteFilesFolders deleteFilesFolders;
 
     @BeforeMethod
@@ -56,14 +58,14 @@ public class DeleteFilesFoldersTest {
     @Test
     public void testDeleteFilesAndDirectories() {
         Boolean recursive = Boolean.TRUE;
-        Number thresholdNumber = 0;
+        Number thresholdNumber = 0;//all files and folders will match
         Boolean skipFolders = false;
         String skipFolderPathPattern = "";
         Boolean skipFiles = false;
         String skipFilePathPattern = "";
 
         deleteFilesFolders.action(TEST_DIRECTORY_PATH, PROCESS_ALL_TYPES, recursive, thresholdNumber,
-                THRESHOLD_UNIT_DAY,
+                THRESHOLD_UNIT_DAY, THRESHOLD_CRITERIA_CREATION,
                 skipFolders, skipFolderPathPattern, skipFiles, skipFilePathPattern, ERROR_IGNORE);
 
         File testDirectory = new File(TEST_DIRECTORY_PATH);
@@ -78,14 +80,14 @@ public class DeleteFilesFoldersTest {
     @Test
     public void testNotDeleteFilesAndDirectories() {
         Boolean recursive = Boolean.TRUE;
-        Number thresholdNumber = 1;
+        Number thresholdNumber = 1;//no files/folders will match as they are created now during testing
         Boolean skipFolders = false;
         String skipFolderPathPattern = "";
         Boolean skipFiles = false;
         String skipFilePathPattern = "";
 
         deleteFilesFolders.action(TEST_DIRECTORY_PATH, PROCESS_ALL_TYPES, recursive, thresholdNumber,
-                THRESHOLD_UNIT_DAY,
+                THRESHOLD_UNIT_DAY, THRESHOLD_CRITERIA_CREATION,
                 skipFolders, skipFolderPathPattern, skipFiles, skipFilePathPattern, ERROR_IGNORE);
 
         File testDirectory = new File(TEST_DIRECTORY_PATH);
