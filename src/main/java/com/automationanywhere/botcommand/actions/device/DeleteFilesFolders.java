@@ -43,7 +43,7 @@ public class DeleteFilesFolders {
 
     @Execute
     public void action(
-            @Idx(index = "1", type = AttributeType.TEXT)
+            @Idx(index = "1", type = AttributeType.FILE)
             @Pkg(label = "Enter base folder path", description = "Files/Folders will be scanned within this folder " +
                     "for deletion")
             @NotEmpty
@@ -179,7 +179,13 @@ public class DeleteFilesFolders {
                 }
             }
             directoriesToDelete.removeAll(directoriesToSkipDeletion);
-            deleteFileDirectories(filesToDelete, directoriesToDelete, unableToDeleteBehavior);
+            if (selectMethod.equalsIgnoreCase(PROCESS_ALL_TYPES)) {
+                delete(filesToDelete, unableToDeleteBehavior);
+                delete(directoriesToDelete, unableToDeleteBehavior);
+            } else if (selectMethod.equalsIgnoreCase(PROCESS_ONLY_FILE_TYPE)) {
+                delete(filesToDelete, unableToDeleteBehavior);
+            }
+
         } catch (IOException e) {
             if (unableToDeleteBehavior.equalsIgnoreCase(ERROR_THROW)) {
                 throw new BotCommandException(e.getMessage());
@@ -230,20 +236,11 @@ public class DeleteFilesFolders {
         return Files.isRegularFile(path) && Pattern.matches(filePattern, path.toFile().getAbsolutePath());
     }
 
-    private static void deleteFileDirectories(Set<Path> filesToDelete, Set<Path> directoriesToDelete,
-                                              String unableToDeleteBehavior) {
+    private static void delete(Set<Path> filesToDelete,
+                               String unableToDeleteBehavior) {
         for (Path filePath : filesToDelete) {
             try {
                 FileUtils.forceDelete(filePath.toFile());
-            } catch (IOException e) {
-                if (unableToDeleteBehavior.equalsIgnoreCase(ERROR_THROW)) {
-                    throw new BotCommandException(e.getMessage());
-                }
-            }
-        }
-        for (Path dirPath : directoriesToDelete) {
-            try {
-                FileUtils.forceDelete(dirPath.toFile());
             } catch (IOException e) {
                 if (unableToDeleteBehavior.equalsIgnoreCase(ERROR_THROW)) {
                     throw new BotCommandException(e.getMessage());

@@ -73,6 +73,7 @@ public class DeleteFilesFoldersTest {
         Collection<File> filesAndDirs = FileUtils.listFilesAndDirs(testDirectory,
                 TrueFileFilter.INSTANCE, TrueFileFilter.INSTANCE);
         filesAndDirs.remove(testDirectory);
+        System.out.println(filesAndDirs);
         Assert.assertEquals(filesAndDirs.size(), 0, "Test directory should be " +
                 "empty after deletion");
     }
@@ -95,6 +96,7 @@ public class DeleteFilesFoldersTest {
         Collection<File> filesAndDirs = FileUtils.listFilesAndDirs(testDirectory,
                 TrueFileFilter.INSTANCE, TrueFileFilter.INSTANCE);
         filesAndDirs.remove(testDirectory);
+        System.out.println(filesAndDirs);
         Assert.assertEquals(filesAndDirs.size(), 3, "Test directory should be " +
                 "intact as threshold does not match");
     }
@@ -117,6 +119,7 @@ public class DeleteFilesFoldersTest {
         Collection<File> filesAndDirs = FileUtils.listFilesAndDirs(testDirectory,
                 TrueFileFilter.INSTANCE, TrueFileFilter.INSTANCE);
         filesAndDirs.remove(testDirectory);
+        System.out.println(filesAndDirs);
         Assert.assertEquals(filesAndDirs.size(), 2, "Test directory must contain skipped directory and its children");
     }
 
@@ -138,7 +141,30 @@ public class DeleteFilesFoldersTest {
         Collection<File> filesAndDirs = FileUtils.listFilesAndDirs(testDirectory,
                 TrueFileFilter.INSTANCE, TrueFileFilter.INSTANCE);
         filesAndDirs.remove(testDirectory);
+        System.out.println(filesAndDirs);
         Assert.assertEquals(filesAndDirs.size(), 3, "Test directory must contain directory and its skipped children");
+    }
+
+    @Test
+    public void testSkipFileTypeDeletion() {
+        Boolean recursive = Boolean.TRUE;
+        Number thresholdNumber = 0;//all files and folders will match
+        Boolean skipFolders = false;
+        String skipFolderPathPattern = "";
+        Boolean skipFiles = false;
+        String skipFilePathPattern = "";
+
+        deleteFilesFolders.action(TEST_DIRECTORY_PATH, PROCESS_ONLY_FILE_TYPE, recursive, thresholdNumber,
+                THRESHOLD_UNIT_DAY, THRESHOLD_CRITERIA_CREATION,
+                skipFolders, skipFolderPathPattern, skipFiles, skipFilePathPattern, ERROR_IGNORE);
+
+        File testDirectory = new File(TEST_DIRECTORY_PATH);
+        Assert.assertTrue(testDirectory.exists());
+        Collection<File> filesAndDirs = FileUtils.listFilesAndDirs(testDirectory,
+                TrueFileFilter.INSTANCE, TrueFileFilter.INSTANCE);
+        filesAndDirs.remove(testDirectory);
+        System.out.println(filesAndDirs);
+        Assert.assertEquals(filesAndDirs.size(), 1, "Only directory should be present");
     }
 
     @Test
@@ -159,6 +185,7 @@ public class DeleteFilesFoldersTest {
         Collection<File> filesAndDirs = FileUtils.listFilesAndDirs(testDirectory,
                 TrueFileFilter.INSTANCE, TrueFileFilter.INSTANCE);
         filesAndDirs.remove(testDirectory);
+        System.out.println(filesAndDirs);
         Assert.assertEquals(filesAndDirs.size(), 2, "Test directory must contain directory and its skipped children");
     }
 }
