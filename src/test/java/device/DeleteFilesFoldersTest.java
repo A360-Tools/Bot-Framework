@@ -98,4 +98,67 @@ public class DeleteFilesFoldersTest {
         Assert.assertEquals(filesAndDirs.size(), 3, "Test directory should be " +
                 "intact as threshold does not match");
     }
+
+    @Test
+    public void testSkipDirectoryDeletion() {
+        Boolean recursive = Boolean.TRUE;
+        Number thresholdNumber = 0;//all files and folders will match
+        Boolean skipFolders = true;
+        String skipFolderPathPattern = ".*\\\\subDirectory";
+        Boolean skipFiles = false;
+        String skipFilePathPattern = "";
+
+        deleteFilesFolders.action(TEST_DIRECTORY_PATH, PROCESS_ALL_TYPES, recursive, thresholdNumber,
+                THRESHOLD_UNIT_DAY, THRESHOLD_CRITERIA_CREATION,
+                skipFolders, skipFolderPathPattern, skipFiles, skipFilePathPattern, ERROR_IGNORE);
+
+        File testDirectory = new File(TEST_DIRECTORY_PATH);
+        Assert.assertTrue(testDirectory.exists());
+        Collection<File> filesAndDirs = FileUtils.listFilesAndDirs(testDirectory,
+                TrueFileFilter.INSTANCE, TrueFileFilter.INSTANCE);
+        filesAndDirs.remove(testDirectory);
+        Assert.assertEquals(filesAndDirs.size(), 2, "Test directory must contain skipped directory and its children");
+    }
+
+    @Test
+    public void testSkipFileDeletion() {
+        Boolean recursive = Boolean.TRUE;
+        Number thresholdNumber = 0;//all files and folders will match
+        Boolean skipFolders = false;
+        String skipFolderPathPattern = "";
+        Boolean skipFiles = true;
+        String skipFilePathPattern = ".*\\.txt$";
+
+        deleteFilesFolders.action(TEST_DIRECTORY_PATH, PROCESS_ALL_TYPES, recursive, thresholdNumber,
+                THRESHOLD_UNIT_DAY, THRESHOLD_CRITERIA_CREATION,
+                skipFolders, skipFolderPathPattern, skipFiles, skipFilePathPattern, ERROR_IGNORE);
+
+        File testDirectory = new File(TEST_DIRECTORY_PATH);
+        Assert.assertTrue(testDirectory.exists());
+        Collection<File> filesAndDirs = FileUtils.listFilesAndDirs(testDirectory,
+                TrueFileFilter.INSTANCE, TrueFileFilter.INSTANCE);
+        filesAndDirs.remove(testDirectory);
+        Assert.assertEquals(filesAndDirs.size(), 3, "Test directory must contain directory and its skipped children");
+    }
+
+    @Test
+    public void testSkipFileDeletionSingleFolder() {
+        Boolean recursive = Boolean.TRUE;
+        Number thresholdNumber = 0;//all files and folders will match
+        Boolean skipFolders = false;
+        String skipFolderPathPattern = "";
+        Boolean skipFiles = true;
+        String skipFilePathPattern = ".*\\\\subDirectory\\\\.*\\.txt$";
+
+        deleteFilesFolders.action(TEST_DIRECTORY_PATH, PROCESS_ALL_TYPES, recursive, thresholdNumber,
+                THRESHOLD_UNIT_DAY, THRESHOLD_CRITERIA_CREATION,
+                skipFolders, skipFolderPathPattern, skipFiles, skipFilePathPattern, ERROR_IGNORE);
+
+        File testDirectory = new File(TEST_DIRECTORY_PATH);
+        Assert.assertTrue(testDirectory.exists());
+        Collection<File> filesAndDirs = FileUtils.listFilesAndDirs(testDirectory,
+                TrueFileFilter.INSTANCE, TrueFileFilter.INSTANCE);
+        filesAndDirs.remove(testDirectory);
+        Assert.assertEquals(filesAndDirs.size(), 2, "Test directory must contain directory and its skipped children");
+    }
 }
