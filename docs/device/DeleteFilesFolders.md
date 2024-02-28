@@ -1,5 +1,5 @@
 # Clean Directory
-
+## Important: Use version 3.0.3 or above for improved and fixed abilities
 ## Overview
 
 `Clean Directory` removes files and/or folders within a specified directory based on a set of rules, including age
