@@ -5,7 +5,7 @@
 `Clean Directory` removes files and/or folders within a specified directory based on a set of rules, including age
 threshold and selection method.
 
-![image](https://github.com/A360-Tools/Bot-Framework/assets/82057278/2606731b-cb4c-482a-9363-ef3b00158f7d)
+![image](https://github.com/A360-Tools/Bot-Framework/assets/82057278/c7646e32-4c73-4d54-a6e1-18ec92d5c37d)
 
 ## Parameters
 
