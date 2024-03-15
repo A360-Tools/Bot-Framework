@@ -38,7 +38,7 @@ Designed to streamline bot development, enhance logging, and facilitate comprehe
 - Automated log deletion based on log age to optimize log management.
 - Customizable log retention through pattern matching for directories and files, aligning with organizational policies.
 
-  ![image](https://github.com/A360-Tools/Bot-Framework/assets/82057278/2606731b-cb4c-482a-9363-ef3b00158f7d)
+  ![image](https://github.com/A360-Tools/Bot-Framework/assets/82057278/c7646e32-4c73-4d54-a6e1-18ec92d5c37d)
 
 ### [Close Process/Application](https://github.com/A360-Tools/Bot-Framework/blob/main/docs/device/CloseApplications.md)
 - Simplifies the termination of processes or applications by name, enhancing system resource management.
