@@ -7,7 +7,6 @@ import com.automationanywhere.botcommand.exception.BotCommandException;
 import com.automationanywhere.botcommand.utilities.file.FileValidator;
 import com.automationanywhere.commandsdk.annotations.*;
 import com.automationanywhere.commandsdk.annotations.rules.*;
-import com.automationanywhere.commandsdk.model.AllowedTarget;
 import com.automationanywhere.commandsdk.model.AttributeType;
 import com.automationanywhere.commandsdk.model.DataType;
 import org.apache.commons.csv.CSVFormat;
@@ -33,7 +32,7 @@ import java.util.Map;
         text_color = "#1f9c61",
         return_label = "Output: config dictionary", return_type = DataType.DICTIONARY, return_sub_type =
         DataType.STRING, return_name = "Config", return_Direct = true,
-        allowed_agent_targets = AllowedTarget.HEADLESS,
+//        allowed_agent_targets = AllowedTarget.HEADLESS,
         documentation_url = "https://github.com/A360-Tools/Bot-Framework/blob/main/docs/config/CSVReader.md",
         return_required = true
 )

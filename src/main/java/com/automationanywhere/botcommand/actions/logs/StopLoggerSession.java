@@ -5,7 +5,6 @@ import com.automationanywhere.botcommand.utilities.logger.CustomLogger;
 import com.automationanywhere.commandsdk.annotations.*;
 import com.automationanywhere.commandsdk.annotations.rules.NotEmpty;
 import com.automationanywhere.commandsdk.annotations.rules.SessionObject;
-import com.automationanywhere.commandsdk.model.AllowedTarget;
 import com.automationanywhere.commandsdk.model.AttributeType;
 import com.automationanywhere.commandsdk.model.DataType;
 
@@ -19,9 +18,10 @@ import com.automationanywhere.commandsdk.model.DataType;
         description = "Stops a logger session",
         text_color = "#2F4F4F",
         icon = "log_session.svg",
+//        allowed_agent_targets = AllowedTarget.HEADLESS,
         node_label = "{{session}}",
-        documentation_url = "https://github.com/A360-Tools/Bot-Framework/blob/main/docs/logs/StopLoggerSession.md",
-        allowed_agent_targets = AllowedTarget.HEADLESS)
+        documentation_url = "https://github.com/A360-Tools/Bot-Framework/blob/main/docs/logs/StopLoggerSession.md"
+)
 public class StopLoggerSession {
 
     @Execute

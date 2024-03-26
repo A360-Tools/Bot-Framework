@@ -3,7 +3,6 @@ package com.automationanywhere.botcommand.actions.documentation;
 import com.automationanywhere.botcommand.data.model.image.Image;
 import com.automationanywhere.commandsdk.annotations.*;
 import com.automationanywhere.commandsdk.annotations.rules.NotEmpty;
-import com.automationanywhere.commandsdk.model.AllowedTarget;
 import com.automationanywhere.commandsdk.model.AttributeType;
 
 
@@ -21,7 +20,7 @@ import com.automationanywhere.commandsdk.model.AttributeType;
         group_label = "Documentation",
         documentation_url = "https://github.com/A360-Tools/Bot-Framework/blob/main/docs/documentation/Comment.md",
         text_color = "#608d56",
-        allowed_agent_targets = AllowedTarget.HEADLESS,
+//        allowed_agent_targets = AllowedTarget.HEADLESS,
         comment = true
 
 )

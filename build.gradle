@@ -5,8 +5,8 @@ buildscript {
             dirs 'libs'
         }
         dependencies {
-            classpath name: 'package-compileonly-sdk', version: '1.3.0'
-            classpath "gradle.plugin.com.github.johnrengelman:shadow:7.1.2"
+            classpath name: 'package-compileonly-sdk', version: '1.4.0'
+            classpath "gradle.plugin.com.github.johnrengelman:shadow:7.1.1"
         }
     }
 }
@@ -22,7 +22,7 @@ configure(allprojects) {
 
     ext {
         groupName = 'com.automationanywhere'
-        testNgVersion = '7.9.0'
+        testNgVersion = '6.14.3'
         loggerVersion = '2.20.0'
         jnaVersion = '5.3.1'
         version '3.0.4'
@@ -45,7 +45,7 @@ configure(allprojects) {
         artifactName = project.name
         group = "$groupName"
         author = "Sumit Kumar"
-        generatePackageWithDateTime = true
+        generatePackageWithDateTime = false
     }
 
     jar.dependsOn commandCodeGen
@@ -62,21 +62,20 @@ configure(allprojects) {
         exclude 'META-INF/*.RSA'
     }
     dependencies {
-        annotationProcessor name: 'package-compileonly-sdk', version: '1.3.0'
+        annotationProcessor name: 'package-compileonly-sdk', version: '1.4.0'
 
-        compileOnly name: 'package-compileonly-sdk', version: '1.3.0'
+        compileOnly name: 'package-compileonly-sdk', version: '1.4.0'
         compileOnly group: "org.apache.logging.log4j", name: "log4j-api", version: "$loggerVersion"
+        compileOnly group: "net.java.dev.jna", name: "jna-platform", version: "$jnaVersion"
 
         implementation name: 'package-runtime-sdk', version: '1.0.0'
 
         testImplementation name: 'package-compileonly-sdk', version: '1.0.0'
         testImplementation group: "org.testng", name: "testng", version: "$testNgVersion"
-    }
-}
 
-dependencies {
-    implementation 'org.apache.commons:commons-csv:1.10.0'
-    implementation 'org.json:json:20240205'
-    implementation 'org.apache.logging.log4j:log4j-core:2.21.1'
-    implementation group: 'org.apache.poi', name: 'poi-ooxml', version: '5.2.2'
+        implementation 'org.apache.commons:commons-csv:1.10.0'
+        implementation 'org.json:json:20240205'
+        implementation 'org.apache.logging.log4j:log4j-core:2.21.1'
+        implementation group: 'org.apache.poi', name: 'poi-ooxml', version: '5.2.2'
+    }
 }

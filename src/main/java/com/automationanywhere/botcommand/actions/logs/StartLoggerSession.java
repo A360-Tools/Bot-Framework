@@ -5,7 +5,6 @@ import com.automationanywhere.botcommand.exception.BotCommandException;
 import com.automationanywhere.botcommand.utilities.logger.CustomLogger;
 import com.automationanywhere.commandsdk.annotations.*;
 import com.automationanywhere.commandsdk.annotations.rules.*;
-import com.automationanywhere.commandsdk.model.AllowedTarget;
 import com.automationanywhere.commandsdk.model.AttributeType;
 import com.automationanywhere.commandsdk.model.DataType;
 import com.automationanywhere.commandsdk.model.ReturnSettingsType;
@@ -35,7 +34,7 @@ import static com.automationanywhere.commandsdk.model.AttributeType.FILE;
         return_type = DataType.SESSION,
         return_name = "Logger",
         documentation_url = "https://github.com/A360-Tools/Bot-Framework/blob/main/docs/logs/StartLoggerSession.md",
-        allowed_agent_targets = AllowedTarget.HEADLESS,
+//        allowed_agent_targets = AllowedTarget.HEADLESS,
         return_required = true)
 public class StartLoggerSession {
     private static final String COMMON_FILE_ALL_LEVEL = "COMMON_FILE";

@@ -7,7 +7,6 @@ import com.automationanywhere.botcommand.exception.BotCommandException;
 import com.automationanywhere.botcommand.utilities.file.FileValidator;
 import com.automationanywhere.commandsdk.annotations.*;
 import com.automationanywhere.commandsdk.annotations.rules.*;
-import com.automationanywhere.commandsdk.model.AllowedTarget;
 import com.automationanywhere.commandsdk.model.AttributeType;
 import com.automationanywhere.commandsdk.model.DataType;
 import com.automationanywhere.core.security.SecureString;
@@ -33,7 +32,7 @@ import static com.automationanywhere.commandsdk.model.AttributeType.CREDENTIAL;
         return_label = "Output: config dictionary", return_type = DataType.DICTIONARY, return_sub_type =
         DataType.STRING, return_name = "Config", return_Direct = true,
         documentation_url = "https://github.com/A360-Tools/Bot-Framework/blob/main/docs/config/ExcelReader.md",
-        allowed_agent_targets = AllowedTarget.HEADLESS,
+//        allowed_agent_targets = AllowedTarget.HEADLESS,
         return_required = true
 )
 public class ExcelReader {

@@ -8,7 +8,6 @@ import com.automationanywhere.commandsdk.annotations.*;
 import com.automationanywhere.commandsdk.annotations.rules.FileExtension;
 import com.automationanywhere.commandsdk.annotations.rules.NotEmpty;
 import com.automationanywhere.commandsdk.annotations.rules.SelectModes;
-import com.automationanywhere.commandsdk.model.AllowedTarget;
 import com.automationanywhere.commandsdk.model.AttributeType;
 import com.automationanywhere.commandsdk.model.DataType;
 import org.apache.commons.io.FileUtils;
@@ -38,7 +37,7 @@ import java.util.Map;
         text_color = "#f1662a",
         return_label = "Output: config dictionary", return_type = DataType.DICTIONARY, return_sub_type =
         DataType.STRING, return_name = "Config", return_Direct = true,
-        allowed_agent_targets = AllowedTarget.HEADLESS,
+//        allowed_agent_targets = AllowedTarget.HEADLESS,
         documentation_url = "https://github.com/A360-Tools/Bot-Framework/blob/main/docs/config/XMLReader.md",
         return_required = true
 )

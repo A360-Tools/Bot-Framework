@@ -10,7 +10,6 @@ import com.automationanywhere.commandsdk.annotations.rules.FileExtension;
 import com.automationanywhere.commandsdk.annotations.rules.ListType;
 import com.automationanywhere.commandsdk.annotations.rules.NotEmpty;
 import com.automationanywhere.commandsdk.annotations.rules.SelectModes;
-import com.automationanywhere.commandsdk.model.AllowedTarget;
 import com.automationanywhere.commandsdk.model.AttributeType;
 import com.automationanywhere.commandsdk.model.DataType;
 import org.json.JSONArray;
@@ -40,7 +39,7 @@ import java.util.Map;
         return_label = "Output: config dictionary", return_type = DataType.DICTIONARY, return_sub_type =
         DataType.STRING, return_name = "Config", return_Direct = true,
         documentation_url = "https://github.com/A360-Tools/Bot-Framework/blob/main/docs/config/JSONReader.md",
-        allowed_agent_targets = AllowedTarget.HEADLESS,
+//        allowed_agent_targets = AllowedTarget.HEADLESS,
         return_required = true
 )
 public class JSONReader {

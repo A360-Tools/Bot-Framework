@@ -14,7 +14,6 @@ import com.automationanywhere.commandsdk.annotations.rules.EntryList.EntryListLa
 import com.automationanywhere.commandsdk.annotations.rules.NotEmpty;
 import com.automationanywhere.commandsdk.annotations.rules.SelectModes;
 import com.automationanywhere.commandsdk.annotations.rules.SessionObject;
-import com.automationanywhere.commandsdk.model.AllowedTarget;
 import com.automationanywhere.commandsdk.model.AttributeType;
 import com.automationanywhere.commandsdk.model.DataType;
 import org.apache.logging.log4j.Logger;
@@ -40,8 +39,9 @@ import java.util.UUID;
         name = "log_message",
         group_label = "Logs",
         documentation_url = "https://github.com/A360-Tools/Bot-Framework/blob/main/docs/logs/LogMessage.md",
-        text_color = "#4285f4",
-        allowed_agent_targets = AllowedTarget.HEADLESS
+//        allowed_agent_targets = AllowedTarget.HEADLESS,
+        text_color = "#4285f4"
+
 )
 public class LogMessage {
     private static final String LEVEL_INFO = "INFO";

@@ -3,7 +3,6 @@ package com.automationanywhere.botcommand.actions.documentation;
 import com.automationanywhere.botcommand.data.Value;
 import com.automationanywhere.commandsdk.annotations.*;
 import com.automationanywhere.commandsdk.annotations.rules.NotEmpty;
-import com.automationanywhere.commandsdk.model.AllowedTarget;
 import com.automationanywhere.commandsdk.model.AttributeType;
 
 import java.util.Map;
@@ -26,7 +25,7 @@ import java.util.Map;
         documentation_url = "https://github.com/A360-Tools/Bot-Framework/blob/main/docs/documentation/About.md",
         text_color = "#2196f3",
 
-        allowed_agent_targets = AllowedTarget.HEADLESS,
+//        allowed_agent_targets = AllowedTarget.HEADLESS,
         comment = true
 
 )

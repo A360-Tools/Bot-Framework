@@ -6,7 +6,6 @@ import com.automationanywhere.botcommand.utilities.process.TaskKiller;
 import com.automationanywhere.commandsdk.annotations.*;
 import com.automationanywhere.commandsdk.annotations.rules.ListType;
 import com.automationanywhere.commandsdk.annotations.rules.NotEmpty;
-import com.automationanywhere.commandsdk.model.AllowedTarget;
 import com.automationanywhere.commandsdk.model.AttributeType;
 import com.automationanywhere.commandsdk.model.DataType;
 
@@ -22,7 +21,7 @@ import java.util.List;
         description = "Sends close and then terminate request to running applications in list",
         icon = "close.svg", name = "device_close_application",
         group_label = "Device",
-        allowed_agent_targets = AllowedTarget.HEADLESS,
+//        allowed_agent_targets = AllowedTarget.HEADLESS,
         documentation_url = "https://github.com/A360-Tools/Bot-Framework/blob/main/docs/device/CloseApplications.md",
         text_color = "#e04f5f"
 )

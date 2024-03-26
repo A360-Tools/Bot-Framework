@@ -3,7 +3,6 @@ package com.automationanywhere.botcommand.actions.device;
 import com.automationanywhere.botcommand.exception.BotCommandException;
 import com.automationanywhere.commandsdk.annotations.*;
 import com.automationanywhere.commandsdk.annotations.rules.*;
-import com.automationanywhere.commandsdk.model.AllowedTarget;
 import com.automationanywhere.commandsdk.model.AttributeType;
 import com.automationanywhere.commandsdk.model.DataType;
 import org.apache.commons.io.FileUtils;
@@ -25,9 +24,10 @@ import java.util.regex.Pattern;
         icon = "delete_folders.svg",
         name = "device_delete_files_folders",
         group_label = "Device",
+//        allowed_agent_targets = AllowedTarget.HEADLESS,
         documentation_url = "https://github.com/A360-Tools/Bot-Framework/blob/main/docs/device/DeleteFilesFolders.md",
-        text_color = "#e04f5f",
-        allowed_agent_targets = AllowedTarget.HEADLESS
+        text_color = "#e04f5f"
+
 )
 public class DeleteFilesFolders {
     private static final String THRESHOLD_UNIT_DAY = "DAY";
