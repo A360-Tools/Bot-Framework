@@ -12,7 +12,9 @@ import com.automationanywhere.commandsdk.model.DataType;
 import com.automationanywhere.core.security.SecureString;
 import org.apache.poi.ss.usermodel.*;
 
+import java.io.File;
 import java.io.FileInputStream;
+import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -105,81 +107,149 @@ public class ExcelReader {
             @NotEmpty
             Boolean isTrimValues
     ) {
+        FileInputStream inputStream = null;
+        Workbook workbook = null;
+
         try {
+            // Validate file exists and has correct extension
             FileValidator fileValidator = new FileValidator(inputFilePath);
             String[] allowedExtensions = {"xls", "xlsx"};
             fileValidator.validateFile(allowedExtensions);
+
+            // Determine if we're using column headers
             boolean hasHeader = parsingMethod.equalsIgnoreCase(COLUMN_HEADER);
 
+            // Get password if needed
             String filePasswordInsecureString = null;
-            if (isPasswordProtected) {
+            if (isPasswordProtected != null && isPasswordProtected) {
                 filePasswordInsecureString = filePassword.getInsecureString();
             }
 
-            try (FileInputStream inputStream = new FileInputStream(inputFilePath);
-                 Workbook workbook = WorkbookFactory.create(inputStream, filePasswordInsecureString)) {
+            // Create result dictionary
+            Map<String, Value> excelDictionary = new LinkedHashMap<>();
 
-                Map<String, Value> excelDictionary = new LinkedHashMap<>();
+            // Open file and workbook with explicit resource management
+            File file = new File(inputFilePath);
+            inputStream = new FileInputStream(file);
 
-                Sheet sheet = workbook.getSheet(sheetName);
-                if (sheet == null) {
-                    throw new BotCommandException("Sheet with name " + sheetName + " not found");
+            // Create workbook with proper password handling
+            if (filePasswordInsecureString != null && !filePasswordInsecureString.isEmpty()) {
+                workbook = WorkbookFactory.create(inputStream, filePasswordInsecureString);
+            } else {
+                workbook = WorkbookFactory.create(inputStream);
+            }
+
+            // Get sheet by name
+            Sheet sheet = workbook.getSheet(sheetName);
+            if (sheet == null) {
+                throw new BotCommandException("Sheet with name '" + sheetName + "' not found");
+            }
+
+            // Initialize data formatter for cell value extraction
+            DataFormatter dataFormatter = new DataFormatter();
+
+            // Determine column indices
+            int keyIdx;
+            int valueIdx;
+
+            if (hasHeader) {
+                Row headerRow = sheet.getRow(0);
+                if (headerRow == null) {
+                    throw new BotCommandException("Header row not found in sheet '" + sheetName + "'");
                 }
-                DataFormatter dataFormatter = new DataFormatter();
-                int keyIdx;
-                int valueIdx;
-                if (hasHeader) {
-                    Row headerRow = sheet.getRow(0);
-                    keyIdx = findColumnIndex(headerRow, keyColumnName);
-                    valueIdx = findColumnIndex(headerRow, valueColumnName);
-                } else {
-                    keyIdx = keyIndex.intValue();
-                    valueIdx = valueIndex.intValue();
+                keyIdx = findColumnIndex(headerRow, keyColumnName);
+                valueIdx = findColumnIndex(headerRow, valueColumnName);
+            } else {
+                keyIdx = keyIndex.intValue();
+                valueIdx = valueIndex.intValue();
+            }
+
+            // Process rows
+            boolean headerSkipped = false;
+            for (Row row : sheet) {
+                if (row == null) continue;
+
+                // Skip header row if using column headers
+                if (!headerSkipped && hasHeader) {
+                    headerSkipped = true;
+                    continue;
                 }
 
-                boolean headerSkipped = false;
-                for (Row row : sheet) {
-                    if (!headerSkipped && hasHeader) {
-                        headerSkipped = true;
+                if (keyIdx >= 0 && valueIdx >= 0) {
+                    // Get cells or create blank if missing
+                    Cell keyCell = row.getCell(keyIdx, Row.MissingCellPolicy.CREATE_NULL_AS_BLANK);
+                    Cell valueCell = row.getCell(valueIdx, Row.MissingCellPolicy.CREATE_NULL_AS_BLANK);
+
+                    // Extract key and verify it's not empty
+                    String key = dataFormatter.formatCellValue(keyCell);
+                    if (key == null || key.isEmpty()) {
                         continue;
                     }
-                    if (keyIdx >= 0 && valueIdx >= 0) {
-                        Cell keyCell = row.getCell(keyIdx, Row.MissingCellPolicy.CREATE_NULL_AS_BLANK);
-                        Cell valueCell = row.getCell(valueIdx, Row.MissingCellPolicy.CREATE_NULL_AS_BLANK);
 
-                        String key = dataFormatter.formatCellValue(keyCell);
-                        if (key == null || key.isEmpty()) {
-                            continue;
-                        }
-                        String value = dataFormatter.formatCellValue(valueCell);
-                        value = isTrimValues ? value.strip() : value;
-
-                        excelDictionary.put(key, new StringValue(value));
+                    // Extract and process value
+                    String value = dataFormatter.formatCellValue(valueCell);
+                    if (isTrimValues != null && isTrimValues) {
+                        value = value.trim();
                     }
+
+                    // Add to dictionary
+                    excelDictionary.put(key, new StringValue(value));
                 }
-
-                return new DictionaryValue(excelDictionary);
-
-            } catch (Exception e) {
-                throw new BotCommandException("Error occurred while opening file: " + e.getMessage());
             }
+
+            return new DictionaryValue(excelDictionary);
+
         } catch (Exception e) {
-            throw new BotCommandException("Error occurred: " + e.getMessage());
+            throw new BotCommandException("Error reading Excel file: " + e.getMessage(), e);
+        } finally {
+            // Ensure resources are always closed properly
+            closeWorkbook(workbook);
+            closeInputStream(inputStream);
         }
     }
 
     private int findColumnIndex(Row headerRow, String columnName) {
+        if (headerRow == null || columnName == null) {
+            throw new BotCommandException("Invalid header row or column name");
+        }
+
         int columnIndex = -1;
         DataFormatter dataFormatter = new DataFormatter();
+
         for (Cell cell : headerRow) {
-            if (dataFormatter.formatCellValue(cell).equalsIgnoreCase(columnName)) {
+            if (cell != null && columnName.equalsIgnoreCase(dataFormatter.formatCellValue(cell))) {
                 columnIndex = cell.getColumnIndex();
                 break;
             }
         }
+
         if (columnIndex == -1) {
-            throw new BotCommandException("Column '" + columnName + "' not found.");
+            throw new BotCommandException("Column '" + columnName + "' not found in header row");
         }
+
         return columnIndex;
+    }
+
+    // Helper methods for resource cleanup
+    private void closeWorkbook(Workbook workbook) {
+        if (workbook != null) {
+            try {
+                workbook.close();
+            } catch (IOException e) {
+                // Log the error but don't throw, as we're in cleanup
+                System.err.println("Error closing workbook: " + e.getMessage());
+            }
+        }
+    }
+
+    private void closeInputStream(FileInputStream inputStream) {
+        if (inputStream != null) {
+            try {
+                inputStream.close();
+            } catch (IOException e) {
+                // Log the error but don't throw, as we're in cleanup
+                System.err.println("Error closing input stream: " + e.getMessage());
+            }
+        }
     }
 }

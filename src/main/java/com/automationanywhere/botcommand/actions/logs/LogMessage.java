@@ -16,6 +16,7 @@ import com.automationanywhere.commandsdk.annotations.rules.SelectModes;
 import com.automationanywhere.commandsdk.annotations.rules.SessionObject;
 import com.automationanywhere.commandsdk.model.AttributeType;
 import com.automationanywhere.commandsdk.model.DataType;
+import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.Logger;
 
 import java.net.URLDecoder;
@@ -49,15 +50,19 @@ public class LogMessage {
     private static final String LEVEL_WARN = "WARN";
     private static final String LOG_VARIABLE = "YES";
     private static final String DO_NOT_LOG_VARIABLE = "NO";
+
     @Idx(index = "5.2.1.3", type = AttributeType.TEXT, name = "NAME")
     @Pkg(label = "Name", default_value_type = DataType.STRING)
     @NotEmpty
     private String colName;
+
     @Idx(index = "5.2.1.4", type = AttributeType.VARIABLE, name = "VALUE")
     @Pkg(label = "Value", default_value_type = DataType.ANY)
     private Value colValue;
+
     @GlobalSessionContext
     private com.automationanywhere.bot.service.GlobalSessionContext globalSessionContext;
+
     private String testBotUri; // For testing purposes
 
     public void setTestBotUri(String testBotUri) {
@@ -76,6 +81,7 @@ public class LogMessage {
             @NotEmpty
             @SessionObject
             CustomLogger session,
+
             @Idx(
                     index = "2", type = AttributeType.SELECT, options = {
                     @Idx.Option(index = "2.1", pkg = @Pkg(label = "INFORMATION", value = LEVEL_INFO)),
@@ -132,6 +138,10 @@ public class LogMessage {
         try {
             Map<String, Value> variableValues = null;
             String screenshotPath = "";
+
+            // Convert string log level to Log4j Level
+            Level log4jLevel = convertToLog4jLevel(logLevel);
+
             if (logVariable.equalsIgnoreCase(LOG_VARIABLE)) {
                 if (sourceMap != null && !sourceMap.isEmpty()) {
                     variableValues = DataConversion.getMergedDictionary(list, sourceMap);
@@ -139,8 +149,11 @@ public class LogMessage {
                     variableValues = DataConversion.getMergedDictionary(list);
                 }
             }
+
             if (captureScreenshot) {
-                screenshotPath = generateRandomScreenshotPath(session.getScreenshotFolderPath());
+                // Get appropriate screenshot folder based on log level
+                String screenshotFolder = session.getScreenshotFolderPath(log4jLevel);
+                screenshotPath = generateRandomScreenshotPath(screenshotFolder, logLevel);
                 CaptureScreen.captureDesktop(screenshotPath, true);
             }
 
@@ -149,6 +162,7 @@ public class LogMessage {
             message.put(CustomHTMLLayout.Columns.SCREENSHOT, screenshotPath);
             message.put(CustomHTMLLayout.Columns.VARIABLES, variableValues);
             message.put(CustomHTMLLayout.Columns.SOURCE, getFormattedBotUri());
+
             Logger logger = session.getLogger();
             switch (logLevel) {
                 case LEVEL_INFO:
@@ -168,8 +182,34 @@ public class LogMessage {
         }
     }
 
-    public static String generateRandomScreenshotPath(String folderPath) {
-        String fileName = "screenshot_" + UUID.randomUUID() + ".png";
+    /**
+     * Converts string log level to Log4j Level object
+     * @param logLevel The string representation of log level
+     * @return The corresponding Log4j Level object
+     */
+    private Level convertToLog4jLevel(String logLevel) {
+        switch (logLevel) {
+            case LEVEL_INFO:
+                return Level.INFO;
+            case LEVEL_WARN:
+                return Level.WARN;
+            case LEVEL_ERROR:
+                return Level.ERROR;
+            default:
+                return Level.INFO;
+        }
+    }
+
+    public static String generateRandomScreenshotPath(String folderPath, String logLevel) {
+        // Create prefix based on log level
+        String prefix = "info_";
+        if (logLevel.equals(LEVEL_WARN)) {
+            prefix = "warn_";
+        } else if (logLevel.equals(LEVEL_ERROR)) {
+            prefix = "error_";
+        }
+
+        String fileName = prefix + UUID.randomUUID() + ".png";
         Path path = Paths.get(folderPath, fileName);
         return path.toAbsolutePath().toString();
     }
@@ -187,5 +227,4 @@ public class LogMessage {
         botUri = botUri.replace("/", "\\");
         return botUri;
     }
-
 }

@@ -4,8 +4,10 @@ import com.automationanywhere.botcommand.data.Value;
 import com.automationanywhere.botcommand.data.impl.*;
 import com.automationanywhere.botcommand.data.model.record.Record;
 import com.automationanywhere.botcommand.data.model.table.Table;
+import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.text.StringEscapeUtils;
 
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -19,27 +21,27 @@ public class HTMLGenerator {
     private static final String NULL = "NULL";
 
     public static String generateHTML(Map<String, Value> valueMap) {
-        if (valueMap.entrySet().isEmpty()) {
+        if (valueMap == null || valueMap.entrySet().isEmpty()) {
             return "";
         }
-        String uninqueID = UUID.randomUUID().toString();
+        String uniqueID = UUID.randomUUID().toString();
         StringBuilder htmlBuilder = new StringBuilder();
         htmlBuilder
                 .append("<label class='btn' for='")
-                .append(uninqueID)
+                .append(uniqueID)
                 .append("'>")
                 .append("Show Details [")
                 .append(valueMap.entrySet().size())
                 .append("]</label>");
 
         htmlBuilder.append("<input class='modal-state' id='")
-                .append(uninqueID)
+                .append(uniqueID)
                 .append("' type='checkbox' />");
 
         htmlBuilder
                 .append("<div class='modal'>")
                 .append("<label class='modal__bg' for='")
-                .append(uninqueID)
+                .append(uniqueID)
                 .append("'></label>")
                 .append("<div class='modal__inner'>");
 
@@ -207,27 +209,30 @@ public class HTMLGenerator {
     }
 
     public static String getScreenshotHTML(String screenshotPath) {
-        if (screenshotPath.isEmpty()) {
+        if (screenshotPath == null || screenshotPath.isEmpty()) {
             return "";
         }
-        String uninqueID = UUID.randomUUID().toString();
 
-        String htmlBuilder = "<label class='btn' for='" +
-                uninqueID +
+        // Create a relative path to the screenshot for HTML
+        String relativePath = "screenshots/" + FilenameUtils.getName(screenshotPath);
+
+        String uniqueID = UUID.randomUUID().toString();
+
+        return "<label class='btn' for='" +
+                uniqueID +
                 "'>" +
                 "Show Image" +
                 "</label>" +
                 "<input class='modal-state' id='" +
-                uninqueID +
+                uniqueID +
                 "' type='checkbox' />" +
                 "<div class='modal'>" +
                 "<label class='modal__bg' for='" +
-                uninqueID +
+                uniqueID +
                 "'></label>" +
                 "<div class='modal__inner__img'>" +
                 "<img src='" +
-                screenshotPath +
+                relativePath +
                 "'</img>";
-        return htmlBuilder;
     }
 }

@@ -14,9 +14,13 @@ import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
 
 import java.io.BufferedReader;
-import java.io.FileReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.Reader;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -112,58 +116,137 @@ public class CSVReader {
             String delimiter
 
     ) {
+        Reader reader = null;
+        CSVParser csvParser = null;
+        FileInputStream fileInputStream = null;
+
         try {
+            // Validate file exists and has correct extension
             FileValidator fileValidator = new FileValidator(inputFilePath);
             String[] allowedExtensions = {"csv"};
             fileValidator.validateFile(allowedExtensions);
+
             boolean hasHeader = parsingMethod.equalsIgnoreCase(COLUMN_HEADER);
+
+            // Parse charset safely
+            Charset charset;
+            try {
+                charset = Charset.forName(charsetName);
+            } catch (Exception e) {
+                // Fallback to UTF-8 if provided charset is invalid
+                charset = StandardCharsets.UTF_8;
+            }
+
+            // Set up CSV format with proper builder pattern (non-deprecated)
             CSVFormat csvFormat;
             if (hasHeader) {
-                csvFormat = CSVFormat.Builder
-                        .create()
+                csvFormat = CSVFormat.DEFAULT
+                        .builder()
                         .setHeader()
                         .setDelimiter(delimiter)
                         .setIgnoreHeaderCase(true)
-                        .setIgnoreEmptyLines(true)
-                        .build();
+                        .setIgnoreEmptyLines(true).get();
             } else {
-                csvFormat = CSVFormat.Builder
-                        .create()
-                        .setIgnoreEmptyLines(true)
+                csvFormat = CSVFormat.DEFAULT
+                        .builder()
                         .setDelimiter(delimiter)
-                        .build();
+                        .setIgnoreEmptyLines(true).get();
             }
-            Charset charset = Charset.forName(charsetName);
-            try (Reader reader = new BufferedReader(new FileReader(inputFilePath, charset));
-                 CSVParser csvParser = new CSVParser(reader, csvFormat)) {
 
-                Map<String, Value> csvDictionary = new LinkedHashMap<>();
+            // Create result dictionary
+            Map<String, Value> csvDictionary = new LinkedHashMap<>();
 
-                for (CSVRecord csvRecord : csvParser) {
-                    String key;
-                    String value;
+            // Open file with explicit resource management
+            File file = new File(inputFilePath);
+            fileInputStream = new FileInputStream(file);
+            reader = new BufferedReader(new InputStreamReader(fileInputStream, charset));
+
+            // Parse CSV content
+            csvParser = CSVParser.parse(reader, csvFormat);
+
+            // Process CSV records
+            for (CSVRecord csvRecord : csvParser) {
+                if (csvRecord.size() == 0) continue;
+
+                String key = null;
+                String value = null;
+
+                try {
                     if (hasHeader) {
+                        // When using header column names
                         key = csvRecord.get(keyColumnName);
                         value = csvRecord.get(valueColumnName);
                     } else {
-                        key = csvRecord.get(keyIndex.intValue());
-                        value = csvRecord.get(valueIndex.intValue());
+                        // When using column indices
+                        int keyIdx = keyIndex.intValue();
+                        int valueIdx = valueIndex.intValue();
+
+                        // Check bounds before accessing
+                        if (keyIdx >= 0 && keyIdx < csvRecord.size() &&
+                                valueIdx >= 0 && valueIdx < csvRecord.size()) {
+                            key = csvRecord.get(keyIdx);
+                            value = csvRecord.get(valueIdx);
+                        }
                     }
-                    if (key == null || key.isEmpty()) {
-                        continue;
-                    }
-                    value = isTrimValues ? value.strip() : value;
-                    csvDictionary.put(key, new StringValue(value));
+                } catch (IllegalArgumentException e) {
+                    // Skip records where header is not found or index is out of bounds
+                    continue;
                 }
 
-                return new DictionaryValue(csvDictionary);
+                // Skip if key is empty
+                if (key == null || key.isEmpty()) {
+                    continue;
+                }
 
-            } catch (Exception e) {
-                throw new BotCommandException("Error occurred while opening file: " + e.getMessage());
+                // Apply trimming if requested
+                if (value != null && isTrimValues != null && isTrimValues) {
+                    value = value.trim();
+                }
+
+                // Add to result dictionary
+                csvDictionary.put(key, new StringValue(value != null ? value : ""));
             }
+
+            return new DictionaryValue(csvDictionary);
+
         } catch (Exception e) {
-            throw new BotCommandException("Error occurred: " + e.getMessage());
+            throw new BotCommandException("Error reading CSV file: " + e.getMessage(), e);
+        } finally {
+            // Clean up resources in reverse order of creation
+            closeQuietly(csvParser);
+            closeQuietly(reader);
+            closeQuietly(fileInputStream);
         }
     }
 
+    // Helper methods for resource cleanup
+    private void closeQuietly(CSVParser parser) {
+        if (parser != null) {
+            try {
+                parser.close();
+            } catch (IOException e) {
+                // Swallow exception during cleanup
+            }
+        }
+    }
+
+    private void closeQuietly(Reader reader) {
+        if (reader != null) {
+            try {
+                reader.close();
+            } catch (IOException e) {
+                // Swallow exception during cleanup
+            }
+        }
+    }
+
+    private void closeQuietly(FileInputStream stream) {
+        if (stream != null) {
+            try {
+                stream.close();
+            } catch (IOException e) {
+                // Swallow exception during cleanup
+            }
+        }
+    }
 }
