@@ -167,7 +167,9 @@ public class ExcelReader {
             // Process rows
             boolean headerSkipped = false;
             for (Row row : sheet) {
-                if (row == null) continue;
+                if (row == null) {
+                    continue;
+                }
 
                 // Skip header row if using column headers
                 if (!headerSkipped && hasHeader) {

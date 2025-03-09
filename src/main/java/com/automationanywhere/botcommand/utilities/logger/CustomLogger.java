@@ -3,15 +3,8 @@ package com.automationanywhere.botcommand.utilities.logger;
 import com.automationanywhere.toolchain.runtime.session.CloseableSessionObject;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.logging.log4j.Level;
-import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.core.Appender;
 import org.apache.logging.log4j.core.LoggerContext;
-import org.apache.logging.log4j.core.appender.RollingFileAppender;
-import org.apache.logging.log4j.core.config.Configuration;
-import org.apache.logging.log4j.core.config.ConfigurationFactory;
-import org.apache.logging.log4j.core.config.ConfigurationSource;
-import org.apache.logging.log4j.core.config.DefaultConfiguration;
 import org.apache.logging.log4j.core.config.builder.api.AppenderComponentBuilder;
 import org.apache.logging.log4j.core.config.builder.api.ConfigurationBuilder;
 import org.apache.logging.log4j.core.config.builder.api.LayoutComponentBuilder;
@@ -39,6 +32,7 @@ public class CustomLogger implements CloseableSessionObject {
     private final String loggerId;
     private final LoggerContext loggerContext;
     private final Map<Level, String> screenshotFolderPaths;
+    private final Map<Level, String> variablesFolderPaths;
 
     // Constructor for a single log file for all levels
     public CustomLogger(String loggerName, String logFilePath, long sizeLimitMB) throws IOException {
@@ -47,15 +41,22 @@ public class CustomLogger implements CloseableSessionObject {
         // Create screenshot folder at the same location as log file
         String baseDir = FilenameUtils.getFullPath(logFilePath);
         String screenshotFolder = baseDir + "screenshots";
+        String variablesFolder = baseDir + "variables";
 
         this.screenshotFolderPaths = new HashMap<>();
-        // Use the same screenshot folder for all levels when using a combined log file
+        this.variablesFolderPaths = new HashMap<>();
+
+        // Use the same folder for all levels when using a combined log file
         this.screenshotFolderPaths.put(Level.INFO, screenshotFolder);
         this.screenshotFolderPaths.put(Level.WARN, screenshotFolder);
         this.screenshotFolderPaths.put(Level.ERROR, screenshotFolder);
 
-        // Create screenshot directory
-        createScreenshotDirectories();
+        this.variablesFolderPaths.put(Level.INFO, variablesFolder);
+        this.variablesFolderPaths.put(Level.WARN, variablesFolder);
+        this.variablesFolderPaths.put(Level.ERROR, variablesFolder);
+
+        // Create directories
+        createDirectories();
 
         // Create a unique logger context for this instance
         LoggerContext context = createNewLoggerContext();
@@ -64,7 +65,8 @@ public class CustomLogger implements CloseableSessionObject {
         ConfigurationBuilder<BuiltConfiguration> builder = new DefaultConfigurationBuilder();
         setupLoggerConfiguration(builder);
 
-        AppenderComponentBuilder appenderBuilder = getCustomAppenderBuilder(builder, "COMBINED_" + loggerId, logFilePath,
+        AppenderComponentBuilder appenderBuilder = getCustomAppenderBuilder(builder, "COMBINED_" + loggerId,
+                logFilePath,
                 sizeLimitMB);
         builder.add(appenderBuilder);
         builder.add(builder.newLogger(loggerName, Level.INFO)
@@ -82,6 +84,20 @@ public class CustomLogger implements CloseableSessionObject {
 
         // Get logger from the new context
         this.logger = context.getLogger(loggerName);
+    }
+
+    private void createDirectories() throws IOException {
+        // Create screenshot directories
+        for (String path : screenshotFolderPaths.values()) {
+            Path directoryPath = Paths.get(path);
+            Files.createDirectories(directoryPath);
+        }
+
+        // Create variables directories
+        for (String path : variablesFolderPaths.values()) {
+            Path directoryPath = Paths.get(path);
+            Files.createDirectories(directoryPath);
+        }
     }
 
     private LoggerContext createNewLoggerContext() {
@@ -122,17 +138,20 @@ public class CustomLogger implements CloseableSessionObject {
     public CustomLogger(String loggerName, Map<Level, String> levelFilePathMap, long sizeLimitMB) throws IOException {
         this.loggerId = UUID.randomUUID().toString();
         this.screenshotFolderPaths = new HashMap<>();
+        this.variablesFolderPaths = new HashMap<>();
 
-        // Create a screenshot folder alongside each log file
+        // Create a screenshot and variables folder alongside each log file
         for (Map.Entry<Level, String> entry : levelFilePathMap.entrySet()) {
             Level level = entry.getKey();
             String filePath = entry.getValue();
             String baseDir = FilenameUtils.getFullPath(filePath);
+
             this.screenshotFolderPaths.put(level, baseDir + "screenshots");
+            this.variablesFolderPaths.put(level, baseDir + "variables");
         }
 
-        // Create all screenshot directories
-        createScreenshotDirectories();
+        // Create all directories
+        createDirectories();
 
         // Create a unique logger context for this instance
         LoggerContext context = createNewLoggerContext();
@@ -176,14 +195,6 @@ public class CustomLogger implements CloseableSessionObject {
         this.logger = context.getLogger(loggerName);
     }
 
-    private void createScreenshotDirectories() throws IOException {
-        // Create unique directories only (remove duplicates)
-        for (String path : screenshotFolderPaths.values()) {
-            Path directoryPath = Paths.get(path);
-            Files.createDirectories(directoryPath);
-        }
-    }
-
     public Logger getLogger() {
         return logger;
     }
@@ -210,9 +221,30 @@ public class CustomLogger implements CloseableSessionObject {
 
     /**
      * Returns the screenshot folder path for the INFO level
+     *
      * @return default screenshot folder path (INFO level)
      */
     public String getScreenshotFolderPath() {
         return screenshotFolderPaths.get(Level.INFO);
+    }
+
+    /**
+     * Returns the variables folder path for the specified log level
+     *
+     * @param level Log level
+     *
+     * @return variables folder path for the specified level
+     */
+    public String getVariablesFolderPath(Level level) {
+        return variablesFolderPaths.getOrDefault(level, variablesFolderPaths.get(Level.INFO));
+    }
+
+    /**
+     * Returns the variables folder path for the INFO level
+     *
+     * @return default variables folder path (INFO level)
+     */
+    public String getVariablesFolderPath() {
+        return variablesFolderPaths.get(Level.INFO);
     }
 }

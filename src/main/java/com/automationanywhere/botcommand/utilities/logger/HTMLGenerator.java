@@ -5,12 +5,17 @@ import com.automationanywhere.botcommand.data.impl.*;
 import com.automationanywhere.botcommand.data.model.record.Record;
 import com.automationanywhere.botcommand.data.model.table.Table;
 import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.text.StringEscapeUtils;
 
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
+import java.util.Objects;
 
 /**
  * @author Sumit Kumar
@@ -19,181 +24,345 @@ import java.util.UUID;
 public class HTMLGenerator {
 
     private static final String NULL = "NULL";
+    private static final String TEMPLATE_PATH = "/templates/variables.html";
 
     public static String generateHTML(Map<String, Value> valueMap) {
-        if (valueMap == null || valueMap.entrySet().isEmpty()) {
+        if (valueMap == null || valueMap.isEmpty()) {
             return "";
         }
-        String uniqueID = UUID.randomUUID().toString();
-        StringBuilder htmlBuilder = new StringBuilder();
-        htmlBuilder
-                .append("<label class='btn' for='")
-                .append(uniqueID)
-                .append("'>")
-                .append("Show Details [")
-                .append(valueMap.entrySet().size())
-                .append("]</label>");
-
-        htmlBuilder.append("<input class='modal-state' id='")
-                .append(uniqueID)
-                .append("' type='checkbox' />");
-
-        htmlBuilder
-                .append("<div class='modal'>")
-                .append("<label class='modal__bg' for='")
-                .append(uniqueID)
-                .append("'></label>")
-                .append("<div class='modal__inner'>");
-
-        for (Map.Entry<String, Value> entry : valueMap.entrySet()) {
-            generateVariableHTML(entry.getKey(), entry.getValue(), htmlBuilder);
-        }
-        htmlBuilder.append("</div>")
-                .append("</div>");
-        return htmlBuilder.toString();
+        int variableCount = valueMap.size();
+        return "<span class='variable-count'>" + variableCount + " variable" + (variableCount > 1 ? "s" : "") +
+                "</span>";
     }
 
-    private static void generateVariableHTML(String name, Value value, StringBuilder htmlBuilder) {
+    /**
+     * Generates a separate HTML file for variable data and returns a link to it
+     *
+     * @param valueMap   Map of variable names to values
+     * @param folderPath Folder where the HTML file will be stored
+     * @param logEventId Unique identifier for the log event
+     *
+     * @return Relative path to the HTML file
+     */
+    public static String generateVariableFile(Map<String, Value> valueMap, String folderPath, String logEventId) {
+        if (valueMap == null || valueMap.isEmpty()) {
+            return "";
+        }
+
+        String filename = "variables_" + logEventId + ".html";
+        Path filePath = Paths.get(folderPath, filename);
+
+        // Create HTML content for variables
+        StringBuilder htmlBuilder = new StringBuilder();
+
+        try {
+            // Read the header template from the resource file
+            byte[] templateBytes = IOUtils.toByteArray(
+                    Objects.requireNonNull(HTMLGenerator.class.getResourceAsStream(TEMPLATE_PATH)));
+            String headerTemplate = new String(templateBytes, StandardCharsets.UTF_8);
+
+            // Append the template header
+            htmlBuilder.append(headerTemplate);
+
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
+        // Continue with the container div
+        if (!htmlBuilder.toString().contains("<div class='container'>")) {
+            htmlBuilder.append("<div class='container'>\n");
+        }
+
+        // Add each variable to the HTML
+        for (Map.Entry<String, Value> entry : valueMap.entrySet()) {
+            appendVariableToHTML(entry.getKey(), entry.getValue(), htmlBuilder);
+        }
+
+        htmlBuilder.append("</div>\n")
+                .append("</body>\n")
+                .append("</html>");
+
+        // To debug the template loading
+        System.out.println("Generated HTML file: " + filePath);
+
+        // Write the HTML to a file
+        try {
+            Files.write(filePath, htmlBuilder.toString().getBytes(StandardCharsets.UTF_8));
+        } catch (IOException e) {
+            System.err.println("Error writing variables HTML file: " + e.getMessage());
+            return "";
+        }
+
+        // Return the relative path to the file
+        return "variables/" + filename;
+    }
+
+    private static void appendVariableToHTML(String name, Value value, StringBuilder htmlBuilder) {
         name = name != null ? name : NULL;
-        htmlBuilder
-                .append("<div class='card'>")
-                .append("<label>")
-                .append(StringEscapeUtils.escapeHtml4(name))
-                .append("</label>");
+
+        // Only create a variable card if a name is provided (for top-level variables)
+        boolean isTopLevel = name != null && !name.startsWith("Index ");
+
+        if (isTopLevel) {
+            htmlBuilder.append("<div class='variable-card'>\n")
+                    .append("<div class='variable-name'>")
+                    .append(StringEscapeUtils.escapeHtml4(name))
+                    .append("</div>\n");
+        }
 
         if (value == null) {
-            htmlBuilder.append("<label>")
-                    .append(NULL)
-                    .append("</label>");
+            htmlBuilder.append("<div class='variable-type'>NULL</div>\n")
+                    .append("<div class='variable-value'>NULL</div>\n");
         } else {
             String classname = value.getClass().getSimpleName();
             String variableType = classname.toLowerCase()
                     .replace("object", "")
                     .replace("value", "").toUpperCase();
 
-            htmlBuilder.append("<label>")
-                    .append(StringEscapeUtils.escapeHtml4(variableType))
-                    .append("</label>");
+            if (isTopLevel) {
+                htmlBuilder.append("<div class='variable-type'>")
+                        .append(StringEscapeUtils.escapeHtml4(variableType))
+                        .append("</div>\n");
+            }
 
             switch (variableType) {
                 case "LIST":
-                    visitListValue((ListValue) value, htmlBuilder);
+                    appendListValue((ListValue) value, htmlBuilder);
                     break;
                 case "RECORD":
-                    visitRecordValue((RecordValue) value, htmlBuilder);
+                    appendRecordValue((RecordValue) value, htmlBuilder);
                     break;
                 case "TABLE":
-                    visitTableValue((TableValue) value, htmlBuilder);
+                    appendTableValue((TableValue) value, htmlBuilder);
                     break;
                 case "DICTIONARY":
-                    visitDictionaryValue((DictionaryValue) value, htmlBuilder);
+                    appendDictionaryValue((DictionaryValue) value, htmlBuilder);
                     break;
                 default:
-                    visitScalarValue(value, htmlBuilder);
+                    appendScalarValue(value, htmlBuilder);
                     break;
             }
         }
 
-        htmlBuilder.append("</div>");
+        if (isTopLevel) {
+            htmlBuilder.append("</div>\n");
+        }
     }
 
-    private static void visitListValue(ListValue listValue, StringBuilder htmlBuilder) {
+    private static void appendListValue(ListValue listValue, StringBuilder htmlBuilder) {
         List<Value> list = listValue.get();
-        htmlBuilder.append("<details>")
-                .append("<summary> Value [")
+
+        htmlBuilder.append("<details>\n")
+                .append("<summary>List: ")
                 .append(list.size())
-                .append(" items]</summary>");
+                .append(" items</summary>\n");
 
         if (!list.isEmpty()) {
             for (int i = 0; i < list.size(); i++) {
-                generateVariableHTML("At index [" + i + "]", list.get(i), htmlBuilder);
+                Value itemValue = list.get(i);
+                String indexName = "Index " + i;
+
+                htmlBuilder.append("<div class='variable-card'>\n")
+                        .append("<div class='variable-name'>")
+                        .append(indexName)
+                        .append("</div>\n");
+
+                if (itemValue == null) {
+                    htmlBuilder.append("<div class='variable-value'>NULL</div>\n");
+                } else {
+                    String itemType = itemValue.getClass().getSimpleName().toLowerCase()
+                            .replace("object", "")
+                            .replace("value", "").toUpperCase();
+
+                    htmlBuilder.append("<div class='variable-type'>")
+                            .append(StringEscapeUtils.escapeHtml4(itemType))
+                            .append("</div>\n");
+
+                    // Use appendVariableToHTML instead of separate switch cases
+                    appendVariableValueWithoutCard(itemValue, htmlBuilder);
+                }
+
+                htmlBuilder.append("</div>\n");
             }
         }
 
-        htmlBuilder.append("</details>");
+        htmlBuilder.append("</details>\n");
     }
 
-    private static void visitRecordValue(RecordValue recordValue, StringBuilder htmlBuilder) {
-        Record record = recordValue.get();
-        htmlBuilder.append("<details>")
-                .append("<summary> Value [")
-                .append(record.getSchema().size())
-                .append(" Columns]</summary>")
-                .append("<table>")
-                .append("<tr>");
-
-        for (int i = 0; i < record.getSchema().size(); i++) {
-            htmlBuilder.append("<th>")
-                    .append("<span title='Table Header' type='text' disabled value='")
-                    .append(StringEscapeUtils.escapeHtml4(record.getSchema().get(i).getName()))
-                    .append("'></th>");
+    private static void appendVariableValueWithoutCard(Value value, StringBuilder htmlBuilder) {
+        if (value == null) {
+            htmlBuilder.append("<div class='variable-value'>NULL</div>\n");
+            return;
         }
 
-        htmlBuilder.append("</tr>");
+        String variableType = value.getClass().getSimpleName().toLowerCase()
+                .replace("object", "")
+                .replace("value", "").toUpperCase();
 
-        int j = 0;
-        for (Value v : record.getValues()) {
-            htmlBuilder.append("<td>");
-            generateVariableHTML("Col" + (++j), v, htmlBuilder);
-            htmlBuilder.append("</td>");
+        switch (variableType) {
+            case "LIST":
+                appendListValue((ListValue) value, htmlBuilder);
+                break;
+            case "RECORD":
+                appendRecordValue((RecordValue) value, htmlBuilder);
+                break;
+            case "TABLE":
+                appendTableValue((TableValue) value, htmlBuilder);
+                break;
+            case "DICTIONARY":
+                appendDictionaryValue((DictionaryValue) value, htmlBuilder);
+                break;
+            default:
+                appendScalarValue(value, htmlBuilder);
+                break;
         }
-
-        htmlBuilder.append("</tr>")
-                .append("</table>")
-                .append("</details>");
     }
 
-    private static void visitTableValue(TableValue tableValue, StringBuilder htmlBuilder) {
-        Table table = tableValue.get();
-        htmlBuilder.append("<details>")
-                .append("<summary> Value [")
-                .append(table.getRows().size())
-                .append(" Rows x ")
-                .append(table.getSchema().size())
-                .append(" Columns]</summary>")
-                .append("<table>")
-                .append("<tr>");
-
-        for (int i = 0; i < table.getSchema().size(); i++) {
-            htmlBuilder.append("<th>")
-                    .append("<span>")
-                    .append(StringEscapeUtils.escapeHtml4(table.getSchema().get(i).getName()))
-                    .append("</span>")
-                    .append("</th>");
-        }
-
-        htmlBuilder.append("</tr>");
-
-        for (int i = 0; i < table.getRows().size(); i++) {
-            htmlBuilder.append("<tr>");
-            for (int j = 0; j < table.getRows().get(i).getValues().size(); j++) {
-                htmlBuilder.append("<td>");
-                generateVariableHTML("R" + (i + 1) + "C" + (j + 1),
-                        table.getRows().get(i).getValues().get(j),
-                        htmlBuilder);
-
-                htmlBuilder.append("</td>");
-            }
-            htmlBuilder.append("</tr>");
-        }
-
-        htmlBuilder.append("</table>")
-                .append("</details>");
-    }
-
-    private static void visitDictionaryValue(DictionaryValue dictionaryValue, StringBuilder htmlBuilder) {
+    private static void appendDictionaryValue(DictionaryValue dictionaryValue, StringBuilder htmlBuilder) {
         Map<String, Value> dictionaryMap = dictionaryValue.get();
-        htmlBuilder.append("<details>")
-                .append("<summary> Value [").append(dictionaryMap.size()).append(" pairs] </summary>");
+
+        htmlBuilder.append("<details>\n")
+                .append("<summary>Dictionary: ")
+                .append(dictionaryMap.size())
+                .append(" entries</summary>\n");
 
         for (Map.Entry<String, Value> entry : dictionaryMap.entrySet()) {
-            generateVariableHTML("At Key: " + entry.getKey(), entry.getValue(), htmlBuilder);
+            String key = entry.getKey();
+            Value val = entry.getValue();
+
+            htmlBuilder.append("<div class='variable-card'>\n")
+                    .append("<div class='variable-name'>")
+                    .append(StringEscapeUtils.escapeHtml4(key))
+                    .append("</div>\n");
+
+            if (val == null) {
+                htmlBuilder.append("<div class='variable-value'>NULL</div>\n");
+            } else {
+                String valType = val.getClass().getSimpleName().toLowerCase()
+                        .replace("object", "")
+                        .replace("value", "").toUpperCase();
+
+                htmlBuilder.append("<div class='variable-type'>")
+                        .append(StringEscapeUtils.escapeHtml4(valType))
+                        .append("</div>\n");
+
+                // Use appendVariableValueWithoutCard instead of separate switch cases
+                appendVariableValueWithoutCard(val, htmlBuilder);
+            }
+
+            htmlBuilder.append("</div>\n");
         }
 
-        htmlBuilder.append("</details>");
+        htmlBuilder.append("</details>\n");
     }
 
-    private static void visitScalarValue(Value scalarValue, StringBuilder htmlBuilder) {
+    private static void appendRecordValue(RecordValue recordValue, StringBuilder htmlBuilder) {
+        Record record = recordValue.get();
+
+        htmlBuilder.append("<details class='full-width'>\n")
+                .append("<summary>Record: ")
+                .append(record.getSchema().size())
+                .append(" columns</summary>\n")
+                .append("<table>\n")
+                .append("<tr>\n");
+
+        // Add header row
+        for (int i = 0; i < record.getSchema().size(); i++) {
+            htmlBuilder.append("<th>")
+                    .append(StringEscapeUtils.escapeHtml4(record.getSchema().get(i).getName()))
+                    .append("</th>\n");
+        }
+
+        htmlBuilder.append("</tr>\n");
+        htmlBuilder.append("<tr>\n");
+
+        // Add data row with proper nested handling
+        for (Value v : record.getValues()) {
+            htmlBuilder.append("<td>\n");
+
+            if (v == null) {
+                htmlBuilder.append("NULL");
+            } else {
+                // Use appendVariableValueWithoutCard for consistent rendering
+                appendValueInCell(v, htmlBuilder);
+            }
+
+            htmlBuilder.append("</td>\n");
+        }
+
+        htmlBuilder.append("</tr>\n")
+                .append("</table>\n")
+                .append("</details>\n");
+    }
+
+    private static void appendTableValue(TableValue tableValue, StringBuilder htmlBuilder) {
+        Table table = tableValue.get();
+
+        htmlBuilder.append("<details class='full-width'>\n")
+                .append("<summary>Table: ")
+                .append(table.getRows().size())
+                .append(" rows x ")
+                .append(table.getSchema().size())
+                .append(" columns</summary>\n")
+                .append("<table>\n")
+                .append("<tr>\n");
+
+        // Add header row
+        for (int i = 0; i < table.getSchema().size(); i++) {
+            htmlBuilder.append("<th>")
+                    .append(StringEscapeUtils.escapeHtml4(table.getSchema().get(i).getName()))
+                    .append("</th>\n");
+        }
+
+        htmlBuilder.append("</tr>\n");
+
+        // Add data rows with proper nested handling
+        for (int i = 0; i < table.getRows().size(); i++) {
+            htmlBuilder.append("<tr>\n");
+
+            for (int j = 0; j < table.getRows().get(i).getValues().size(); j++) {
+                Value cellValue = table.getRows().get(i).getValues().get(j);
+
+                htmlBuilder.append("<td>\n");
+
+                if (cellValue == null) {
+                    htmlBuilder.append("NULL");
+                } else {
+                    // Use appendVariableValueWithoutCard for consistent rendering
+                    appendValueInCell(cellValue, htmlBuilder);
+                }
+
+                htmlBuilder.append("</td>\n");
+            }
+
+            htmlBuilder.append("</tr>\n");
+        }
+
+        htmlBuilder.append("</table>\n")
+                .append("</details>\n");
+    }
+
+    // Helper method for table and record cells
+    private static void appendValueInCell(Value value, StringBuilder htmlBuilder) {
+        if (value == null) {
+            htmlBuilder.append("NULL");
+            return;
+        }
+
+        if (value instanceof ListValue) {
+            appendListValue((ListValue) value, htmlBuilder);
+        } else if (value instanceof DictionaryValue) {
+            appendDictionaryValue((DictionaryValue) value, htmlBuilder);
+        } else if (value instanceof RecordValue) {
+            appendRecordValue((RecordValue) value, htmlBuilder);
+        } else if (value instanceof TableValue) {
+            appendTableValue((TableValue) value, htmlBuilder);
+        } else {
+            appendScalarValue(value, htmlBuilder);
+        }
+    }
+
+    private static void appendScalarValue(Value scalarValue, StringBuilder htmlBuilder) {
         String objectStringvalue = "";
         if (scalarValue instanceof CredentialObject) {
             objectStringvalue = ((CredentialObject) scalarValue).get().getInsecureString();
@@ -203,9 +372,10 @@ public class HTMLGenerator {
                 || scalarValue instanceof BooleanValue) {
             objectStringvalue = scalarValue.get().toString();
         }
-        htmlBuilder.append("<textarea disabled>")
+
+        htmlBuilder.append("<div class='variable-value'>")
                 .append(StringEscapeUtils.escapeHtml4(objectStringvalue))
-                .append("</textarea>");
+                .append("</div>\n");
     }
 
     public static String getScreenshotHTML(String screenshotPath) {
@@ -213,26 +383,10 @@ public class HTMLGenerator {
             return "";
         }
 
-        // Create a relative path to the screenshot for HTML
+        // Create a relative path to the screenshot
         String relativePath = "screenshots/" + FilenameUtils.getName(screenshotPath);
 
-        String uniqueID = UUID.randomUUID().toString();
-
-        return "<label class='btn' for='" +
-                uniqueID +
-                "'>" +
-                "Show Image" +
-                "</label>" +
-                "<input class='modal-state' id='" +
-                uniqueID +
-                "' type='checkbox' />" +
-                "<div class='modal'>" +
-                "<label class='modal__bg' for='" +
-                uniqueID +
-                "'></label>" +
-                "<div class='modal__inner__img'>" +
-                "<img src='" +
-                relativePath +
-                "'</img>";
+        // Return a link to the screenshot
+        return "<a href='" + relativePath + "' target='_blank' class='img-link'>View Screenshot</a>";
     }
 }

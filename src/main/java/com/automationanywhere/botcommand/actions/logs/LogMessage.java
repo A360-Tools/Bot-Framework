@@ -163,6 +163,11 @@ public class LogMessage {
             message.put(CustomHTMLLayout.Columns.VARIABLES, variableValues);
             message.put(CustomHTMLLayout.Columns.SOURCE, getFormattedBotUri());
 
+            // Add variables folder path if variables are being logged
+            if (variableValues != null && !variableValues.isEmpty()) {
+                message.put(CustomHTMLLayout.Columns.VARIABLES_FOLDER_PATH, session.getVariablesFolderPath(log4jLevel));
+            }
+
             Logger logger = session.getLogger();
             switch (logLevel) {
                 case LEVEL_INFO:
@@ -184,7 +189,9 @@ public class LogMessage {
 
     /**
      * Converts string log level to Log4j Level object
+     *
      * @param logLevel The string representation of log level
+     *
      * @return The corresponding Log4j Level object
      */
     private Level convertToLog4jLevel(String logLevel) {
