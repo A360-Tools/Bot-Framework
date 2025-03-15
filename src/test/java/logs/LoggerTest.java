@@ -104,12 +104,6 @@ public class LoggerTest {
         setupTestData();
     }
 
-    @AfterClass
-    public void tearDown() {
-        // Add any cleanup code if needed
-        System.out.println("Tests completed. Log files available at: " + baseTestPath);
-    }
-
     private void setupTestData() {
         // Create a source map with some variables representing variables sent via common variables
         sourceMap = new HashMap<>();
@@ -174,6 +168,12 @@ public class LoggerTest {
         entryList.add(new DictionaryValue(variable4));
     }
 
+    @AfterClass
+    public void tearDown() {
+        // Add any cleanup code if needed
+        System.out.println("Tests completed. Log files available at: " + baseTestPath);
+    }
+
     @Test
     public void testCommonLoggerForAllLevels() throws Exception {
         // Test case: Common logger for all levels
@@ -202,7 +202,8 @@ public class LoggerTest {
         // Log messages of different levels
         logMessage.action(logger, LEVEL_INFO, "Common logger: INFO message", true, LOG_VARIABLE, entryList, sourceMap);
         logMessage.action(logger, LEVEL_WARN, "Common logger: WARN message", true, LOG_VARIABLE, entryList, sourceMap);
-        logMessage.action(logger, LEVEL_ERROR, "Common logger: ERROR message", true, LOG_VARIABLE, entryList, sourceMap);
+        logMessage.action(logger, LEVEL_ERROR, "Common logger: ERROR message", true, LOG_VARIABLE, entryList,
+                sourceMap);
 
         // Ensure log file is created
         Assert.assertTrue(Files.exists(Paths.get(commonLogPath)), "Log file should be created");
@@ -226,9 +227,12 @@ public class LoggerTest {
         Assert.assertTrue(content.contains("Common logger: ERROR message"), "Log should contain ERROR message");
 
         // Check if relative screenshot paths with appropriate level prefixes are used in HTML
-        Assert.assertTrue(content.contains("screenshots/info_"), "Log should reference INFO screenshots with relative paths");
-        Assert.assertTrue(content.contains("screenshots/warn_"), "Log should reference WARN screenshots with relative paths");
-        Assert.assertTrue(content.contains("screenshots/error_"), "Log should reference ERROR screenshots with relative paths");
+        Assert.assertTrue(content.contains("screenshots/info_"), "Log should reference INFO screenshots with relative" +
+                " paths");
+        Assert.assertTrue(content.contains("screenshots/warn_"), "Log should reference WARN screenshots with relative" +
+                " paths");
+        Assert.assertTrue(content.contains("screenshots/error_"), "Log should reference ERROR screenshots with " +
+                "relative paths");
 
         // Check if variable links are used in HTML instead of embedding content
         Assert.assertTrue(content.contains("variables/variables_"), "Log should contain links to variable HTML files");
@@ -261,15 +265,19 @@ public class LoggerTest {
 
         // Verify screenshots and variables directories are created for each log file location
         String infoScreenshotsDir = Paths.get(baseTestPath, "screenshots").toString();
-        Assert.assertTrue(Files.exists(Paths.get(infoScreenshotsDir)), "Screenshots directory for INFO should be created");
+        Assert.assertTrue(Files.exists(Paths.get(infoScreenshotsDir)), "Screenshots directory for INFO should be " +
+                "created");
 
         String infoVariablesDir = Paths.get(baseTestPath, "variables").toString();
         Assert.assertTrue(Files.exists(Paths.get(infoVariablesDir)), "Variables directory for INFO should be created");
 
         // Log messages of different levels
-        logMessage.action(logger, LEVEL_INFO, "Separate loggers: INFO message", true, LOG_VARIABLE, entryList, sourceMap);
-        logMessage.action(logger, LEVEL_WARN, "Separate loggers: WARN message", true, LOG_VARIABLE, entryList, sourceMap);
-        logMessage.action(logger, LEVEL_ERROR, "Separate loggers: ERROR message", true, LOG_VARIABLE, entryList, sourceMap);
+        logMessage.action(logger, LEVEL_INFO, "Separate loggers: INFO message", true, LOG_VARIABLE, entryList,
+                sourceMap);
+        logMessage.action(logger, LEVEL_WARN, "Separate loggers: WARN message", true, LOG_VARIABLE, entryList,
+                sourceMap);
+        logMessage.action(logger, LEVEL_ERROR, "Separate loggers: ERROR message", true, LOG_VARIABLE, entryList,
+                sourceMap);
 
         // Ensure all log files are created
         Assert.assertTrue(Files.exists(Paths.get(infoLogPath)), "INFO log file should be created");
@@ -281,26 +289,38 @@ public class LoggerTest {
 
         // Verify the INFO log file contains only INFO messages
         String infoContent = new String(Files.readAllBytes(Paths.get(infoLogPath)));
-        Assert.assertTrue(infoContent.contains("Separate loggers: INFO message"), "INFO log should contain INFO message");
-        Assert.assertFalse(infoContent.contains("Separate loggers: WARN message"), "INFO log should not contain WARN message");
-        Assert.assertFalse(infoContent.contains("Separate loggers: ERROR message"), "INFO log should not contain ERROR message");
+        Assert.assertTrue(infoContent.contains("Separate loggers: INFO message"), "INFO log should contain INFO " +
+                "message");
+        Assert.assertFalse(infoContent.contains("Separate loggers: WARN message"), "INFO log should not contain WARN " +
+                "message");
+        Assert.assertFalse(infoContent.contains("Separate loggers: ERROR message"), "INFO log should not contain " +
+                "ERROR message");
 
         // Verify the WARN log file contains only WARN messages
         String warnContent = new String(Files.readAllBytes(Paths.get(warnLogPath)));
-        Assert.assertFalse(warnContent.contains("Separate loggers: INFO message"), "WARN log should not contain INFO message");
-        Assert.assertTrue(warnContent.contains("Separate loggers: WARN message"), "WARN log should contain WARN message");
-        Assert.assertFalse(warnContent.contains("Separate loggers: ERROR message"), "WARN log should not contain ERROR message");
+        Assert.assertFalse(warnContent.contains("Separate loggers: INFO message"), "WARN log should not contain INFO " +
+                "message");
+        Assert.assertTrue(warnContent.contains("Separate loggers: WARN message"), "WARN log should contain WARN " +
+                "message");
+        Assert.assertFalse(warnContent.contains("Separate loggers: ERROR message"), "WARN log should not contain " +
+                "ERROR message");
 
         // Verify the ERROR log file contains only ERROR messages
         String errorContent = new String(Files.readAllBytes(Paths.get(errorLogPath)));
-        Assert.assertFalse(errorContent.contains("Separate loggers: INFO message"), "ERROR log should not contain INFO message");
-        Assert.assertFalse(errorContent.contains("Separate loggers: WARN message"), "ERROR log should not contain WARN message");
-        Assert.assertTrue(errorContent.contains("Separate loggers: ERROR message"), "ERROR log should contain ERROR message");
+        Assert.assertFalse(errorContent.contains("Separate loggers: INFO message"), "ERROR log should not contain " +
+                "INFO message");
+        Assert.assertFalse(errorContent.contains("Separate loggers: WARN message"), "ERROR log should not contain " +
+                "WARN message");
+        Assert.assertTrue(errorContent.contains("Separate loggers: ERROR message"), "ERROR log should contain ERROR " +
+                "message");
 
         // Verify variables links in each file
-        Assert.assertTrue(infoContent.contains("variables/variables_"), "INFO log should contain links to variable files");
-        Assert.assertTrue(warnContent.contains("variables/variables_"), "WARN log should contain links to variable files");
-        Assert.assertTrue(errorContent.contains("variables/variables_"), "ERROR log should contain links to variable files");
+        Assert.assertTrue(infoContent.contains("variables/variables_"), "INFO log should contain links to variable " +
+                "files");
+        Assert.assertTrue(warnContent.contains("variables/variables_"), "WARN log should contain links to variable " +
+                "files");
+        Assert.assertTrue(errorContent.contains("variables/variables_"), "ERROR log should contain links to variable " +
+                "files");
 
         // Stop the logger
         stopLoggerSession.stop(logger);
@@ -342,18 +362,24 @@ public class LoggerTest {
         // Verify content of the first logger's file
         Assert.assertTrue(content1.contains("Logger 1: First message"), "Logger 1 should contain its first message");
         Assert.assertTrue(content1.contains("Logger 1: Second message"), "Logger 1 should contain its second message");
-        Assert.assertFalse(content1.contains("Logger 2: First message"), "Logger 1 should not contain Logger 2's messages");
-        Assert.assertFalse(content1.contains("Logger 2: Second message"), "Logger 1 should not contain Logger 2's messages");
+        Assert.assertFalse(content1.contains("Logger 2: First message"), "Logger 1 should not contain Logger 2's " +
+                "messages");
+        Assert.assertFalse(content1.contains("Logger 2: Second message"), "Logger 1 should not contain Logger 2's " +
+                "messages");
 
         // Verify content of the second logger's file
         Assert.assertTrue(content2.contains("Logger 2: First message"), "Logger 2 should contain its first message");
         Assert.assertTrue(content2.contains("Logger 2: Second message"), "Logger 2 should contain its second message");
-        Assert.assertFalse(content2.contains("Logger 1: First message"), "Logger 2 should not contain Logger 1's messages");
-        Assert.assertFalse(content2.contains("Logger 1: Second message"), "Logger 2 should not contain Logger 1's messages");
+        Assert.assertFalse(content2.contains("Logger 1: First message"), "Logger 2 should not contain Logger 1's " +
+                "messages");
+        Assert.assertFalse(content2.contains("Logger 1: Second message"), "Logger 2 should not contain Logger 1's " +
+                "messages");
 
         // Verify variable links use the correct logger-specific base path
-        Assert.assertTrue(content1.contains("variables/variables_"), "Logger 1 should contain links to its variables directory");
-        Assert.assertTrue(content2.contains("variables/variables_"), "Logger 2 should contain links to its variables directory");
+        Assert.assertTrue(content1.contains("variables/variables_"), "Logger 1 should contain links to its variables " +
+                "directory");
+        Assert.assertTrue(content2.contains("variables/variables_"), "Logger 2 should contain links to its variables " +
+                "directory");
 
         // Stop both loggers
         stopLoggerSession.stop(logger1);
@@ -375,7 +401,8 @@ public class LoggerTest {
         // Log without taking screenshots
         logMessage.action(logger, LEVEL_INFO, "No screenshot: INFO message", false, LOG_VARIABLE, entryList, sourceMap);
         logMessage.action(logger, LEVEL_WARN, "No screenshot: WARN message", false, LOG_VARIABLE, entryList, sourceMap);
-        logMessage.action(logger, LEVEL_ERROR, "No screenshot: ERROR message", false, LOG_VARIABLE, entryList, sourceMap);
+        logMessage.action(logger, LEVEL_ERROR, "No screenshot: ERROR message", false, LOG_VARIABLE, entryList,
+                sourceMap);
 
         // Wait a moment for file writing to complete
         Thread.sleep(500);
@@ -432,9 +459,10 @@ public class LoggerTest {
                 "Log should contain anchor tags for variable files");
 
         // Open and verify a variable file
-        File[] variableFiles = variablesDirectory.listFiles((dir, name) -> name.startsWith("variables_") && name.endsWith(".html"));
+        File[] variableFiles =
+                variablesDirectory.listFiles((dir, name) -> name.startsWith("variables_") && name.endsWith(".html"));
         if (variableFiles != null && variableFiles.length > 0) {
-            String variableFileContent = new String(Files.readAllBytes(variableFiles[0].toPath()));
+            String variableFileContent = new String(Files.readAllBytes(variableFiles[ 0 ].toPath()));
 
             // Check for variable content in the separate file
             // Updated to work with new HTMLGenerator implementation
@@ -474,10 +502,11 @@ public class LoggerTest {
         // Get the size of the variable file
         String variablesDir = Paths.get(baseTestPath, "variables").toString();
         File variablesDirectory = new File(variablesDir);
-        File[] variableFiles = variablesDirectory.listFiles((dir, name) -> name.startsWith("variables_") && name.endsWith(".html"));
+        File[] variableFiles =
+                variablesDirectory.listFiles((dir, name) -> name.startsWith("variables_") && name.endsWith(".html"));
 
         if (variableFiles != null && variableFiles.length > 0) {
-            long variableFileSize = Files.size(variableFiles[0].toPath());
+            long variableFileSize = Files.size(variableFiles[ 0 ].toPath());
 
             // Log the sizes for information
             System.out.println("Log file size: " + logFileSize + " bytes");
@@ -540,7 +569,8 @@ public class LoggerTest {
 
         // Paths should be relative to the log file location
         Assert.assertTrue(logContent.contains("screenshots/"), "Log should reference screenshots with relative paths");
-        Assert.assertTrue(logContent.contains("variables/variables_"), "Log should contain links to variable HTML files");
+        Assert.assertTrue(logContent.contains("variables/variables_"), "Log should contain links to variable HTML " +
+                "files");
 
         // Make sure there are no absolute paths
         Assert.assertFalse(logContent.contains(baseTestPath), "Log should not contain absolute paths");
@@ -575,7 +605,8 @@ public class LoggerTest {
         Thread.sleep(500);
 
         // Verify log file was created
-        Assert.assertTrue(Files.exists(Paths.get(differentDriveLogFile)), "Log file should be created in different drive folder");
+        Assert.assertTrue(Files.exists(Paths.get(differentDriveLogFile)), "Log file should be created in different " +
+                "drive folder");
 
         // Check that screenshots and variables folders were created in the correct relative location
         Path screenshotsPath = Paths.get(differentDrivePath, "screenshots");
@@ -596,7 +627,8 @@ public class LoggerTest {
 
         // Paths should be relative to the log file location
         Assert.assertTrue(logContent.contains("screenshots/"), "Log should reference screenshots with relative paths");
-        Assert.assertTrue(logContent.contains("variables/variables_"), "Log should contain links to variable HTML files");
+        Assert.assertTrue(logContent.contains("variables/variables_"), "Log should contain links to variable HTML " +
+                "files");
 
         // Make sure there are no absolute paths
         Assert.assertFalse(logContent.contains(baseTestPath), "Log should not contain absolute paths");
@@ -651,7 +683,8 @@ public class LoggerTest {
 
         // Paths should be relative to the log file location
         Assert.assertTrue(logContent.contains("screenshots/"), "Log should reference screenshots with relative paths");
-        Assert.assertTrue(logContent.contains("variables/variables_"), "Log should contain links to variable HTML files");
+        Assert.assertTrue(logContent.contains("variables/variables_"), "Log should contain links to variable HTML " +
+                "files");
 
         // Make sure there are no absolute paths in the HTML links
         Assert.assertFalse(logContent.contains(baseTestPath), "Log should not contain absolute paths");
@@ -692,7 +725,8 @@ public class LoggerTest {
         String originalScreenshotsDir = Paths.get(baseTestPath, "screenshots").toString();
         String originalVariablesDir = Paths.get(baseTestPath, "variables").toString();
 
-        Assert.assertTrue(Files.exists(Paths.get(originalScreenshotsDir)), "Original screenshots directory should exist");
+        Assert.assertTrue(Files.exists(Paths.get(originalScreenshotsDir)), "Original screenshots directory should " +
+                "exist");
         Assert.assertTrue(Files.exists(Paths.get(originalVariablesDir)), "Original variables directory should exist");
 
         // Stop the logger
@@ -724,11 +758,15 @@ public class LoggerTest {
         String movedLogContent = new String(Files.readAllBytes(Paths.get(newLocationPath)));
 
         // Verify that the log file at the new location can still resolve the relative paths
-        Assert.assertTrue(movedLogContent.contains("screenshots/"), "Moved log should reference screenshots with relative paths");
-        Assert.assertTrue(movedLogContent.contains("variables/variables_"), "Moved log should contain links to variable HTML files");
+        Assert.assertTrue(movedLogContent.contains("screenshots/"), "Moved log should reference screenshots with " +
+                "relative paths");
+        Assert.assertTrue(movedLogContent.contains("variables/variables_"), "Moved log should contain links to " +
+                "variable HTML files");
 
         // Since relative paths are used, the links should still work in the new location
-        Assert.assertTrue(Files.exists(Paths.get(baseTestPath + "moved/screenshots")), "Screenshots should exist in new location");
-        Assert.assertTrue(Files.exists(Paths.get(baseTestPath + "moved/variables")), "Variables should exist in new location");
+        Assert.assertTrue(Files.exists(Paths.get(baseTestPath + "moved/screenshots")), "Screenshots should exist in " +
+                "new location");
+        Assert.assertTrue(Files.exists(Paths.get(baseTestPath + "moved/variables")), "Variables should exist in new " +
+                "location");
     }
 }

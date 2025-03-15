@@ -6,120 +6,161 @@
     <title>Variables Data</title>
     <style>
         :root {
-        --primary: #4285f4;
-        --primary-light: #8ab4f8;
-        --secondary: #34a853;
-        --secondary-light: #82d893;
-        --danger: #ea4335;
-        --warning: #fbbc05;
-        --surface: #ffffff;
-        --background: #f8f9fa;
-        --text-primary: #202124;
-        --text-secondary: #5f6368;
-        --border: #dadce0;
+            --primary: #4285f4;
+            --primary-light: #8ab4f8;
+            --secondary: #34a853;
+            --secondary-light: #82d893;
+            --danger: #ea4335;
+            --warning: #fbbc05;
+            --surface: #ffffff;
+            --background: #f8f9fa;
+            --text-primary: #202124;
+            --text-secondary: #5f6368;
+            --border: #dadce0;
         }
 
         * {
-        box-sizing: border-box;
-        margin: 0;
-        padding: 0;
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
         }
 
         body {
-        font-family: 'Segoe UI', Roboto, Oxygen, Ubuntu, 'Helvetica Neue', sans-serif;
-        background-color: var(--background);
-        color: var(--text-primary);
-        line-height: 1.5;
-        padding: 20px;
+            font-family: 'Segoe UI', Roboto, Oxygen, Ubuntu, 'Helvetica Neue', sans-serif;
+            background-color: var(--background);
+            color: var(--text-primary);
+            line-height: 1.5;
+            padding: 20px;
+            margin: 0;
+            min-width: 100%;
+            width: fit-content; /* Allow body to expand based on content */
         }
 
         header {
-        background: linear-gradient(135deg, var(--primary), var(--secondary));
-        color: white;
-        padding: 1rem;
-        text-align: center;
-        margin-bottom: 20px;
-        border-radius: 8px;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            padding: 1rem;
+            text-align: center;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            width: 100%;
         }
 
         .container {
-        display: flex;
-        flex-direction: column;
-        gap: 20px;
-        max-width: 800px;
-        margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            width: 100%;
+            /* Remove max-width constraint to allow full expansion */
+            margin: 0 auto;
+            min-width: fit-content;
         }
 
         .variable-card {
-        background-color: var(--surface);
-        border-radius: 8px;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
-        padding: 16px;
-        display: flex;
-        flex-direction: column;
-        margin-bottom: 16px;
+            background-color: var(--surface);
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            margin-bottom: 16px;
+            width: 100%;
+            min-width: fit-content; /* Allow card to expand with content */
         }
 
         .variable-name {
-        font-weight: 600;
-        margin-bottom: 8px;
-        color: var(--primary);
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: var(--primary);
         }
 
         .variable-type {
-        font-size: 0.9em;
-        color: var(--text-secondary);
-        margin-bottom: 8px;
+            font-size: 0.9em;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
         }
 
         .variable-value {
-        background-color: var(--background);
-        border-radius: 4px;
-        padding: 8px;
-        font-family: monospace;
-        white-space: pre-wrap;
-        word-break: break-word;
-        margin-top: auto;
+            background-color: var(--background);
+            border-radius: 4px;
+            padding: 8px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            word-break: break-word;
+            margin-top: auto;
         }
 
         details {
-        margin-top: 8px;
+            margin-top: 8px;
+            width: 100%;
+            min-width: fit-content; /* Allow details to expand with content */
         }
 
         summary {
-        cursor: pointer;
-        padding: 8px;
-        background-color: var(--primary-light);
-        color: var(--text-primary);
-        border-radius: 4px;
-        margin-bottom: 8px;
+            cursor: pointer;
+            padding: 8px;
+            background-color: var(--primary-light);
+            color: var(--text-primary);
+            border-radius: 4px;
+            margin-bottom: 8px;
+        }
+
+        /* Remove the table wrapper with overflow-x - let content expand naturally */
+        .table-container {
+            width: 100%;
+            min-width: fit-content;
+            margin-bottom: 16px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
+            border-radius: 4px;
         }
 
         table {
-        border-collapse: collapse;
-        width: 100%;
-        margin-top: 8px;
+            border-collapse: collapse;
+            width: 100%;
+            margin-top: 8px;
+            background-color: var(--surface);
+            table-layout: auto; /* Let columns size based on content */
         }
 
         th, td {
-        border: 1px solid var(--border);
-        padding: 8px;
-        text-align: left;
+            border: 1px solid var(--border);
+            padding: 8px;
+            text-align: left;
+            min-width: 120px; /* Minimum width for each column */
         }
 
         th {
-        background-color: var(--primary-light);
+            background-color: var(--primary-light);
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        td {
+            vertical-align: top;
+            word-break: break-word; /* Allow text to wrap inside cells */
+        }
+
+        tr:hover {
+            background-color: rgba(0,0,0,0.05);
         }
 
         .full-width {
-        width: 100%;
+            width: 100%;
+            min-width: fit-content;
         }
 
-        /* Nested variable cards styling */
         .variable-card .variable-card {
-        margin-left: 20px;
-        border-left: 3px solid var(--primary-light);
+            border-left: 3px solid var(--primary-light);
+        }
+
+        /* Ensure header spans the whole content width even when scrolling */
+        @media (min-width: 1200px) {
+            header {
+                width: 100%;
+                min-width: fit-content;
+            }
         }
     </style>
 </head>

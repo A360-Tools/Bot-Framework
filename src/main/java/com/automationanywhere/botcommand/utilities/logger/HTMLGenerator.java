@@ -263,6 +263,7 @@ public class HTMLGenerator {
                 .append("<summary>Record: ")
                 .append(record.getSchema().size())
                 .append(" columns</summary>\n")
+                .append("<div class='table-container'>\n")
                 .append("<table>\n")
                 .append("<tr>\n");
 
@@ -292,6 +293,7 @@ public class HTMLGenerator {
 
         htmlBuilder.append("</tr>\n")
                 .append("</table>\n")
+                .append("</div>\n")
                 .append("</details>\n");
     }
 
@@ -304,6 +306,7 @@ public class HTMLGenerator {
                 .append(" rows x ")
                 .append(table.getSchema().size())
                 .append(" columns</summary>\n")
+                .append("<div class='table-container'>\n")
                 .append("<table>\n")
                 .append("<tr>\n");
 
@@ -339,6 +342,7 @@ public class HTMLGenerator {
         }
 
         htmlBuilder.append("</table>\n")
+                .append("</div>\n")
                 .append("</details>\n");
     }
 
