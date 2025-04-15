@@ -3,6 +3,8 @@
 ## Overview
 
 `Start Logger Session` initializes a new logging session, enabling the creation of log files. You can choose to log all levels (INFO, WARN, ERROR) to a single HTML file or configure separate HTML files for each level. The command supports log file rollover based on size.
+![image](https://github.com/user-attachments/assets/cb497a74-d255-4e5a-9b8b-4e8e2933aa00)
+![image](https://github.com/user-attachments/assets/0c8da229-737e-459d-95e5-fcd3b30a343d)
 
 ## Parameters
 
