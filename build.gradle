@@ -25,7 +25,7 @@ configure(allprojects){
 		testNgVersion = '7.7.0'
 		loggerVersion = '2.24.3'
 		jnaVersion = '5.3.1'
-		version '3.2.1'
+		version '3.2.3'
 	}
 	group "$groupName"
 
@@ -61,7 +61,6 @@ configure(allprojects){
 		exclude 'META-INF/*.DSA'
 		exclude 'META-INF/*.RSA'
 		relocate 'org.apache.commons.io', 'botframework.shaded.commons.io'
-		relocate 'org.apache.logging.log4j', 'botframework.shaded.log4j'
 	}
 
 	dependencies {

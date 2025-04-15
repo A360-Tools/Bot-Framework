@@ -25,8 +25,8 @@ import static com.automationanywhere.commandsdk.model.AttributeType.CREDENTIAL;
  */
 @BotCommand
 @CommandPkg(label = "Read Excel",
-        node_label = "file: {{inputFilePath}}, sheet {{selectSheetBy == 'name' ? sheetName : 'index ' + sheetIndex}} with {{parsingMethod}} and save to" +
-                "{{returnTo}}",
+        node_label = "file: {{inputFilePath}}, sheet by {{selectSheetBy}} | {{sheetIndex}} || {{sheetName}} |with " +
+                "{{parsingMethod}} and save to {{returnTo}}",
         description = "Read values from Excel file and save to dictionary",
         icon = "excel.svg", name = "config_read_excel",
         group_label = "Config",
