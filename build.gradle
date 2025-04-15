@@ -22,10 +22,10 @@ configure(allprojects){
 
 	ext {
 		groupName = 'com.automationanywhere'
-		testNgVersion = '6.14.3'
-		loggerVersion = '2.20.0'
+		testNgVersion = '7.7.0'
+		loggerVersion = '2.24.3'
 		jnaVersion = '5.3.1'
-		version '3.1.6'
+		version '3.2.0'
 	}
 	group "$groupName"
 
@@ -60,29 +60,33 @@ configure(allprojects){
 		exclude 'META-INF/*.SF'
 		exclude 'META-INF/*.DSA'
 		exclude 'META-INF/*.RSA'
+		relocate 'org.apache.commons.io', 'botframework.shaded.commons.io'
+		relocate 'org.apache.logging.log4j', 'botframework.shaded.log4j'
 	}
 
 	dependencies {
 		annotationProcessor name: 'package-compileonly-sdk', version: '1.5.0'
-
 		compileOnly name: 'package-compileonly-sdk', version: '1.5.0'
-		compileOnly group: "org.apache.logging.log4j", name: "log4j-api", version: "$loggerVersion"
 
 		implementation name: 'package-runtime-sdk', version: '1.0.0'
-
 		testImplementation name: 'package-compileonly-sdk', version: '1.0.0'
 		testImplementation group: "org.testng", name:"testng", version: "$testNgVersion"
 
-
+		// https://mvnrepository.com/artifact/org.json/json
 		implementation 'org.json:json:20250107'
+
+		// https://mvnrepository.com/artifact/org.apache.logging.log4j/log4j-api
+		implementation group: "org.apache.logging.log4j", name: "log4j-api", version: "$loggerVersion"
 		// https://mvnrepository.com/artifact/org.apache.logging.log4j/log4j-core
-		implementation 'org.apache.logging.log4j:log4j-core:2.21.1'
+		implementation group: "org.apache.logging.log4j", name: "log4j-core", version: "$loggerVersion"
+
+		// https://mvnrepository.com/artifact/commons-io/commons-io
+		implementation 'commons-io:commons-io:2.19.0'
 		// https://mvnrepository.com/artifact/org.apache.poi/poi-ooxml
-		implementation 'org.apache.poi:poi-ooxml:5.2.2'
+		implementation 'org.apache.poi:poi-ooxml:5.4.1'
+
 		// https://mvnrepository.com/artifact/org.apache.commons/commons-csv
-		implementation 'org.apache.commons:commons-csv:1.13.0'
-
-
+		implementation 'org.apache.commons:commons-csv:1.14.0'
 	}
 
 }
