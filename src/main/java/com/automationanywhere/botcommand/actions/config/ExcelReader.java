@@ -25,7 +25,7 @@ import static com.automationanywhere.commandsdk.model.AttributeType.CREDENTIAL;
  */
 @BotCommand
 @CommandPkg(label = "Read Excel",
-        node_label = "file: {{inputFilePath}}, sheet {{sheetName}} with {{parsingMethod}} and save to" +
+        node_label = "file: {{inputFilePath}}, sheet {{selectSheetBy == 'name' ? sheetName : 'index ' + sheetIndex}} with {{parsingMethod}} and save to" +
                 "{{returnTo}}",
         description = "Read values from Excel file and save to dictionary",
         icon = "excel.svg", name = "config_read_excel",
@@ -47,10 +47,27 @@ public class ExcelReader {
             @FileExtension("xlsx,xls")
             String inputFilePath,
 
-            @Idx(index = "2", type = AttributeType.TEXT)
-            @Pkg(label = "Enter sheet name to read")
+            @Idx(index = "2", type = AttributeType.SELECT, options = {
+                    @Idx.Option(index = "2.1", pkg = @Pkg(label = "Name", value = "name")),
+                    @Idx.Option(index = "2.2", pkg = @Pkg(label = "Index", value = "index"))
+            })
+            @Pkg(label = "Select sheet by", description = "Select sheet by name or index",
+                    default_value = "name", default_value_type = DataType.STRING)
+            @NotEmpty
+            @SelectModes
+            String selectSheetBy,
+
+            @Idx(index = "2.1.1", type = AttributeType.TEXT)
+            @Pkg(label = "Sheet name")
             @NotEmpty
             String sheetName,
+
+            @Idx(index = "2.2.1", type = AttributeType.NUMBER)
+            @Pkg(label = "Sheet index", description = "Index of the sheet (0-based)")
+            @NotEmpty
+            @NumberInteger
+            @GreaterThanEqualTo("0")
+            Double sheetIndex,
 
             @Idx(index = "3", type = AttributeType.CHECKBOX)
             @Pkg(label = "File is password protected", description = "Select to supply password")
@@ -137,10 +154,21 @@ public class ExcelReader {
                 workbook = WorkbookFactory.create(inputStream);
             }
 
-            // Get sheet by name
-            Sheet sheet = workbook.getSheet(sheetName);
-            if (sheet == null) {
-                throw new BotCommandException("Sheet with name '" + sheetName + "' not found");
+            // Get sheet based on selection method
+            Sheet sheet;
+            if ("name".equalsIgnoreCase(selectSheetBy)) {
+                sheet = workbook.getSheet(sheetName);
+                if (sheet == null) {
+                    throw new BotCommandException("Sheet with name '" + sheetName + "' not found");
+                }
+            } else { // index
+                int sheetIdx = sheetIndex.intValue();
+                int sheetCount = workbook.getNumberOfSheets();
+                if (sheetIdx < 0 || sheetIdx >= sheetCount) {
+                    throw new BotCommandException("Invalid sheet index: " + sheetIdx +
+                            ". Valid range is 0 to " + (sheetCount - 1));
+                }
+                sheet = workbook.getSheetAt(sheetIdx);
             }
 
             // Initialize data formatter for cell value extraction
@@ -153,7 +181,8 @@ public class ExcelReader {
             if (hasHeader) {
                 Row headerRow = sheet.getRow(0);
                 if (headerRow == null) {
-                    throw new BotCommandException("Header row not found in sheet '" + sheetName + "'");
+                    throw new BotCommandException("Header row not found in sheet '" +
+                            (selectSheetBy.equals("name") ? sheetName : "at index " + sheetIndex.intValue()) + "'");
                 }
                 keyIdx = findColumnIndex(headerRow, keyColumnName);
                 valueIdx = findColumnIndex(headerRow, valueColumnName);
