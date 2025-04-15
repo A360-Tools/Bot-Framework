@@ -23,7 +23,6 @@ import java.util.Map;
         documentation_url = "https://github.com/A360-Tools/Bot-Framework/blob/main/docs/documentation/CautionSequence" +
                 ".md",
         text_color = "#ffa500",
-//        allowed_agent_targets = AllowedTarget.HEADLESS,
         nestable = true
 )
 public class CautionSequence {

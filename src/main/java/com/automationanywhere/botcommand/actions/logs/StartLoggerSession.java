@@ -25,16 +25,12 @@ import static com.automationanywhere.commandsdk.model.AttributeType.FILE;
 @CommandPkg(label = "Start Logger Session",
         name = "logs_start_session",
         description = "Create new logger session",
-        comment = true,
         group_label = "Logs",
-        text_color = "#2F4F4F",
-        background_color = "#2F4F4F",
         icon = "log_session.svg", node_label = "{{returnTo}}",
         return_settings = {ReturnSettingsType.SESSION_TARGET},
         return_type = DataType.SESSION,
         return_name = "Logger",
         documentation_url = "https://github.com/A360-Tools/Bot-Framework/blob/main/docs/logs/StartLoggerSession.md",
-//        allowed_agent_targets = AllowedTarget.HEADLESS,
         return_required = true)
 public class StartLoggerSession {
     private static final String COMMON_FILE_ALL_LEVEL = "COMMON_FILE";

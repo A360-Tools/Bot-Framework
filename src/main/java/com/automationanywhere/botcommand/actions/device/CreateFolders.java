@@ -29,8 +29,6 @@ import java.util.Map;
         description = "Creates directories by path, including any necessary but nonexistent parent directories.",
         icon = "create_folders.svg", name = "device_create_folders",
         group_label = "Device",
-        text_color = "#0088ff",
-        //        allowed_agent_targets = AllowedTarget.HEADLESS,
         documentation_url = "https://github.com/A360-Tools/Bot-Framework/blob/main/docs/device/CreateFolders.md"
 
 )

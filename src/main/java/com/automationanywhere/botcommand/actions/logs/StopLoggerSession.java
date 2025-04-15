@@ -16,9 +16,7 @@ import com.automationanywhere.commandsdk.model.DataType;
         name = "logs_stop_session",
         group_label = "Logs",
         description = "Stops a logger session",
-        text_color = "#2F4F4F",
         icon = "log_session.svg",
-//        allowed_agent_targets = AllowedTarget.HEADLESS,
         node_label = "{{session}}",
         documentation_url = "https://github.com/A360-Tools/Bot-Framework/blob/main/docs/logs/StopLoggerSession.md"
 )

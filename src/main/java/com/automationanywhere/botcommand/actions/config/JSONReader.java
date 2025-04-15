@@ -35,11 +35,9 @@ import java.util.Map;
         description = "Read values from JSON file and save to dictionary",
         icon = "json.svg", name = "config_read_json",
         group_label = "Config",
-        text_color = "#fbc02d",
         return_label = "Output: config dictionary", return_type = DataType.DICTIONARY, return_sub_type =
         DataType.STRING, return_name = "Config", return_Direct = true,
         documentation_url = "https://github.com/A360-Tools/Bot-Framework/blob/main/docs/config/JSONReader.md",
-//        allowed_agent_targets = AllowedTarget.HEADLESS,
         return_required = true
 )
 public class JSONReader {

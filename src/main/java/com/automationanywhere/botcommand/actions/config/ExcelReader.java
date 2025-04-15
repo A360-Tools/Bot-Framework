@@ -30,11 +30,9 @@ import static com.automationanywhere.commandsdk.model.AttributeType.CREDENTIAL;
         description = "Read values from Excel file and save to dictionary",
         icon = "excel.svg", name = "config_read_excel",
         group_label = "Config",
-        text_color = "#1f9c61",
         return_label = "Output: config dictionary", return_type = DataType.DICTIONARY, return_sub_type =
         DataType.STRING, return_name = "Config", return_Direct = true,
         documentation_url = "https://github.com/A360-Tools/Bot-Framework/blob/main/docs/config/ExcelReader.md",
-//        allowed_agent_targets = AllowedTarget.HEADLESS,
         return_required = true
 )
 public class ExcelReader {

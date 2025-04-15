@@ -2,63 +2,66 @@
 
 ## Overview
 
-`Start Logger Session` initializes a new logging session, enabling the creation of log files with optional separate
-configurations for different log levels.
-
-![image](https://github.com/A360-Tools/Bot-Framework/assets/82057278/1ff80209-110d-448d-a9c3-245b90f0dea6)
+`Start Logger Session` initializes a new logging session, enabling the creation of log files. You can choose to log all levels (INFO, WARN, ERROR) to a single HTML file or configure separate HTML files for each level. The command supports log file rollover based on size.
 
 ## Parameters
 
-### Append Option for Different Levels of Log
+### Append option for different levels of log
 
-- **Options:** "Same File", "Custom Configuration"
-- **Description:** Determines whether all log levels are appended to the same file or if separate files are used for
-  different log levels.
+* **Type:** `Select`
+* **Options:**
+  * `Same File`: Log INFO, WARN, and ERROR messages to a single file specified in "Log file path".
+  * `Custom Configuration`: Log INFO, WARN, and ERROR messages to separate files specified below.
+* **Default:** `Same File`
+* **Description:** Determines whether all log levels are appended to the same file or if separate files are used for different log levels.
 
-### Log File Path
+### Log file path
 
-- **Condition:** Required if "Same File" is selected.
-- **Type:** `String`
-- **Description:** The path to the log file where logs will be stored.
+* **Condition:** Required if "Append option for different levels of log" is set to `Same File`.
+* **Type:** `File`
+* **Description:** The path to the log file where all logs (INFO, WARN, ERROR) will be stored.
+* **Constraints:** Must be a local file path ending with the `.html` extension. Cannot be empty.
 
-### INFO Logs File Path
+### INFO logs file path
 
-- **Condition:** Required if "Custom Configuration" is selected for INFO level logs.
-- **Type:** `String`
-- **Description:** The path to the file where INFO level logs will be stored.
+* **Condition:** Required if "Append option for different levels of log" is set to `Custom Configuration`.
+* **Type:** `File`
+* **Description:** The path to the file where INFO level logs will be stored.
+* **Constraints:** Must be a local file path ending with the `.html` extension. Cannot be empty.
 
-### WARN Logs File Path
+### WARN logs file path
 
-- **Condition:** Required if "Custom Configuration" is selected for WARN level logs.
-- **Type:** `String`
-- **Description:** The path to the file where WARN level logs will be stored.
+* **Condition:** Required if "Append option for different levels of log" is set to `Custom Configuration`.
+* **Type:** `File`
+* **Description:** The path to the file where WARN level logs will be stored.
+* **Constraints:** Must be a local file path ending with the `.html` extension. Cannot be empty.
 
-### ERROR Logs File Path
+### ERROR logs file path
 
-- **Condition:** Required if "Custom Configuration" is selected for ERROR level logs.
-- **Type:** `String`
-- **Description:** The path to the file where ERROR level logs will be stored.
+* **Condition:** Required if "Append option for different levels of log" is set to `Custom Configuration`.
+* **Type:** `File`
+* **Description:** The path to the file where ERROR level logs will be stored.
+* **Constraints:** Must be a local file path ending with the `.html` extension. Cannot be empty.
 
-### Screenshot Folder Path
+### Rollover file size in MB
 
-- **Type:** `String`
-- **Description:** The directory path where screenshots associated with log messages will be saved.
-
-### Rollover File Size in MB
-
-- **Type:** `Number`
-- **Description:** The maximum size in megabytes before the log file is rolled over to a new file.
+* **Type:** `Number`
+* **Default:** `10`
+* **Description:** The maximum size in megabytes (MB) before the log file is rolled over (archived and a new one started).
+* **Constraints:** Must be a number greater than 0.
 
 ## Output
 
-- **Type:** `SessionValue`
-- **Description:** Returns a session object representing the initialized logger session.
+* **Type:** `Session`
+* **Assignment Variable:** `Logger` (Session)
+* **Description:** Returns a session object representing the initialized logger session. This session variable must be used in subsequent logging commands (e.g., `Write Log`, `End Logger Session`).
 
 ## Exceptions
 
 Throws `BotCommandException` if:
 
-- Invalid file paths are provided.
-- The screenshot folder path is invalid or empty.
-- An unsupported log level and file option is specified.
-- Any other error occurs during logger session initialization.
+* An invalid option is provided for "Append option for different levels of log".
+* Required file paths are empty based on the selected "Append option".
+* Provided file paths do not end with the `.html` extension.
+* "Rollover file size in MB" is not greater than 0.
+* Any other error occurs during logger session initialization (e.g., file access issues). The specific error message will be included.

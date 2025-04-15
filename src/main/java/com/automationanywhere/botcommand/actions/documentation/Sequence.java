@@ -23,7 +23,6 @@ import java.util.Map;
         text_color = "#4285f4",
         documentation_url = "https://github.com/A360-Tools/Bot-Framework/blob/main/docs/documentation/Sequence.md",
         background_color = "#4285f4",
-//        allowed_agent_targets = AllowedTarget.HEADLESS,
         nestable = true
 )
 public class Sequence {

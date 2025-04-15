@@ -40,8 +40,8 @@ import java.util.UUID;
         name = "log_message",
         group_label = "Logs",
         documentation_url = "https://github.com/A360-Tools/Bot-Framework/blob/main/docs/logs/LogMessage.md",
-//        allowed_agent_targets = AllowedTarget.HEADLESS,
-        text_color = "#4285f4"
+        text_color = "#4285f4",
+        comment = true
 
 )
 public class LogMessage {

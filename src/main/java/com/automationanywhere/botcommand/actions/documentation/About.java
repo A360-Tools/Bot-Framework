@@ -24,8 +24,6 @@ import java.util.Map;
         group_label = "Documentation",
         documentation_url = "https://github.com/A360-Tools/Bot-Framework/blob/main/docs/documentation/About.md",
         text_color = "#2196f3",
-
-//        allowed_agent_targets = AllowedTarget.HEADLESS,
         comment = true
 
 )

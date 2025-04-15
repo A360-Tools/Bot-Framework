@@ -34,10 +34,8 @@ import java.util.Map;
         description = "Read values from XML file and save to dictionary",
         icon = "xml.svg", name = "config_read_xml",
         group_label = "Config",
-        text_color = "#f1662a",
         return_label = "Output: config dictionary", return_type = DataType.DICTIONARY, return_sub_type =
         DataType.STRING, return_name = "Config", return_Direct = true,
-//        allowed_agent_targets = AllowedTarget.HEADLESS,
         documentation_url = "https://github.com/A360-Tools/Bot-Framework/blob/main/docs/config/XMLReader.md",
         return_required = true
 )

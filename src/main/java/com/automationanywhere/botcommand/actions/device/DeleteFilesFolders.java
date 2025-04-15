@@ -24,10 +24,7 @@ import java.util.regex.Pattern;
         icon = "delete_folders.svg",
         name = "device_delete_files_folders",
         group_label = "Device",
-//        allowed_agent_targets = AllowedTarget.HEADLESS,
-        documentation_url = "https://github.com/A360-Tools/Bot-Framework/blob/main/docs/device/DeleteFilesFolders.md",
-        text_color = "#e04f5f"
-
+        documentation_url = "https://github.com/A360-Tools/Bot-Framework/blob/main/docs/device/DeleteFilesFolders.md"
 )
 public class DeleteFilesFolders {
     private static final String THRESHOLD_UNIT_DAY = "DAY";
