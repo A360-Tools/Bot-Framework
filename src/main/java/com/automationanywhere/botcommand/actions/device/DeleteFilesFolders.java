@@ -259,14 +259,15 @@ public class DeleteFilesFolders {
                 return FileVisitResult.SKIP_SUBTREE; // Don't process contents of skipped directories
             }
 
-            // Check if this directory meets the age criteria for deletion
+            // Check if directory meets age criteria for deletion regardless of recursive setting
+            // The actual deletion will be controlled by selectMethod parameter
             if (meetsDeletionCriteria(attrs)) {
                 LOGGER.info("Marking directory for potential deletion: " + dir);
                 directoriesToDelete.add(dir);
             }
 
-            // If not recursive, skip subdirectories (unless it's the base path)
-            if (!recursive && !dir.equals(basePath)) {
+            // If not recursive, skip traversing into subdirectories after processing current directory
+            if (!recursive) {
                 return FileVisitResult.SKIP_SUBTREE;
             }
 
