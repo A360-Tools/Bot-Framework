@@ -211,7 +211,7 @@ public class DeleteFilesFolders {
     /**
      * Helper class that collects files and directories during file tree traversal.
      */
-    private class FileCollector extends SimpleFileVisitor<Path> {
+    private static class FileCollector extends SimpleFileVisitor<Path> {
         private final Path basePath;
         private final boolean recursive;
         private final String thresholdCriteria;
@@ -339,7 +339,7 @@ public class DeleteFilesFolders {
      * Helper class that processes file and directory lists to resolve conflicts
      * and prepare for deletion.
      */
-    private class DeletionProcessor {
+    private static class DeletionProcessor {
         private final Path basePath;
         private final Set<Path> filesToDelete;
         private final Set<Path> directoriesToDelete;
