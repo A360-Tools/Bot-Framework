@@ -68,8 +68,10 @@ configure(allprojects){
 		compileOnly name: 'package-compileonly-sdk', version: '1.5.0'
 
 		implementation name: 'package-runtime-sdk', version: '1.0.0'
-		testImplementation name: 'package-compileonly-sdk', version: '1.0.0'
+		testImplementation name: 'package-compileonly-sdk', version: '1.5.0'
 		testImplementation group: "org.testng", name:"testng", version: "$testNgVersion"
+
+		testImplementation 'com.google.protobuf:protobuf-java:4.30.2' //table,record type use this internally
 
 		// https://mvnrepository.com/artifact/org.json/json
 		implementation 'org.json:json:20250107'
