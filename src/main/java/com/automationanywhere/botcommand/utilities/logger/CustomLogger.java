@@ -35,7 +35,7 @@ public class CustomLogger implements CloseableSessionObject {
     private final Map<Level, String> variablesFolderPaths;
 
     // Constructor for a single log file for all levels
-    public CustomLogger(String loggerName, String logFilePath, long sizeLimitMB) throws IOException {
+    public CustomLogger(String loggerName, String logFilePath, int maxLogEntries) throws IOException {
         this.loggerId = UUID.randomUUID().toString();
 
         // Create screenshot folder at the same location as log file
@@ -67,7 +67,7 @@ public class CustomLogger implements CloseableSessionObject {
 
         AppenderComponentBuilder appenderBuilder = getCustomAppenderBuilder(builder, "COMBINED_" + loggerId,
                 logFilePath,
-                sizeLimitMB);
+                maxLogEntries);
         builder.add(appenderBuilder);
         builder.add(builder.newLogger(loggerName, Level.INFO)
                 .add(builder.newAppenderRef("COMBINED_" + loggerId)));
@@ -114,13 +114,18 @@ public class CustomLogger implements CloseableSessionObject {
 
     private AppenderComponentBuilder getCustomAppenderBuilder(ConfigurationBuilder<BuiltConfiguration> builder,
                                                               String appenderName,
-                                                              String filePath, long sizeLimitMB) {
+                                                              String filePath, int maxLogEntries) {
         LayoutComponentBuilder layoutBuilder = builder.newLayout("CustomHTMLLayout")
                 .addAttribute("charset", "UTF-8");
 
-        String filePattern =
-                FilenameUtils.getFullPath(filePath) + FilenameUtils.getBaseName(filePath) + "_%i." +
-                        FilenameUtils.getExtension(filePath);
+        // Simple sequential numbering: 1_log.html, 2_log.html, etc.
+        // Active file remains as log.html
+        String baseName = FilenameUtils.getBaseName(filePath);
+        String baseDir = FilenameUtils.getFullPath(filePath);
+        String ext = FilenameUtils.getExtension(filePath);
+
+        // Pattern: %i_basename.extension (e.g., 1_log.html, 2_log.html)
+        String filePattern = baseDir + "%i_" + baseName + "." + ext;
 
         return builder.newAppender(appenderName, "RollingFile")
                 .addAttribute("fileName", filePath)
@@ -129,13 +134,13 @@ public class CustomLogger implements CloseableSessionObject {
                 .addAttribute("append", true)
                 .addComponent(layoutBuilder)
                 .addComponent(builder.newComponent("Policies")
-                        .addComponent(builder.newComponent("SizeBasedTriggeringPolicy").addAttribute("size",
-                                sizeLimitMB + "MB")))
-                .addComponent(builder.newComponent("DefaultRolloverStrategy").addAttribute("fileIndex", "nomax"));
+                        .addComponent(builder.newComponent("EntryCountBasedTriggeringPolicy")
+                                .addAttribute("maxEntries", maxLogEntries)))
+                .addComponent(builder.newComponent("DefaultRolloverStrategy"));
     }
 
     // Constructor for multiple log files based on the level
-    public CustomLogger(String loggerName, Map<Level, String> levelFilePathMap, long sizeLimitMB) throws IOException {
+    public CustomLogger(String loggerName, Map<Level, String> levelFilePathMap, int maxLogEntries) throws IOException {
         this.loggerId = UUID.randomUUID().toString();
         this.screenshotFolderPaths = new HashMap<>();
         this.variablesFolderPaths = new HashMap<>();
@@ -166,7 +171,7 @@ public class CustomLogger implements CloseableSessionObject {
             String appenderName = level.name() + "_" + loggerId;
 
             AppenderComponentBuilder appenderBuilder = getCustomAppenderBuilder(builder, appenderName, filePath,
-                    sizeLimitMB);
+                    maxLogEntries);
             // Only accept logs for this specific level
             appenderBuilder.add(builder.newFilter("LevelMatchFilter", "ACCEPT", "DENY")
                     .addAttribute("level", level));

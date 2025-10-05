@@ -99,6 +99,13 @@ public class DeleteFilesFoldersTest {
             if (modificationTime != null) {
                 Files.setLastModifiedTime(path, FileTime.from(modificationTime));
             }
+
+            // Add delay to ensure filesystem has processed the timestamp changes
+            try {
+                Thread.sleep(100); // 100ms delay to avoid race conditions
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
         }
     }
 
@@ -116,6 +123,13 @@ public class DeleteFilesFoldersTest {
 
             if (modificationTime != null) {
                 Files.setLastModifiedTime(path, FileTime.from(modificationTime));
+            }
+
+            // Add delay to ensure filesystem has processed the timestamp changes
+            try {
+                Thread.sleep(100); // 100ms delay to avoid race conditions
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
             }
         }
     }
@@ -575,5 +589,109 @@ public class DeleteFilesFoldersTest {
         // Check results
         assertPathsExist("image.jpg", "data.csv", "logs", "logs/server.log");
         assertPathsDoNotExist("doc.txt");
+    }
+
+    @Test
+    public void testYoungFilesPreserveParentDirectory() throws IOException {
+        // This tests the fix we implemented for preserving directories containing young files
+        Instant now = Instant.now();
+
+        // Create directory with mixed-age files
+        createDirWithTimes("logs", now.minus(10, ChronoUnit.DAYS), now.minus(10, ChronoUnit.DAYS));
+        createFileWithTimes("logs/old.log", now.minus(5, ChronoUnit.DAYS), now.minus(5, ChronoUnit.DAYS));
+        createFileWithTimes("logs/recent.log", now, now); // Young file
+
+        // Also create another directory with only old files
+        createDirWithTimes("temp", now.minus(10, ChronoUnit.DAYS), now.minus(10, ChronoUnit.DAYS));
+        createFileWithTimes("temp/old1.tmp", now.minus(5, ChronoUnit.DAYS), now.minus(5, ChronoUnit.DAYS));
+        createFileWithTimes("temp/old2.tmp", now.minus(3, ChronoUnit.DAYS), now.minus(3, ChronoUnit.DAYS));
+
+        // Try to delete files older than 1 day
+        deleteFilesFolders.action(
+                TEST_DIRECTORY_PATH, PROCESS_ALL_TYPES, true, 1,
+                THRESHOLD_UNIT_DAY, THRESHOLD_CRITERIA_CREATION,
+                false, "", false, "", ERROR_IGNORE);
+
+        // Directory with young file should be preserved
+        assertPathsExist("logs", "logs/recent.log");
+        assertPathsDoNotExist("logs/old.log");
+
+        // Directory with only old files should be deleted
+        assertPathsDoNotExist("temp", "temp/old1.tmp", "temp/old2.tmp");
+    }
+
+    @Test
+    public void testNonRecursiveWithOldNestedContent() throws IOException {
+        // This tests the behavior when non-recursive mode encounters old directories with nested content
+        Instant oldTime = Instant.now().minus(5, ChronoUnit.DAYS);
+        Instant now = Instant.now();
+
+        // Create old directory with young nested content
+        createDirWithTimes("dir1", oldTime, oldTime);
+        createFileWithTimes("dir1/nested_young.txt", now, now); // Young file inside old dir
+        createFileWithTimes("dir1/nested_old.txt", oldTime, oldTime); // Old file inside old dir
+
+        // Create another old directory with only old content
+        createDirWithTimes("dir2", oldTime, oldTime);
+        createFileWithTimes("dir2/all_old.txt", oldTime, oldTime);
+
+        // Create a young directory
+        createDirWithTimes("dir3", now, now);
+        createFileWithTimes("dir3/content.txt", now, now);
+
+        // Non-recursive deletion of directories older than 1 day
+        deleteFilesFolders.action(
+                TEST_DIRECTORY_PATH, PROCESS_ALL_TYPES, false, 1,
+                THRESHOLD_UNIT_DAY, THRESHOLD_CRITERIA_CREATION,
+                false, "", false, "", ERROR_IGNORE);
+
+        // In non-recursive mode, old directories are deleted entirely (including young content)
+        // This is the current behavior - the directory age takes precedence
+        assertPathsDoNotExist("dir1", "dir1/nested_young.txt", "dir1/nested_old.txt");
+        assertPathsDoNotExist("dir2", "dir2/all_old.txt");
+
+        // Young directory should remain
+        assertPathsExist("dir3", "dir3/content.txt");
+    }
+
+    @Test
+    public void testConcurrentFileModification() throws IOException, InterruptedException {
+        // This tests handling of files being actively written (simulating active logs)
+        createFileWithTimes("active.log", null, null);
+        createFileWithTimes("inactive.log", null, null);
+
+        // Start a thread that keeps modifying one file
+        Thread writer = new Thread(() -> {
+            try {
+                Path activePath = Paths.get(TEST_DIRECTORY_PATH, "active.log");
+                for (int i = 0; i < 5; i++) {
+                    Files.write(activePath,
+                               ("Log line " + i + "\n").getBytes(),
+                               StandardOpenOption.APPEND);
+                    Thread.sleep(50);
+                }
+            } catch (Exception e) {
+                // Ignore exceptions in test thread
+            }
+        });
+        writer.start();
+
+        Thread.sleep(100); // Let writer start and modify the file
+
+        // Try to delete all files - should handle the actively written file gracefully
+        deleteFilesFolders.action(
+                TEST_DIRECTORY_PATH, PROCESS_ALL_TYPES, true, 0,
+                THRESHOLD_UNIT_DAY, THRESHOLD_CRITERIA_CREATION,
+                false, "", false, "", ERROR_IGNORE);
+
+        writer.join(); // Wait for writer to finish
+
+        // With ERROR_IGNORE, the deletion should complete for accessible files
+        // The actively written file might or might not be deleted depending on OS file locking
+        // But the operation should not throw an exception
+        assertPathsDoNotExist("inactive.log"); // This should definitely be deleted
+
+        // Note: active.log might exist or not depending on OS file locking behavior
+        // We're mainly testing that the operation completes without throwing
     }
 }

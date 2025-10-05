@@ -19,6 +19,8 @@ import com.automationanywhere.commandsdk.model.DataType;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.Logger;
 
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
@@ -221,17 +223,102 @@ public class LogMessage {
         return path.toAbsolutePath().toString();
     }
 
-    public String getFormattedBotUri() {
-        if (this.testBotUri != null) {
-            return this.testBotUri;
-        }
-
-        // Original implementation
-        String botUri = this.globalSessionContext.getBotUri();
-        botUri = URLDecoder.decode(botUri, StandardCharsets.UTF_8);
-        botUri = botUri.substring(botUri.indexOf("Automation Anywhere") + "Automation Anywhere".length(),
-                botUri.indexOf(63));
-        botUri = botUri.replace("/", "\\");
-        return botUri;
+  public String getFormattedBotUri() {
+    if (this.testBotUri != null) {
+      return this.testBotUri;
     }
+
+    String botUri = URLDecoder.decode(this.globalSessionContext.getBotUri(), StandardCharsets.UTF_8);
+    int start = botUri.indexOf("Automation Anywhere") + "Automation Anywhere".length();
+    int end = botUri.indexOf('?');
+    String path = botUri.substring(start, end > 0 ? end : botUri.length()).replace("/", "\\");
+
+    // Extract workspace and version from query string
+    String workspace = null, version = null;
+    try {
+      int queryStart = botUri.indexOf('?');
+      if (queryStart > 0 && queryStart < botUri.length() - 1) {
+        String query = botUri.substring(queryStart + 1);
+
+        for (String param : query.split("&")) {
+          String[] kv = param.split("=", 2);
+          if (kv.length == 2) {
+            if ("workspace".equalsIgnoreCase(kv[0])) workspace = kv[1];
+            else if ("version".equalsIgnoreCase(kv[0])) version = kv[1];
+          }
+        }
+      }
+    } catch (Exception e) {
+      // Continue without workspace/version if parsing fails
+    }
+
+    // Get line number if available
+    Integer lineNumber = null;
+    try {
+      lineNumber = getCurrentLineNumber();
+    } catch (Exception e) {
+      // Line number not available, continue without it
+    }
+
+    // Build GitHub-style format: WORKSPACE:PATH@vVERSION#LLINE
+    StringBuilder result = new StringBuilder();
+
+    if (workspace != null) {
+      result.append(workspace).append(":");
+    }
+
+    result.append(path);
+
+    if (version != null) {
+      result.append("@v").append(version);
+    }
+
+    if (lineNumber != null && lineNumber > 0) {
+      result.append("#L").append(lineNumber);
+    }
+
+    return result.toString();
+  }
+
+  /**
+   * Extracts the current line number from JobExecutionResponse using reflection.
+   * Path: BotControl → this$0 (DispatcherImpl) → lastJobExecutionResponse → getCurrentLine()
+   *
+   * @return Current line number, or null if not accessible
+   */
+  private Integer getCurrentLineNumber() {
+    try {
+      // Step 1: Get BotControl from GlobalSessionContext
+      com.automationanywhere.bot.service.BotControl botControl = globalSessionContext.getBotControl();
+      if (botControl == null) {
+        return null;
+      }
+
+      // Step 2: Get the outer DispatcherImpl instance via this$0 field (BotControl is an inner class)
+      Field this0Field = botControl.getClass().getDeclaredField("this$0");
+      this0Field.setAccessible(true);
+      Object dispatcherImpl = this0Field.get(botControl);
+      if (dispatcherImpl == null) {
+        return null;
+      }
+
+      // Step 3: Get lastJobExecutionResponse field from DispatcherImpl
+      Field responseField = dispatcherImpl.getClass().getDeclaredField("lastJobExecutionResponse");
+      responseField.setAccessible(true);
+      Object jobExecutionResponse = responseField.get(dispatcherImpl);
+      if (jobExecutionResponse == null) {
+        return null;
+      }
+
+      // Step 4: Call getCurrentLine() method on JobExecutionResponse
+      Method getCurrentLineMethod = jobExecutionResponse.getClass().getMethod("getCurrentLine");
+      Object currentLine = getCurrentLineMethod.invoke(jobExecutionResponse);
+
+      return currentLine != null ? (Integer) currentLine : null;
+
+    } catch (Exception e) {
+      // Return null if any step fails - line number is not critical
+      return null;
+    }
+  }
 }

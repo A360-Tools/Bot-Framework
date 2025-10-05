@@ -22,10 +22,10 @@ configure(allprojects){
 
 	ext {
 		groupName = 'com.automationanywhere'
-		testNgVersion = '7.7.0'
-		loggerVersion = '2.24.3'
+		testNgVersion = '7.11.0'
+		loggerVersion = '2.25.2'
 		jnaVersion = '5.3.1'
-		version '3.2.4'
+		version '3.5.1'
 	}
 	group "$groupName"
 
@@ -71,10 +71,10 @@ configure(allprojects){
 		testImplementation name: 'package-compileonly-sdk', version: '1.5.0'
 		testImplementation group: "org.testng", name:"testng", version: "$testNgVersion"
 
-		testImplementation 'com.google.protobuf:protobuf-java:4.30.2' //table,record type use this internally
+		testImplementation 'com.google.protobuf:protobuf-java:4.32.1' //table,record type use this internally
 
 		// https://mvnrepository.com/artifact/org.json/json
-		implementation 'org.json:json:20250107'
+		implementation 'org.json:json:20250517'
 
 		// https://mvnrepository.com/artifact/org.apache.logging.log4j/log4j-api
 		implementation group: "org.apache.logging.log4j", name: "log4j-api", version: "$loggerVersion"
@@ -82,12 +82,12 @@ configure(allprojects){
 		implementation group: "org.apache.logging.log4j", name: "log4j-core", version: "$loggerVersion"
 
 		// https://mvnrepository.com/artifact/commons-io/commons-io
-		implementation 'commons-io:commons-io:2.19.0'
+		implementation 'commons-io:commons-io:2.20.0'
 		// https://mvnrepository.com/artifact/org.apache.poi/poi-ooxml
 		implementation 'org.apache.poi:poi-ooxml:5.4.1'
 
 		// https://mvnrepository.com/artifact/org.apache.commons/commons-csv
-		implementation 'org.apache.commons:commons-csv:1.14.0'
+		implementation 'org.apache.commons:commons-csv:1.14.1'
 	}
 
 }

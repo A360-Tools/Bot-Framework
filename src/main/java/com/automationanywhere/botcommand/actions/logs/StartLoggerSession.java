@@ -79,9 +79,9 @@ public class StartLoggerSession {
             String errorLogFilePath,
 
             @Idx(index = "2", type = AttributeType.NUMBER)
-            @Pkg(label = "Rollover file size in MB", default_value_type = DataType.NUMBER, default_value = "10")
+            @Pkg(label = "Maximum log entries per file", default_value_type = DataType.NUMBER, default_value = "1000")
             @GreaterThan("0")
-            Number rollingFileSizeMB
+            Number maxLogEntries
 
     ) {
         try {
@@ -89,7 +89,7 @@ public class StartLoggerSession {
             switch (logLevelsAndFileOption) {
                 case COMMON_FILE_ALL_LEVEL:
                     customLogger = new CustomLogger("CustomLogger_" + UUID.randomUUID(), logFilePath,
-                            rollingFileSizeMB.longValue());
+                            maxLogEntries.intValue());
                     break;
                 case CONFIGURABLE_FILE_ALL_LEVEL:
                     Map<Level, String> levelFilePathMap = new HashMap<>();
@@ -97,7 +97,7 @@ public class StartLoggerSession {
                     levelFilePathMap.put(Level.WARN, warnLogFilePath);
                     levelFilePathMap.put(Level.ERROR, errorLogFilePath);
                     customLogger = new CustomLogger("CustomLogger_" + UUID.randomUUID(), levelFilePathMap,
-                            rollingFileSizeMB.longValue());
+                            maxLogEntries.intValue());
                     break;
                 default:
                     throw new BotCommandException("Invalid log level and file option");

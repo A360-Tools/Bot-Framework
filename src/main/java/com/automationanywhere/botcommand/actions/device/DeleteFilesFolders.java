@@ -14,13 +14,14 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 import java.util.logging.Logger;
 
 @BotCommand
 @CommandPkg(
         label = "Clean Directory",
-        node_label = "{{inputFolderPath}} by deleting {{selectMethod}} {{recursive}}",
-        description = "Remove files/folders based on rule set",
+        node_label = "Clean {{inputFolderPath}} by deleting {{selectMethod}} older than {{thresholdNumber}} {{thresholdUnit}}",
+        description = "Delete old files and folders based on age threshold. Useful for cleaning logs, temp files, and backups.",
         icon = "delete_folders.svg",
         name = "device_delete_files_folders",
         group_label = "Device",
@@ -42,90 +43,93 @@ public class DeleteFilesFolders {
     @Execute
     public void action(
             @Idx(index = "1", type = AttributeType.FILE)
-            @Pkg(label = "Enter base folder path", description = "Files/Folders will be scanned within this folder " +
-                    "for deletion")
+            @Pkg(label = "Target folder to clean", description = "Base folder path where cleanup will be performed. " +
+                    "This folder itself will never be deleted, only its contents.")
             @NotEmpty
             @FileFolder
             String inputFolderPath,
 
             @Idx(index = "2", type = AttributeType.SELECT, options = {
-                    @Idx.Option(index = "2.1", pkg = @Pkg(label = "Directories and Files", value = PROCESS_ALL_TYPES,
-                            node_label = "it's directories and files")),
-                    @Idx.Option(index = "2.2", pkg = @Pkg(label = "Files Only", value = PROCESS_ONLY_FILE_TYPE,
-                            node_label = "it's files"))})
-            @Pkg(label = "Deletion option", default_value = PROCESS_ALL_TYPES,
+                    @Idx.Option(index = "2.1", pkg = @Pkg(label = "Both files and folders", value = PROCESS_ALL_TYPES,
+                            node_label = "files and folders")),
+                    @Idx.Option(index = "2.2", pkg = @Pkg(label = "Files only (keep folder structure)", value = PROCESS_ONLY_FILE_TYPE,
+                            node_label = "files only"))})
+            @Pkg(label = "What to delete", default_value = PROCESS_ALL_TYPES,
                     default_value_type = DataType.STRING)
             @NotEmpty
             @SelectModes
             String selectMethod,
 
             @Idx(index = "3", type = AttributeType.CHECKBOX)
-            @Pkg(label = "All subdirectories are searched as well", default_value = "true",
-                    node_label = "Action all subdirectories",
+            @Pkg(label = "Include all subfolders", default_value = "true",
+                    node_label = "including subfolders",
+                    description = "When checked: processes all nested folders. When unchecked: only processes immediate folder contents.",
                     default_value_type = DataType.BOOLEAN)
             Boolean recursive,
 
             @Idx(index = "4", type = AttributeType.NUMBER)
-            @Pkg(label = "Threshold number", default_value_type = DataType.NUMBER, default_value = "30",
-                    description = "any file/folder with threshold age value older than this value will be " +
-                            "deleted")
+            @Pkg(label = "Delete items older than", default_value_type = DataType.NUMBER, default_value = "30",
+                    description = "Age threshold for deletion. Example: 7 (with Days selected) = delete items 7+ days old. " +
+                            "Use 0 to delete all items regardless of age.")
             @NotEmpty
             @GreaterThanEqualTo("0")
             @NumberInteger
             Number thresholdNumber,
 
             @Idx(index = "5", type = AttributeType.SELECT, options = {
-                    @Idx.Option(index = "5.1", pkg = @Pkg(label = "DAY", value = THRESHOLD_UNIT_DAY)),
-                    @Idx.Option(index = "5.2", pkg = @Pkg(label = "HOUR", value = THRESHOLD_UNIT_HOUR)),
-                    @Idx.Option(index = "5.3", pkg = @Pkg(label = "MINUTE", value = THRESHOLD_UNIT_MINUTE)),
-                    @Idx.Option(index = "5.4", pkg = @Pkg(label = "SECOND", value = THRESHOLD_UNIT_SECOND))})
-            @Pkg(label = "Threshold Unit", default_value = THRESHOLD_UNIT_DAY,
+                    @Idx.Option(index = "5.1", pkg = @Pkg(label = "Days", value = THRESHOLD_UNIT_DAY)),
+                    @Idx.Option(index = "5.2", pkg = @Pkg(label = "Hours", value = THRESHOLD_UNIT_HOUR)),
+                    @Idx.Option(index = "5.3", pkg = @Pkg(label = "Minutes", value = THRESHOLD_UNIT_MINUTE)),
+                    @Idx.Option(index = "5.4", pkg = @Pkg(label = "Seconds", value = THRESHOLD_UNIT_SECOND))})
+            @Pkg(label = "Time unit", default_value = THRESHOLD_UNIT_DAY,
                     default_value_type = DataType.STRING)
             @NotEmpty
             @SelectModes
             String thresholdUnit,
 
             @Idx(index = "6", type = AttributeType.SELECT, options = {
-                    @Idx.Option(index = "6.1", pkg = @Pkg(label = "CREATION", value = THRESHOLD_CRITERIA_CREATION)),
-                    @Idx.Option(index = "6.2", pkg = @Pkg(label = "LAST MODIFICATION", value =
+                    @Idx.Option(index = "6.1", pkg = @Pkg(label = "Creation date (when file was created)", value = THRESHOLD_CRITERIA_CREATION)),
+                    @Idx.Option(index = "6.2", pkg = @Pkg(label = "Last modified date (when file was last changed)", value =
                             THRESHOLD_CRITERIA_MODIFICATION))})
-            @Pkg(label = "Threshold age type", default_value = THRESHOLD_CRITERIA_CREATION,
-                    default_value_type = DataType.STRING)
+            @Pkg(label = "Age based on", default_value = THRESHOLD_CRITERIA_MODIFICATION,
+                    default_value_type = DataType.STRING,
+                    description = "For logs, use 'Last modified' as they are continuously updated.")
             @NotEmpty
             @SelectModes
             String thresholdCriteria,
 
             @Idx(index = "7", type = AttributeType.CHECKBOX)
-            @Pkg(label = "Ignore specific folder paths", default_value = "false", default_value_type =
+            @Pkg(label = "Skip specific folders (preserve them)", default_value = "false", default_value_type =
                     DataType.BOOLEAN)
             Boolean skipFolders,
 
             @Idx(index = "7.1", type = AttributeType.TEXT)
-            @Pkg(label = "Regex pattern to match folder paths to ignore",
-                    description = ".*\\\\subDirectory" + " to skip folder called subDirectory on windows platform" +
-                            "Matching will be done on absolute path in OS file separator format.")
+            @Pkg(label = "Folder pattern to skip (regex)",
+                    description = "Examples: '.*\\\\backup$' skips folders named 'backup', '.*\\\\(archive|important).*' skips folders containing 'archive' or 'important'. " +
+                            "Pattern matches against full absolute path.")
             @NotEmpty
             String skipFolderPathPattern,
 
             @Idx(index = "8", type = AttributeType.CHECKBOX)
-            @Pkg(label = "Ignore specific file paths", default_value = "false", default_value_type =
+            @Pkg(label = "Skip specific files (preserve them)", default_value = "false", default_value_type =
                     DataType.BOOLEAN)
             Boolean skipFiles,
 
             @Idx(index = "8.1", type = AttributeType.TEXT)
-            @Pkg(label = "Regex pattern to match file paths to ignore", description =
-                    ".*\\.txt$" + " to skip all text files on windows platform. Matching will be done on absolute " +
-                            "path in OS file separator format.")
+            @Pkg(label = "File pattern to skip (regex)", description =
+                    "Examples: '.*\\.log$' skips .log files, '.*\\.(txt|csv)$' skips .txt and .csv files, '.*important.*' skips files with 'important' in name. " +
+                            "Pattern matches against full absolute path.")
             @NotEmpty
             String skipFilePathPattern,
 
             @Idx(index = "9", type = AttributeType.RADIO, options = {
-                    @Idx.Option(index = "9.1", pkg = @Pkg(label = "Throw error", value = ERROR_THROW)),
-                    @Idx.Option(index = "9.2", pkg = @Pkg(label = "Ignore", value = ERROR_IGNORE))
+                    @Idx.Option(index = "9.1", pkg = @Pkg(label = "Stop and throw error (fail the bot)", value = ERROR_THROW)),
+                    @Idx.Option(index = "9.2", pkg = @Pkg(label = "Continue silently (skip locked files)", value = ERROR_IGNORE))
             })
-            @Pkg(label = "If certain files/folders cannot be deleted", default_value_type = DataType.STRING,
+            @Pkg(label = "When files cannot be deleted (locked/in-use)", default_value_type = DataType.STRING,
                     description =
-                            "Behavior in case a file is locked/missing permission", default_value = ERROR_IGNORE)
+                            "Choose 'Continue silently' for log cleanup where some files may be actively written. Choose 'Stop and throw error' when all files must be deleted.",
+                    default_value = ERROR_IGNORE)
             @NotEmpty
             String unableToDeleteBehavior
     ) {
@@ -152,7 +156,8 @@ public class DeleteFilesFolders {
                     collector.getFilesToDelete(),
                     collector.getDirectoriesToDelete(),
                     collector.getFilesToSkip(),
-                    collector.getDirectoriesToSkip()
+                    collector.getDirectoriesToSkip(),
+                    collector.getYoungFiles()
             );
 
             // Phase 3: Execute deletions
@@ -225,6 +230,7 @@ public class DeleteFilesFolders {
         private final Set<Path> directoriesToDelete = new HashSet<>();
         private final Set<Path> filesToSkip = new HashSet<>();
         private final Set<Path> directoriesToSkip = new HashSet<>();
+        private final Set<Path> youngFiles = new HashSet<>(); // Track files too young to delete
 
         public FileCollector(
                 Path basePath,
@@ -287,6 +293,9 @@ public class DeleteFilesFolders {
             if (meetsDeletionCriteria(attrs)) {
                 LOGGER.info("Marking file for deletion: " + file);
                 filesToDelete.add(file);
+            } else {
+                // Track files that are too young to delete
+                youngFiles.add(file);
             }
 
             return FileVisitResult.CONTINUE;
@@ -311,11 +320,17 @@ public class DeleteFilesFolders {
                     throw new IllegalArgumentException("Unsupported threshold criteria: " + thresholdCriteria);
             }
 
-            return fileTime.isBefore(deletionThresholdInstant); // older than threshold
+            // Files at or before the threshold instant should be deleted
+            // Using !isAfter instead of isBefore to include files exactly at the threshold
+            return !fileTime.isAfter(deletionThresholdInstant);
         }
 
         private boolean matchesPattern(String pathString, String pattern) {
-            return Pattern.matches(pattern, pathString);
+            try {
+                return Pattern.matches(pattern, pathString);
+            } catch (PatternSyntaxException e) {
+                throw new BotCommandException("Invalid regex pattern: '" + pattern + "'. " + e.getMessage());
+            }
         }
 
         public Set<Path> getFilesToDelete() {
@@ -332,6 +347,10 @@ public class DeleteFilesFolders {
 
         public Set<Path> getDirectoriesToSkip() {
             return directoriesToSkip;
+        }
+
+        public Set<Path> getYoungFiles() {
+            return youngFiles;
         }
     }
 
@@ -350,7 +369,8 @@ public class DeleteFilesFolders {
                 Set<Path> filesToDelete,
                 Set<Path> directoriesToDelete,
                 Set<Path> filesToSkip,
-                Set<Path> directoriesToSkip) {
+                Set<Path> directoriesToSkip,
+                Set<Path> youngFiles) {
             this.basePath = basePath;
             this.filesToDelete = new HashSet<>(filesToDelete);
             this.directoriesToDelete = new HashSet<>(directoriesToDelete);
@@ -367,6 +387,11 @@ public class DeleteFilesFolders {
             for (Path skippedDir : directoriesToSkip) {
                 directoriesToPreserve.add(skippedDir);
                 addParentsToPreserveList(skippedDir);
+            }
+
+            // Process young files - preserve their parent directories
+            for (Path youngFile : youngFiles) {
+                addParentsToPreserveList(youngFile);
             }
 
             // Remove preserved directories from deletion list
