@@ -1,6 +1,7 @@
 package com.automationanywhere.botcommand.actions.logs;
 
 import com.automationanywhere.botcommand.data.Value;
+import com.automationanywhere.botcommand.data.impl.FileValue;
 import com.automationanywhere.botcommand.exception.BotCommandException;
 import com.automationanywhere.botcommand.utilities.logger.CustomHTMLLayout;
 import com.automationanywhere.botcommand.utilities.logger.CustomLogger;
@@ -43,8 +44,10 @@ import java.util.UUID;
         group_label = "Logs",
         documentation_url = "https://github.com/A360-Tools/Bot-Framework/blob/main/docs/logs/LogMessage.md",
         text_color = "#4285f4",
-        comment = true
-
+        return_label = "Screenshot file path (if captured)",
+        return_type = DataType.FILE,
+        return_name = "ScreenshotPath",
+        return_required = false
 )
 public class LogMessage {
     private static final String LEVEL_INFO = "INFO";
@@ -76,7 +79,7 @@ public class LogMessage {
     }
 
     @Execute
-    public void action(
+    public FileValue action(
             @Idx(index = "1", type = AttributeType.SESSION)
             @Pkg(label = "Logger session", description = "Set valid logger session", default_value_type =
                     DataType.SESSION, default_value = "Default")
@@ -184,6 +187,8 @@ public class LogMessage {
                 default:
                     throw new BotCommandException("Invalid log level");
             }
+
+            return new FileValue(screenshotPath);
         } catch (Exception e) {
             throw new BotCommandException("Error occurred: " + e.getMessage());
         }
