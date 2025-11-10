@@ -13,7 +13,6 @@ Designed to streamline bot development, enhance logging, and facilitate comprehe
 ## Key Features
 
 ### [Robust Logging](https://github.com/A360-Tools/Bot-Framework/blob/main/docs/logs/LogMessage.md)
-![Animation](https://github.com/A360-Tools/Bot-Framework/assets/82057278/6f8c9268-d411-4b62-93c2-74cca016e13e)
 - Global session logger for comprehensive logging across subtasks.
 - Automatic capture of source task details, environment details for enhanced traceability.
 - Visualization of complex/nested variables for efficient debugging and tracking.
