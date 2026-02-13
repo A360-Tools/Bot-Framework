@@ -99,7 +99,7 @@ public class CreateFolders {
             }
 
             if (prefix == null) {
-                suffix = "";
+                prefix = "";
             }
 
             for (Value folderPathValue : folderPaths) {
@@ -124,7 +124,7 @@ public class CreateFolders {
 
             return new DictionaryValue(returnDictionary);
         } catch (Exception e) {
-            throw new BotCommandException(e.getMessage());
+            throw new BotCommandException(e.getMessage(), e);
         }
 
     }

@@ -190,7 +190,7 @@ public class LogMessage {
 
             return new FileValue(screenshotPath);
         } catch (Exception e) {
-            throw new BotCommandException("Error occurred: " + e.getMessage());
+            throw new BotCommandException("Error occurred: " + e.getMessage(), e);
         }
     }
 
@@ -234,7 +234,8 @@ public class LogMessage {
     }
 
     String botUri = URLDecoder.decode(this.globalSessionContext.getBotUri(), StandardCharsets.UTF_8);
-    int start = botUri.indexOf("Automation Anywhere") + "Automation Anywhere".length();
+    int aaIndex = botUri.indexOf("Automation Anywhere");
+    int start = aaIndex >= 0 ? aaIndex + "Automation Anywhere".length() : 0;
     int end = botUri.indexOf('?');
     String path = botUri.substring(start, end > 0 ? end : botUri.length()).replace("/", "\\");
 

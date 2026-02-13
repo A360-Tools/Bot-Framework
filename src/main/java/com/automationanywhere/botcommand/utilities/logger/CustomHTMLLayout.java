@@ -14,7 +14,9 @@ import org.apache.logging.log4j.core.layout.AbstractStringLayout;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.nio.charset.Charset;
-import java.text.SimpleDateFormat;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -42,8 +44,9 @@ public class CustomHTMLLayout extends AbstractStringLayout {
         }
     }
 
-    SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MMM-dd HH:mm:ss Z"); // Define your desired date and
-    // time format
+    private static final DateTimeFormatter dateFormat = DateTimeFormatter
+            .ofPattern("yyyy-MMM-dd HH:mm:ss Z")
+            .withZone(ZoneId.systemDefault());
 
     public CustomHTMLLayout(Charset charset) {
         super(charset);
@@ -118,7 +121,7 @@ public class CustomHTMLLayout extends AbstractStringLayout {
                         "<td>%s</td>" +
                         "<td>%s</td>" +
                         "</tr>",
-                StringEscapeUtils.escapeHtml4(dateFormat.format(event.getTimeMillis())),
+                StringEscapeUtils.escapeHtml4(dateFormat.format(Instant.ofEpochMilli(event.getTimeMillis()))),
                 levelClass,
                 StringEscapeUtils.escapeHtml4(event.getLevel().toString()),
                 StringEscapeUtils.escapeHtml4(sourceBotPath),

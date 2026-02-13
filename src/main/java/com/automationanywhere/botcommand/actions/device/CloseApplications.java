@@ -47,7 +47,7 @@ public class CloseApplications {
             TaskKiller.killProcesses(processes, false);
             TaskKiller.killProcesses(processes, true);
         } catch (Exception e) {
-            throw new BotCommandException("Error occurred while terminating applications: " + e.getMessage());
+            throw new BotCommandException("Error occurred while terminating applications: " + e.getMessage(), e);
         }
     }
 }

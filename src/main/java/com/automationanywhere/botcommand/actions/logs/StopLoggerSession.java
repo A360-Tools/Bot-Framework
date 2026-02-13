@@ -31,7 +31,7 @@ public class StopLoggerSession {
             @SessionObject
             CustomLogger session) {
         if (session.isClosed()) {
-            throw new BotCommandException("Logger session not found");
+            throw new BotCommandException("Logger session is already closed");
         } else {
             session.close();
         }

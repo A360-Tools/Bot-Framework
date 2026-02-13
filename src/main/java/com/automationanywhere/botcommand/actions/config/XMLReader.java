@@ -131,6 +131,12 @@ public class XMLReader {
     ) {
         try {
             DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+            factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+            factory.setFeature("http://xml.org/sax/features/external-general-entities", false);
+            factory.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
+            factory.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
+            factory.setXIncludeAware(false);
+            factory.setExpandEntityReferences(false);
             DocumentBuilder builder = factory.newDocumentBuilder();
             Document document;
             switch (inputMethod.toUpperCase()) {
@@ -143,7 +149,7 @@ public class XMLReader {
                     document = builder.parse(new InputSource(new StringReader(xmlText)));
                     break;
                 default:
-                    throw new BotCommandException("Invalid parsing method." + inputMethod);
+                    throw new BotCommandException("Invalid parsing method: " + inputMethod);
             }
 
             Map<String, Value> xmlDictionary = parseXML(document, xPathToNodes, dictionaryKeys
@@ -151,7 +157,7 @@ public class XMLReader {
 
             return new DictionaryValue(xmlDictionary);
         } catch (Exception e) {
-            throw new BotCommandException("Error occurred: " + e.getMessage());
+            throw new BotCommandException("Error occurred: " + e.getMessage(), e);
         }
     }
 
@@ -182,6 +188,9 @@ public class XMLReader {
                     key = node.getNodeName();
                     break;
                 case KEY_OPTION_TAG_ATTRIBUTE:
+                    if (node.getAttributes() == null || node.getAttributes().getNamedItem(dictionaryKeysAttributeName) == null) {
+                        continue;
+                    }
                     key = node.getAttributes().getNamedItem(dictionaryKeysAttributeName).getNodeValue();
                     break;
                 default:
@@ -196,7 +205,11 @@ public class XMLReader {
                     value = node.getTextContent();
                     break;
                 case VALUE_OPTION_TAG_ATTRIBUTE_VALUE:
-                    value = node.getAttributes().getNamedItem(dictionaryValuesAttributeName).getNodeValue();
+                    if (node.getAttributes() == null || node.getAttributes().getNamedItem(dictionaryValuesAttributeName) == null) {
+                        value = "";
+                    } else {
+                        value = node.getAttributes().getNamedItem(dictionaryValuesAttributeName).getNodeValue();
+                    }
                     break;
                 default:
                     throw new BotCommandException("Invalid value parsing method: " + dictionaryValues);

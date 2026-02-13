@@ -12,6 +12,9 @@ import com.automationanywhere.commandsdk.model.DataType;
 import com.automationanywhere.core.security.SecureString;
 import org.apache.poi.ss.usermodel.*;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -36,6 +39,7 @@ import static com.automationanywhere.commandsdk.model.AttributeType.CREDENTIAL;
         return_required = true
 )
 public class ExcelReader {
+    private static final Logger LOGGER = LogManager.getLogger(ExcelReader.class);
     private static final String COLUMN_INDEX = "INDEX";
     private static final String COLUMN_HEADER = "HEADER";
 
@@ -265,8 +269,7 @@ public class ExcelReader {
             try {
                 workbook.close();
             } catch (IOException e) {
-                // Log the error but don't throw, as we're in cleanup
-                System.err.println("Error closing workbook: " + e.getMessage());
+                LOGGER.warn("Error closing workbook: {}", e.getMessage());
             }
         }
     }
@@ -276,8 +279,7 @@ public class ExcelReader {
             try {
                 inputStream.close();
             } catch (IOException e) {
-                // Log the error but don't throw, as we're in cleanup
-                System.err.println("Error closing input stream: " + e.getMessage());
+                LOGGER.warn("Error closing input stream: {}", e.getMessage());
             }
         }
     }

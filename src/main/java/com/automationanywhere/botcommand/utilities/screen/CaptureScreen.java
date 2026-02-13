@@ -9,6 +9,7 @@ import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
@@ -27,6 +28,12 @@ public class CaptureScreen {
             Path path = Paths.get(filePath);
             File file = path.toFile();
 
+            // Ensure parent directories exist
+            Path parentDir = path.getParent();
+            if (parentDir != null) {
+                Files.createDirectories(parentDir);
+            }
+
             if (!isOverwriteFile && file.exists()) {
                 throw new BotCommandException("Screenshot path already exists " + path);
             }
@@ -38,7 +45,7 @@ public class CaptureScreen {
             String extension = FilenameUtils.getExtension(filePath);
             saveFile(image, extension, file);
         } catch (Exception ex) {
-            throw new BotCommandException("Unable to save screenshot " + ex.getMessage());
+            throw new BotCommandException("Unable to save screenshot: " + ex.getMessage(), ex);
         }
     }
 

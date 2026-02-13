@@ -108,7 +108,7 @@ public class StartLoggerSession {
                     .withSessionObject(customLogger)
                     .build();
         } catch (Exception e) {
-            throw new BotCommandException("Error occurred while creating new session: " + e.getMessage());
+            throw new BotCommandException("Error occurred while creating new session: " + e.getMessage(), e);
         }
     }
 }

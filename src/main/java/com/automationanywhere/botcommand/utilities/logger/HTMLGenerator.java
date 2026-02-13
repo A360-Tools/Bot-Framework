@@ -8,7 +8,11 @@ import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.text.StringEscapeUtils;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -22,7 +26,7 @@ import java.util.Objects;
  */
 
 public class HTMLGenerator {
-
+    private static final Logger LOGGER = LogManager.getLogger(HTMLGenerator.class);
     private static final String NULL = "NULL";
     private static final String TEMPLATE_PATH = "/templates/variables.html";
 
@@ -55,17 +59,16 @@ public class HTMLGenerator {
         // Create HTML content for variables
         StringBuilder htmlBuilder = new StringBuilder();
 
-        try {
+        try (InputStream templateStream = HTMLGenerator.class.getResourceAsStream(TEMPLATE_PATH)) {
             // Read the header template from the resource file
-            byte[] templateBytes = IOUtils.toByteArray(
-                    Objects.requireNonNull(HTMLGenerator.class.getResourceAsStream(TEMPLATE_PATH)));
+            byte[] templateBytes = IOUtils.toByteArray(Objects.requireNonNull(templateStream));
             String headerTemplate = new String(templateBytes, StandardCharsets.UTF_8);
 
             // Append the template header
             htmlBuilder.append(headerTemplate);
 
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            throw new RuntimeException("Failed to read variables template: " + e.getMessage(), e);
         }
 
         // Continue with the container div
@@ -82,14 +85,13 @@ public class HTMLGenerator {
                 .append("</body>\n")
                 .append("</html>");
 
-        // To debug the template loading
-        System.out.println("Generated HTML file: " + filePath);
+        LOGGER.debug("Generated HTML file: {}", filePath);
 
         // Write the HTML to a file
         try {
             Files.write(filePath, htmlBuilder.toString().getBytes(StandardCharsets.UTF_8));
         } catch (IOException e) {
-            System.err.println("Error writing variables HTML file: " + e.getMessage());
+            LOGGER.error("Error writing variables HTML file: {}", e.getMessage());
             return "";
         }
 

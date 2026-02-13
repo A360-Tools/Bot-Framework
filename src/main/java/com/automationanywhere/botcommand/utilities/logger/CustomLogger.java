@@ -230,7 +230,7 @@ public class CustomLogger implements CloseableSessionObject {
      * @return default screenshot folder path (INFO level)
      */
     public String getScreenshotFolderPath() {
-        return screenshotFolderPaths.get(Level.INFO);
+        return screenshotFolderPaths.getOrDefault(Level.INFO, "");
     }
 
     /**
@@ -250,6 +250,6 @@ public class CustomLogger implements CloseableSessionObject {
      * @return default variables folder path (INFO level)
      */
     public String getVariablesFolderPath() {
-        return variablesFolderPaths.get(Level.INFO);
+        return variablesFolderPaths.getOrDefault(Level.INFO, "");
     }
 }

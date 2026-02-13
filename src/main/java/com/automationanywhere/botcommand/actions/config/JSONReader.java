@@ -47,14 +47,18 @@ public class JSONReader {
     private static final String PARSING_TYPE_SPECIFIC = "SPECIFIC";
 
     public static Object getJSON(String jsonString) {
+        JSONException objectError;
         try {
             return new JSONObject(jsonString);
         } catch (JSONException eObject) {
-            try {
-                return new JSONArray(jsonString);
-            } catch (JSONException eArray) {
-                throw new BotCommandException("Not a valid JSON object or array.");
-            }
+            objectError = eObject;
+        }
+        try {
+            return new JSONArray(jsonString);
+        } catch (JSONException eArray) {
+            throw new BotCommandException(
+                    "Not a valid JSON object or array. Object parse error: " + objectError.getMessage()
+                            + " | Array parse error: " + eArray.getMessage(), eArray);
         }
     }
 
@@ -144,7 +148,7 @@ public class JSONReader {
             return new DictionaryValue(jsonDictionary);
 
         } catch (Exception e) {
-            throw new BotCommandException("Error occurred: " + e.getMessage());
+            throw new BotCommandException("Error occurred: " + e.getMessage(), e);
         }
     }
 
@@ -165,7 +169,7 @@ public class JSONReader {
             traverseJson("", currentNode, jsonDictionary, false, isTrimValues);
             return jsonDictionary;
         } catch (Exception e) {
-            throw new BotCommandException("Error parsing JSON: " + e.getMessage());
+            throw new BotCommandException("Error parsing JSON: " + e.getMessage(), e);
         }
     }
 

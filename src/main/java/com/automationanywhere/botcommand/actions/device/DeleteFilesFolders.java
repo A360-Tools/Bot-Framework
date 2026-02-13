@@ -222,9 +222,9 @@ public class DeleteFilesFolders {
         private final String thresholdCriteria;
         private final Instant deletionThresholdInstant;
         private final boolean skipFiles;
-        private final String skipFilePathPattern;
+        private final Pattern skipFilePattern;
         private final boolean skipFolders;
-        private final String skipFolderPathPattern;
+        private final Pattern skipFolderPattern;
 
         private final Set<Path> filesToDelete = new HashSet<>();
         private final Set<Path> directoriesToDelete = new HashSet<>();
@@ -246,9 +246,9 @@ public class DeleteFilesFolders {
             this.thresholdCriteria = thresholdCriteria;
             this.deletionThresholdInstant = deletionThresholdInstant;
             this.skipFiles = skipFiles;
-            this.skipFilePathPattern = skipFilePathPattern;
+            this.skipFilePattern = skipFiles ? compilePattern(skipFilePathPattern) : null;
             this.skipFolders = skipFolders;
-            this.skipFolderPathPattern = skipFolderPathPattern;
+            this.skipFolderPattern = skipFolders ? compilePattern(skipFolderPathPattern) : null;
         }
 
         @Override
@@ -259,7 +259,7 @@ public class DeleteFilesFolders {
             }
 
             // Check if this directory should be skipped based on pattern
-            if (skipFolders && matchesPattern(dir.toFile().getAbsolutePath(), skipFolderPathPattern)) {
+            if (skipFolders && matchesPattern(dir.toFile().getAbsolutePath(), skipFolderPattern)) {
                 LOGGER.info("Skipping directory based on pattern: " + dir);
                 directoriesToSkip.add(dir);
                 return FileVisitResult.SKIP_SUBTREE; // Don't process contents of skipped directories
@@ -283,7 +283,7 @@ public class DeleteFilesFolders {
         @Override
         public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
             // Check if this file should be skipped based on pattern
-            if (skipFiles && matchesPattern(file.toFile().getAbsolutePath(), skipFilePathPattern)) {
+            if (skipFiles && matchesPattern(file.toFile().getAbsolutePath(), skipFilePattern)) {
                 LOGGER.info("Skipping file based on pattern: " + file);
                 filesToSkip.add(file);
                 return FileVisitResult.CONTINUE;
@@ -325,12 +325,16 @@ public class DeleteFilesFolders {
             return !fileTime.isAfter(deletionThresholdInstant);
         }
 
-        private boolean matchesPattern(String pathString, String pattern) {
+        private Pattern compilePattern(String pattern) {
             try {
-                return Pattern.matches(pattern, pathString);
+                return Pattern.compile(pattern);
             } catch (PatternSyntaxException e) {
                 throw new BotCommandException("Invalid regex pattern: '" + pattern + "'. " + e.getMessage());
             }
+        }
+
+        private boolean matchesPattern(String pathString, Pattern pattern) {
+            return pattern.matcher(pathString).matches();
         }
 
         public Set<Path> getFilesToDelete() {
