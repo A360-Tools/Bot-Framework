@@ -6,18 +6,19 @@ buildscript {
 		}
 		dependencies {
 			classpath name:'package-compileonly-sdk', version: '1.7.0'
-			classpath "gradle.plugin.com.github.johnrengelman:shadow:7.1.1"
+			classpath "com.gradleup.shadow:shadow-gradle-plugin:8.3.10"
 		}
 	}
 }
 
 plugins {
 	id 'java'
+	id "com.github.ben-manes.versions" version '0.53.0'
 }
 
 configure(allprojects){
 
-	apply plugin: 'com.github.johnrengelman.shadow'
+	apply plugin: 'com.gradleup.shadow'
 	apply plugin: "com.automationanywhere.command-codegen"
 
 	ext {
@@ -29,7 +30,11 @@ configure(allprojects){
 	}
 	group "$groupName"
 
-	sourceCompatibility = JavaVersion.VERSION_11
+	java {
+		toolchain {
+			languageVersion = JavaLanguageVersion.of(11)
+		}
+	}
 
 	compileJava.options.encoding = 'UTF-8'
 	compileTestJava.options.encoding = 'UTF-8'
@@ -52,7 +57,7 @@ configure(allprojects){
 
 	shadowJar {
 		archiveBaseName = project.name
-		classifier = null
+		archiveClassifier = ''
 		mergeServiceFiles('META-INF/spring.*')
 		mergeServiceFiles('META-INF/services/java.sql.Driver')
 		zip64 = true
@@ -71,7 +76,7 @@ configure(allprojects){
 		testImplementation name: 'package-compileonly-sdk', version: '1.7.0'
 		testImplementation group: "org.testng", name:"testng", version: "$testNgVersion"
 
-		testImplementation 'com.google.protobuf:protobuf-java:4.33.5' //table,record type use this internally
+		testImplementation 'com.google.protobuf:protobuf-java:4.34.0' //table,record type use this internally
 
 		// https://mvnrepository.com/artifact/org.json/json
 		implementation 'org.json:json:20251224'
