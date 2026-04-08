@@ -6,7 +6,7 @@ buildscript {
 		}
 		dependencies {
 			classpath name:'package-compileonly-sdk', version: '1.7.0'
-			classpath "com.gradleup.shadow:shadow-gradle-plugin:8.3.10"
+			classpath "com.gradleup.shadow:shadow-gradle-plugin:9.1.0"
 		}
 	}
 }
