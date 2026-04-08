@@ -136,7 +136,9 @@ public class CustomLogger implements CloseableSessionObject {
                 .addComponent(builder.newComponent("Policies")
                         .addComponent(builder.newComponent("EntryCountBasedTriggeringPolicy")
                                 .addAttribute("maxEntries", maxLogEntries)))
-                .addComponent(builder.newComponent("DefaultRolloverStrategy"));
+                .addComponent(builder.newComponent("DefaultRolloverStrategy")
+                    .addAttribute("fileIndex", "nomax")
+            );
     }
 
     // Constructor for multiple log files based on the level
