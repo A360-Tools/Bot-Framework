@@ -79,7 +79,7 @@ public class StartLoggerSession {
             String errorLogFilePath,
 
             @Idx(index = "2", type = AttributeType.NUMBER)
-            @Pkg(label = "Maximum log entries per file", default_value_type = DataType.NUMBER, default_value = "1000")
+            @Pkg(label = "Maximum log entries per file (default 1000)", default_value_type = DataType.NUMBER, default_value = "1000")
             @GreaterThan("0")
             Number maxLogEntries
 
