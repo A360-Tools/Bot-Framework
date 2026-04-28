@@ -24,7 +24,7 @@
             background-color: var(--background);
             color: var(--text-primary);
             line-height: 1.5;
-            padding: 20px;
+            padding: 0;
             margin: 0;
         }
 
@@ -37,7 +37,7 @@
 
         /* Simple sticky header implementation */
         th {
-            padding: 12px 15px;
+            padding: 0;
             background-color: var(--primary);
             color: white;
             position: -webkit-sticky;
@@ -49,7 +49,7 @@
         }
 
         td {
-            padding: 10px 15px;
+            padding: 10px;
             border-bottom: 1px solid var(--border);
             vertical-align: middle;
         }
@@ -72,14 +72,22 @@
             font-weight: 500;
         }
 
+        tbody tr:has(td.level-WARN) {
+          background-color: #fff8e6;
+        }
+
         .level-ERROR {
             color: var(--danger);
             font-weight: 500;
         }
 
+        tbody tr:has(td.level-ERROR) {
+          background-color: #fce9e8;
+        }
+
         .img-link, .vars-link {
             display: inline-block;
-            padding: 6px 12px;
+            padding: 6px 10px;
             background-color: var(--primary);
             color: white !important;
             text-decoration: none;
@@ -104,6 +112,180 @@
             color: white !important;
         }
 
+        body.alert-minimap-enabled {
+            padding-right: 44px;
+            box-sizing: border-box;
+        }
+
+        #alert-minimap {
+            position: fixed;
+            top: 14px;
+            right: 10px;
+            bottom: 14px;
+            width: 24px;
+            z-index: 1000;
+            pointer-events: none;
+        }
+
+        #alert-minimap .alert-minimap-track {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            border-left: 1px solid rgba(95,99,104,0.3);
+            background: rgba(255,255,255,0.82);
+            border-radius: 8px;
+            box-shadow: 0 1px 6px rgba(0,0,0,0.18);
+        }
+
+        #alert-minimap .alert-minimap-dot {
+            position: absolute;
+            left: 50%;
+            width: 8px;
+            height: 8px;
+            margin: -4px 0 0 -4px;
+            padding: 0;
+            border: 0;
+            border-radius: 50%;
+            box-shadow: 0 0 0 1px #fff, 0 1px 3px rgba(0,0,0,0.3);
+            cursor: pointer;
+            pointer-events: auto;
+        }
+
+        #alert-minimap .alert-minimap-dot.is-error {
+            background: var(--danger);
+        }
+
+        #alert-minimap .alert-minimap-dot.is-warning {
+            background: var(--warning);
+        }
+
+        #alert-minimap .alert-minimap-dot:hover,
+        #alert-minimap .alert-minimap-dot:focus-visible {
+            transform: scale(1.5);
+        }
+
+        #alert-minimap .alert-minimap-dot.is-current {
+            width: 14px;
+            height: 14px;
+            margin: -7px 0 0 -7px;
+            box-shadow: 0 0 0 3px rgba(32,33,36,0.18), 0 1px 4px rgba(0,0,0,0.35);
+        }
+
+        #alert-minimap .alert-minimap-dot.is-error.is-current {
+            background: #b3261e;
+        }
+
+        #alert-minimap .alert-minimap-dot.is-warning.is-current {
+            background: #d99000;
+        }
+
+        tbody tr.alert-minimap-warning-current {
+            background-color: #ffe7a3 !important;
+        }
+
+        tbody tr.alert-minimap-current:not(.alert-minimap-warning-current) {
+            background-color: #f7c6c1 !important;
+        }
+
+        .column-menu-trigger {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 22px;
+            height: 22px;
+            margin-left: 8px;
+            padding: 0;
+            border: 1px solid rgba(255,255,255,0.45);
+            border-radius: 4px;
+            background: rgba(255,255,255,0.16);
+            color: white;
+            cursor: pointer;
+            vertical-align: middle;
+        }
+
+        .column-menu-trigger::before {
+            content: "";
+            width: 0;
+            height: 0;
+            border-left: 4px solid transparent;
+            border-right: 4px solid transparent;
+            border-top: 5px solid currentColor;
+        }
+
+        .column-menu-trigger:hover,
+        .column-menu-trigger:focus-visible {
+            background: rgba(255,255,255,0.28);
+        }
+
+        #column-menu {
+            position: fixed;
+            min-width: 210px;
+            max-width: calc(100vw - 24px);
+            padding: 8px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            background: var(--surface);
+            color: var(--text-primary);
+            box-shadow: 0 6px 22px rgba(0,0,0,0.22);
+            z-index: 1100;
+        }
+
+        #column-menu[hidden] {
+            display: none !important;
+        }
+
+        #column-menu .column-menu-title {
+            padding: 4px 6px 8px;
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+
+        #column-menu label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px;
+            border-radius: 4px;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        #column-menu label:hover {
+            background: rgba(0,0,0,0.05);
+        }
+
+        #column-menu label.is-disabled {
+            color: var(--text-secondary);
+            cursor: not-allowed;
+        }
+
+        #column-menu input {
+            margin: 0;
+        }
+
+        #column-menu .column-menu-actions {
+            display: flex;
+            justify-content: flex-end;
+            padding: 8px 4px 2px;
+            border-top: 1px solid var(--border);
+            margin-top: 4px;
+        }
+
+        #column-menu button {
+            padding: 6px 10px;
+            border: 0;
+            border-radius: 4px;
+            background: var(--primary);
+            color: white;
+            font-weight: 500;
+            cursor: pointer;
+        }
+
+        #column-menu button:hover,
+        #column-menu button:focus-visible {
+            background: var(--primary-light);
+        }
+
         @media (max-width: 768px) {
             th, td {
                 padding: 8px 10px;
@@ -112,8 +294,362 @@
             .responsive-hide {
                 display: none;
             }
+
+            body.alert-minimap-enabled {
+                padding-right: 28px;
+            }
+
+            #alert-minimap {
+                top: 58px;
+                right: 4px;
+                width: 18px;
+            }
         }
     </style>
+    <script>
+        (function () {
+            function onReady(callback) {
+                if (document.readyState === 'loading') {
+                    document.addEventListener('DOMContentLoaded', callback);
+                    return;
+                }
+
+                callback();
+            }
+
+            function toArray(list) {
+                return Array.prototype.slice.call(list);
+            }
+
+            onReady(function () {
+                var refreshAlertMinimap = initAlertMinimap();
+                initColumnMenu(refreshAlertMinimap);
+            });
+
+            function initAlertMinimap() {
+                var alertRows = toArray(document.querySelectorAll('tbody tr')).map(function (row) {
+                    if (row.querySelector('td.level-ERROR')) {
+                        return { row: row, level: 'ERROR' };
+                    }
+
+                    if (row.querySelector('td.level-WARN')) {
+                        return { row: row, level: 'WARN' };
+                    }
+
+                    return null;
+                }).filter(Boolean);
+
+                removeElement('alert-minimap');
+                document.body.classList.remove('alert-minimap-enabled');
+
+                if (!alertRows.length) {
+                    return function () {};
+                }
+
+                document.body.classList.add('alert-minimap-enabled');
+
+                var minimap = document.createElement('nav');
+                minimap.id = 'alert-minimap';
+                minimap.setAttribute('aria-label', 'ERROR and WARN rows');
+
+                var track = document.createElement('div');
+                track.className = 'alert-minimap-track';
+                minimap.appendChild(track);
+
+                var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+                var currentIndex = -1;
+                var updateFrame = 0;
+                var dots = alertRows.map(function (item, index) {
+                    var row = item.row;
+                    var level = item.level;
+
+                    if (!row.id) {
+                        row.id = 'alert-row-' + (index + 1);
+                    }
+
+                    var dot = document.createElement('button');
+                    dot.type = 'button';
+                    dot.className = 'alert-minimap-dot is-' + level.toLowerCase().replace('warn', 'warning');
+                    dot.title = level + ' row ' + (index + 1);
+                    dot.setAttribute('aria-label', 'Go to ' + level + ' row ' + (index + 1));
+                    dot.addEventListener('click', function () {
+                        row.scrollIntoView({
+                            block: 'center',
+                            behavior: reduceMotion.matches ? 'auto' : 'smooth'
+                        });
+                        setCurrent(index);
+                    });
+                    track.appendChild(dot);
+                    return dot;
+                });
+
+                document.body.appendChild(minimap);
+
+                function removeElement(id) {
+                    var element = document.getElementById(id);
+                    if (element) {
+                        element.remove();
+                    }
+                }
+
+                function setCurrent(index) {
+                    if (index === currentIndex || index < 0 || index >= alertRows.length) {
+                        return;
+                    }
+
+                    if (currentIndex > -1) {
+                        dots[currentIndex].classList.remove('is-current');
+                        alertRows[currentIndex].row.classList.remove('alert-minimap-current', 'alert-minimap-warning-current');
+                    }
+
+                    currentIndex = index;
+                    dots[currentIndex].classList.add('is-current');
+                    alertRows[currentIndex].row.classList.add('alert-minimap-current');
+
+                    if (alertRows[currentIndex].level === 'WARN') {
+                        alertRows[currentIndex].row.classList.add('alert-minimap-warning-current');
+                    }
+                }
+
+                function updateCurrent() {
+                    var viewportMiddle = window.scrollY + (window.innerHeight / 2);
+                    var bestIndex = 0;
+                    var bestDistance = Infinity;
+
+                    alertRows.forEach(function (item, index) {
+                        var rect = item.row.getBoundingClientRect();
+                        var rowMiddle = window.scrollY + rect.top + (rect.height / 2);
+                        var distance = Math.abs(rowMiddle - viewportMiddle);
+
+                        if (distance < bestDistance) {
+                            bestDistance = distance;
+                            bestIndex = index;
+                        }
+                    });
+
+                    setCurrent(bestIndex);
+                }
+
+                function updateDotPositions() {
+                    var pageHeight = Math.max(
+                        document.documentElement.scrollHeight,
+                        document.body.scrollHeight,
+                        1
+                    );
+
+                    alertRows.forEach(function (item, index) {
+                        var rowTop = item.row.getBoundingClientRect().top + window.scrollY;
+                        var percent = Math.max(0, Math.min(100, (rowTop / pageHeight) * 100));
+                        dots[index].style.top = percent + '%';
+                    });
+
+                    updateCurrent();
+                }
+
+                function scheduleDotPositionUpdate() {
+                    if (updateFrame) {
+                        return;
+                    }
+
+                    updateFrame = window.requestAnimationFrame(function () {
+                        updateFrame = 0;
+                        updateDotPositions();
+                    });
+                }
+
+                window.addEventListener('scroll', scheduleDotPositionUpdate, { passive: true });
+                window.addEventListener('resize', scheduleDotPositionUpdate);
+                window.addEventListener('load', scheduleDotPositionUpdate);
+
+                updateDotPositions();
+                window.setTimeout(updateDotPositions, 250);
+
+                return scheduleDotPositionUpdate;
+            }
+
+            function initColumnMenu(onColumnsChanged) {
+                var table = document.querySelector('table');
+                if (!table || !table.tHead || !table.tBodies.length) {
+                    return;
+                }
+
+                var headers = toArray(table.tHead.querySelectorAll('th'));
+                if (!headers.length || document.getElementById('column-menu')) {
+                    return;
+                }
+
+                var rows = toArray(table.tBodies[0].rows);
+                var columns = headers.map(createColumn);
+                var menu = buildColumnMenu(columns);
+
+                document.body.appendChild(menu);
+                document.addEventListener('click', closeMenu);
+                document.addEventListener('keydown', function (event) {
+                    if (event.key === 'Escape') {
+                        closeMenu();
+                    }
+                });
+                window.addEventListener('resize', closeMenu);
+
+                applyColumns(false);
+
+                function createColumn(header, index) {
+                    var labelText = header.textContent.trim() || 'Column ' + (index + 1);
+                    var trigger = document.createElement('button');
+
+                    trigger.type = 'button';
+                    trigger.className = 'column-menu-trigger';
+                    trigger.title = 'Show or hide columns';
+                    trigger.setAttribute('aria-label', 'Show or hide columns');
+                    trigger.setAttribute('aria-haspopup', 'true');
+                    trigger.setAttribute('aria-expanded', 'false');
+                    trigger.setAttribute('aria-controls', 'column-menu');
+                    trigger.addEventListener('click', function (event) {
+                        event.stopPropagation();
+                        toggleMenu(trigger);
+                    });
+                    header.appendChild(trigger);
+
+                    return {
+                        index: index,
+                        header: header,
+                        labelText: labelText,
+                        trigger: trigger,
+                        visible: true
+                    };
+                }
+
+                function buildColumnMenu(menuColumns) {
+                    var menuElement = document.createElement('div');
+                    var title = document.createElement('div');
+                    var actions = document.createElement('div');
+                    var showAllButton = document.createElement('button');
+
+                    menuElement.id = 'column-menu';
+                    menuElement.hidden = true;
+                    menuElement.setAttribute('role', 'group');
+                    menuElement.setAttribute('aria-labelledby', 'column-menu-title');
+                    menuElement.addEventListener('click', function (event) {
+                        event.stopPropagation();
+                    });
+
+                    title.id = 'column-menu-title';
+                    title.className = 'column-menu-title';
+                    title.textContent = 'Columns';
+                    menuElement.appendChild(title);
+
+                    menuColumns.forEach(function (column) {
+                        var label = document.createElement('label');
+                        var checkbox = document.createElement('input');
+                        var text = document.createElement('span');
+
+                        checkbox.type = 'checkbox';
+                        checkbox.checked = true;
+                        checkbox.addEventListener('change', function () {
+                            if (!checkbox.checked && visibleCount() === 1) {
+                                checkbox.checked = true;
+                                return;
+                            }
+
+                            column.visible = checkbox.checked;
+                            applyColumns(true);
+                        });
+
+                        text.textContent = column.labelText;
+                        label.appendChild(checkbox);
+                        label.appendChild(text);
+                        menuElement.appendChild(label);
+
+                        column.checkbox = checkbox;
+                        column.menuLabel = label;
+                    });
+
+                    actions.className = 'column-menu-actions';
+                    showAllButton.type = 'button';
+                    showAllButton.textContent = 'Show all';
+                    showAllButton.addEventListener('click', function () {
+                        menuColumns.forEach(function (column) {
+                            column.visible = true;
+                        });
+                        applyColumns(true);
+                    });
+
+                    actions.appendChild(showAllButton);
+                    menuElement.appendChild(actions);
+                    return menuElement;
+                }
+
+                function visibleCount() {
+                    return columns.filter(function (column) {
+                        return column.visible;
+                    }).length;
+                }
+
+                function applyColumns(emitChange) {
+                    var count = visibleCount();
+
+                    columns.forEach(function (column) {
+                        column.header.hidden = !column.visible;
+                        rows.forEach(function (row) {
+                            if (row.cells[column.index]) {
+                                row.cells[column.index].hidden = !column.visible;
+                            }
+                        });
+
+                        column.checkbox.checked = column.visible;
+                        column.checkbox.disabled = column.visible && count === 1;
+                        column.menuLabel.classList.toggle('is-disabled', column.checkbox.disabled);
+                    });
+
+                    if (emitChange && typeof onColumnsChanged === 'function') {
+                        onColumnsChanged();
+                    }
+                }
+
+                function toggleMenu(trigger) {
+                    var triggerIndex = columns.findIndex(function (column) {
+                        return column.trigger === trigger;
+                    });
+
+                    if (!menu.hidden && menu.dataset.owner === String(triggerIndex)) {
+                        closeMenu();
+                        return;
+                    }
+
+                    openMenu(trigger, triggerIndex);
+                }
+
+                function openMenu(trigger, triggerIndex) {
+                    var rect = trigger.getBoundingClientRect();
+                    var top;
+                    var left;
+
+                    menu.hidden = false;
+                    menu.dataset.owner = String(triggerIndex);
+
+                    top = rect.bottom + 6;
+                    left = rect.right - menu.offsetWidth;
+                    left = Math.max(8, Math.min(left, window.innerWidth - menu.offsetWidth - 8));
+                    top = Math.max(8, Math.min(top, window.innerHeight - menu.offsetHeight - 8));
+
+                    menu.style.left = left + 'px';
+                    menu.style.top = top + 'px';
+
+                    columns.forEach(function (column) {
+                        column.trigger.setAttribute('aria-expanded', String(column.trigger === trigger));
+                    });
+                }
+
+                function closeMenu() {
+                    menu.hidden = true;
+                    delete menu.dataset.owner;
+                    columns.forEach(function (column) {
+                        column.trigger.setAttribute('aria-expanded', 'false');
+                    });
+                }
+            }
+        }());
+    </script>
 </head>
 <body>
 <table>

@@ -7,13 +7,7 @@ import org.apache.logging.log4j.core.config.plugins.Plugin;
 import org.apache.logging.log4j.core.config.plugins.PluginBuilderAttribute;
 import org.apache.logging.log4j.core.config.plugins.PluginBuilderFactory;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
-import java.io.FileWriter;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -27,7 +21,6 @@ public class EntryCountBasedTriggeringPolicy extends AbstractTriggeringPolicy {
 
     private final int maxEntries;
     private final AtomicInteger currentEntryCount = new AtomicInteger(0);
-    private RollingFileManager manager;
 
     private EntryCountBasedTriggeringPolicy(int maxEntries) {
         this.maxEntries = maxEntries;
@@ -40,8 +33,6 @@ public class EntryCountBasedTriggeringPolicy extends AbstractTriggeringPolicy {
      */
     @Override
     public void initialize(final RollingFileManager manager) {
-        this.manager = manager;
-
         // Count existing entries in the file if it exists
         String fileName = manager.getFileName();
         int existingEntries = countExistingEntries(fileName);
@@ -95,73 +86,14 @@ public class EntryCountBasedTriggeringPolicy extends AbstractTriggeringPolicy {
      * @return Number of existing log entries in the file, or 0 if file doesn't exist or can't be read
      */
     private int countExistingEntries(String filePath) {
-        File file = new File(filePath);
-
-        // If file doesn't exist or is empty, no entries exist
-        if (!file.exists() || file.length() == 0) {
-            return 0;
-        }
-
-        int count = 0;
-        boolean footerFound = false;
-        List<String> allLines = new ArrayList<>();
-
-        try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
-            String line;
-            while ((line = reader.readLine()) != null) {
-                allLines.add(line);
-                String lowerLine = line.toLowerCase();
-
-                // Count occurrences of <tr><td> to count only data rows (excludes header rows with <th>)
-                int index = 0;
-                while ((index = lowerLine.indexOf("<tr><td>", index)) != -1) {
-                    count++;
-                    index += 8; // Move past "<tr><td>" (8 characters) to find next occurrence
-                }
-
-                // Check if this line contains the footer
-                if (!footerFound && (lowerLine.contains("</tbody>") || lowerLine.contains("</table>"))) {
-                    footerFound = true;
-                }
-            }
+        try {
+            return HtmlLogFileSupport.prepareForAppend(filePath);
         } catch (IOException e) {
             // If we can't read the file, assume no entries
             // This is a safe default as it's better to potentially rollover early
             // than to exceed the max entry limit
             return 0;
         }
-
-        // If footer was found, remove it from the file
-        if (footerFound && !allLines.isEmpty()) {
-            try (FileWriter writer = new FileWriter(file, false)) {
-                // Process all lines, removing footer from whichever line contains it
-                for (int i = 0; i < allLines.size(); i++) {
-                    String line = allLines.get(i);
-                    String lowerLine = line.toLowerCase();
-
-                    // Check if this line contains the footer
-                    int footerIndex = lowerLine.indexOf("</tbody>");
-                    if (footerIndex == -1) {
-                        footerIndex = lowerLine.indexOf("</table>");
-                    }
-
-                    if (footerIndex >= 0) {
-                        // Truncate line at footer position
-                        line = line.substring(0, footerIndex);
-                    }
-
-                    writer.write(line);
-                    if (i < allLines.size() - 1) {
-                        writer.write(System.lineSeparator());
-                    }
-                }
-            } catch (IOException e) {
-                // If we can't rewrite, log file will continue to work but footer will be duplicated
-                // This is not critical, just a warning condition
-            }
-        }
-
-        return count;
     }
 
     @PluginBuilderFactory

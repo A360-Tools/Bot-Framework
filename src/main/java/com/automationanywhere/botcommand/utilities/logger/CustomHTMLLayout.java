@@ -27,7 +27,7 @@ import java.util.UUID;
  */
 @Plugin(name = "CustomHTMLLayout", category = Node.CATEGORY, elementType = Layout.ELEMENT_TYPE, printObject = true)
 public class CustomHTMLLayout extends AbstractStringLayout {
-    private static final byte[] footer = ("</tbody></table></body></html>").getBytes();
+    private static final byte[] footer = new byte[0];
     private static final String templatePath = "/templates/log.html";
     private static final byte[] header;
     private static final String machine;

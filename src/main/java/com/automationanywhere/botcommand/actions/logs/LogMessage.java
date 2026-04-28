@@ -146,6 +146,9 @@ public class LogMessage {
 
             // Convert string log level to Log4j Level
             Level log4jLevel = convertToLog4jLevel(logLevel);
+            if (session.isClosed()) {
+                throw new BotCommandException("Logger session is closed");
+            }
 
             if (logVariable.equalsIgnoreCase(LOG_VARIABLE)) {
                 if (sourceMap != null && !sourceMap.isEmpty()) {
@@ -174,6 +177,7 @@ public class LogMessage {
             }
 
             Logger logger = session.getLogger();
+            session.prepareForLog(log4jLevel);
             switch (logLevel) {
                 case LEVEL_INFO:
                     logger.info(message);

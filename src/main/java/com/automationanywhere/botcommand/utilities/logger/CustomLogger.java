@@ -31,6 +31,7 @@ public class CustomLogger implements CloseableSessionObject {
     private final Logger logger;
     private final String loggerId;
     private final LoggerContext loggerContext;
+    private final Map<Level, String> logFilePaths;
     private final Map<Level, String> screenshotFolderPaths;
     private final Map<Level, String> variablesFolderPaths;
 
@@ -45,6 +46,11 @@ public class CustomLogger implements CloseableSessionObject {
 
         this.screenshotFolderPaths = new HashMap<>();
         this.variablesFolderPaths = new HashMap<>();
+        this.logFilePaths = new HashMap<>();
+
+        this.logFilePaths.put(Level.INFO, logFilePath);
+        this.logFilePaths.put(Level.WARN, logFilePath);
+        this.logFilePaths.put(Level.ERROR, logFilePath);
 
         // Use the same folder for all levels when using a combined log file
         this.screenshotFolderPaths.put(Level.INFO, screenshotFolder);
@@ -114,9 +120,11 @@ public class CustomLogger implements CloseableSessionObject {
 
     private AppenderComponentBuilder getCustomAppenderBuilder(ConfigurationBuilder<BuiltConfiguration> builder,
                                                               String appenderName,
-                                                              String filePath, int maxLogEntries) {
+                                                              String filePath, int maxLogEntries) throws IOException {
         LayoutComponentBuilder layoutBuilder = builder.newLayout("CustomHTMLLayout")
                 .addAttribute("charset", "UTF-8");
+
+        HtmlLogFileSupport.prepareForAppend(filePath);
 
         // Simple sequential numbering: 1_log.html, 2_log.html, etc.
         // Active file remains as log.html
@@ -144,6 +152,7 @@ public class CustomLogger implements CloseableSessionObject {
     // Constructor for multiple log files based on the level
     public CustomLogger(String loggerName, Map<Level, String> levelFilePathMap, int maxLogEntries) throws IOException {
         this.loggerId = UUID.randomUUID().toString();
+        this.logFilePaths = new HashMap<>();
         this.screenshotFolderPaths = new HashMap<>();
         this.variablesFolderPaths = new HashMap<>();
 
@@ -153,6 +162,7 @@ public class CustomLogger implements CloseableSessionObject {
             String filePath = entry.getValue();
             String baseDir = FilenameUtils.getFullPath(filePath);
 
+            this.logFilePaths.put(level, filePath);
             this.screenshotFolderPaths.put(level, baseDir + "screenshots");
             this.variablesFolderPaths.put(level, baseDir + "variables");
         }
@@ -212,6 +222,8 @@ public class CustomLogger implements CloseableSessionObject {
             // Shutdown this specific logger context
             loggerContext.stop();
 
+            finalizeLogFiles();
+
             // Remove from the map of contexts
             LOGGER_CONTEXTS.remove(loggerId);
         }
@@ -253,5 +265,23 @@ public class CustomLogger implements CloseableSessionObject {
      */
     public String getVariablesFolderPath() {
         return variablesFolderPaths.getOrDefault(Level.INFO, "");
+    }
+
+    public void prepareForLog(Level level) throws IOException {
+        HtmlLogFileSupport.prepareForAppend(getLogFilePath(level));
+    }
+
+    private void finalizeLogFiles() {
+        try {
+            for (String filePath : logFilePaths.values()) {
+                HtmlLogFileSupport.finalizeLogFiles(filePath);
+            }
+        } catch (IOException e) {
+            throw new IllegalStateException("Failed to finalize log file", e);
+        }
+    }
+
+    private String getLogFilePath(Level level) {
+        return logFilePaths.getOrDefault(level, logFilePaths.get(Level.INFO));
     }
 }

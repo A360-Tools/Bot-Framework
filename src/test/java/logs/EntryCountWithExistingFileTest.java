@@ -13,6 +13,7 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.HashMap;
@@ -264,6 +265,82 @@ public class EntryCountWithExistingFileTest {
         System.out.println("✓ Multiple sessions: Rollover occurred at correct threshold");
     }
 
+    @Test(priority = 6, description = "Rollover does not append next row after footer")
+    public void testRolloverDoesNotAppendAfterFooter() throws Exception {
+        int maxEntries = 13;
+        String logFilePath = baseTestPath + "rollover_footer_boundary.html";
+
+        CustomLogger customLogger = new CustomLogger(
+                "test-logger-rollover-footer-boundary",
+                logFilePath,
+                maxEntries
+        );
+
+        Logger logger = customLogger.getLogger();
+        for (int i = 1; i <= 14; i++) {
+            Map<String, Object> message = new HashMap<>();
+            message.put(CustomHTMLLayout.Columns.MESSAGE, "Boundary entry " + i);
+            message.put(CustomHTMLLayout.Columns.SOURCE, "Test/Boundary");
+            message.put(CustomHTMLLayout.Columns.SCREENSHOT, "");
+            message.put(CustomHTMLLayout.Columns.VARIABLES, null);
+            logger.info(message);
+        }
+
+        customLogger.close();
+
+        String baseDir = FilenameUtils.getFullPath(logFilePath);
+        String baseName = FilenameUtils.getBaseName(logFilePath);
+        String ext = FilenameUtils.getExtension(logFilePath);
+        File rolledFile = new File(baseDir + "1_" + baseName + "." + ext);
+
+        assertNoRowsAfterFooter(logFilePath);
+        assertNoRowsAfterFooter(rolledFile.getAbsolutePath());
+        Assert.assertEquals(countLogEntries(rolledFile.getAbsolutePath()), maxEntries,
+                "Rolled file should keep first " + maxEntries + " rows");
+        Assert.assertEquals(countLogEntries(logFilePath), 1, "Active file should contain row after rollover");
+    }
+
+    @Test(priority = 7, description = "Repair existing log where a row was appended after footer")
+    public void testAppendRepairsRowAfterFooter() throws Exception {
+        int maxEntries = 10;
+        String logFilePath = baseTestPath + "row_after_footer.html";
+        String footer = "</tbody></table></body></html>";
+        String orphanedRow = "<tr><td>Orphaned row</td><td>INFO</td></tr>";
+
+        String malformedContent = "<!DOCTYPE html><html><body><table><tbody>"
+                + "<tr><td>Existing row</td><td>INFO</td></tr>"
+                + footer
+                + orphanedRow
+                + footer;
+
+        Files.write(Paths.get(logFilePath), malformedContent.getBytes(StandardCharsets.UTF_8));
+
+        CustomLogger customLogger = new CustomLogger(
+                "test-logger-row-after-footer",
+                logFilePath,
+                maxEntries
+        );
+
+        Logger logger = customLogger.getLogger();
+        Map<String, Object> message = new HashMap<>();
+        message.put(CustomHTMLLayout.Columns.MESSAGE, "Entry after repair");
+        message.put(CustomHTMLLayout.Columns.SOURCE, "Test/Repair");
+        message.put(CustomHTMLLayout.Columns.SCREENSHOT, "");
+        message.put(CustomHTMLLayout.Columns.VARIABLES, null);
+        logger.info(message);
+        customLogger.close();
+
+        String content = new String(Files.readAllBytes(Paths.get(logFilePath)), StandardCharsets.UTF_8);
+        String lowerContent = content.toLowerCase();
+
+        Assert.assertFalse(lowerContent.contains("</html><tr>"), "No row should appear after closing html");
+        Assert.assertTrue(content.contains(orphanedRow), "Existing orphaned row should be preserved");
+        Assert.assertTrue(content.indexOf(orphanedRow) < lowerContent.indexOf("</tbody>"),
+                "Recovered row should be inside tbody");
+        Assert.assertEquals(countLogEntries(logFilePath), 3, "All existing and new rows should remain");
+        Assert.assertEquals(countFooterOccurrences(content), 1, "Final log should have exactly one footer");
+    }
+
     /**
      * Helper method to write entries to a log file
      */
@@ -338,5 +415,27 @@ public class EntryCountWithExistingFileTest {
             }
         }
         return false;
+    }
+
+    private void assertNoRowsAfterFooter(String filePath) throws IOException {
+        String content = new String(Files.readAllBytes(Paths.get(filePath)), StandardCharsets.UTF_8);
+        Assert.assertFalse(content.toLowerCase().matches("(?s).*</html\\s*>\\s*<tr>.*"),
+                "No row should appear after closing html in " + filePath);
+        Assert.assertEquals(countFooterOccurrences(content), 1,
+                "File should have exactly one footer: " + filePath);
+    }
+
+    private int countFooterOccurrences(String content) {
+        String lowerContent = content.toLowerCase();
+        String footer = "</tbody></table></body></html>";
+        int count = 0;
+        int index = 0;
+
+        while ((index = lowerContent.indexOf(footer, index)) != -1) {
+            count++;
+            index += footer.length();
+        }
+
+        return count;
     }
 }
