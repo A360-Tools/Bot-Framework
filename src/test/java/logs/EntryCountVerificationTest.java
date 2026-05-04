@@ -120,7 +120,7 @@ public class EntryCountVerificationTest {
 
         // The HTMLGenerator creates relative paths like "screenshots/filename.png"
         Assert.assertTrue(htmlContent.contains("screenshots/test_image.png") ||
-                         htmlContent.contains("View Screenshot"),
+                         htmlContent.contains("class='img-link'"),
             "HTML should contain screenshot reference");
 
         System.out.println("Screenshot path test completed. Log at: " + logFilePath);

@@ -299,7 +299,7 @@ public class EntryCountRotationTest {
 
         // Verify HTML content structure is maintained
         String originalContent = new String(Files.readAllBytes(originalFile.toPath()));
-        Assert.assertTrue(originalContent.contains("View Screenshot") || originalContent.contains(".png"),
+        Assert.assertTrue(originalContent.contains("class='img-link'") || originalContent.contains(".png"),
             "Screenshot references should be preserved");
         Assert.assertTrue(originalContent.contains("Variables") || originalContent.contains("vars-link"),
             "Variable references should be preserved");
@@ -361,7 +361,7 @@ public class EntryCountRotationTest {
 
         // Verify HTML contains links to both
         String htmlContent = new String(Files.readAllBytes(Paths.get(logFilePath)));
-        Assert.assertTrue(htmlContent.contains("View Screenshot"), "HTML should contain screenshot link");
+        Assert.assertTrue(htmlContent.contains("class='img-link'"), "HTML should contain screenshot link");
         Assert.assertTrue(htmlContent.contains("vars-link"), "HTML should contain variable link");
     }
 
