@@ -97,7 +97,24 @@
         }
 
         .img-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
             position: relative;
+        }
+
+        .img-link::before {
+            content: "";
+            flex: 0 0 auto;
+            width: 88px;
+            height: 50px;
+            border: 1px solid rgba(255,255,255,0.75);
+            border-radius: 3px;
+            background-color: var(--surface);
+            background-image: var(--screenshot-preview);
+            background-position: center;
+            background-repeat: no-repeat;
+            background-size: cover;
         }
 
         .img-link:hover::after,
@@ -144,6 +161,15 @@
 
             .responsive-hide {
                 display: none;
+            }
+
+            .img-link {
+                gap: 6px;
+            }
+
+            .img-link::before {
+                width: 64px;
+                height: 40px;
             }
 
             .img-link:hover::after,
