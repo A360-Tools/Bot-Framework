@@ -96,6 +96,31 @@
             transition: background-color 0.2s;
         }
 
+        .img-link {
+            position: relative;
+        }
+
+        .img-link:hover::after,
+        .img-link:focus-visible::after {
+            content: "";
+            position: absolute;
+            right: 0;
+            bottom: calc(100% + 10px);
+            width: 360px;
+            max-width: 70vw;
+            height: 220px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            background-color: var(--surface);
+            background-image: var(--screenshot-preview);
+            background-position: center;
+            background-repeat: no-repeat;
+            background-size: contain;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.25);
+            z-index: 1000;
+            pointer-events: none;
+        }
+
         .img-link:hover, .vars-link:hover {
             background-color: var(--primary-light);
         }
@@ -119,6 +144,13 @@
 
             .responsive-hide {
                 display: none;
+            }
+
+            .img-link:hover::after,
+            .img-link:focus-visible::after {
+                width: 260px;
+                max-width: 82vw;
+                height: 160px;
             }
         }
     </style>
