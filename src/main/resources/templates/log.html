@@ -24,7 +24,7 @@
             background-color: var(--background);
             color: var(--text-primary);
             line-height: 1.5;
-            padding: 20px;
+            padding: 0;
             margin: 0;
         }
 
@@ -37,7 +37,7 @@
 
         /* Simple sticky header implementation */
         th {
-            padding: 12px 15px;
+            padding: 0;
             background-color: var(--primary);
             color: white;
             position: -webkit-sticky;
@@ -49,7 +49,7 @@
         }
 
         td {
-            padding: 10px 15px;
+            padding: 10px;
             border-bottom: 1px solid var(--border);
             vertical-align: middle;
         }
@@ -72,14 +72,22 @@
             font-weight: 500;
         }
 
+        tbody tr:has(td.level-WARN) {
+            background-color: #fff8e6;
+        }
+
         .level-ERROR {
             color: var(--danger);
             font-weight: 500;
         }
 
+        tbody tr:has(td.level-ERROR) {
+            background-color: #fce9e8;
+        }
+
         .img-link, .vars-link {
             display: inline-block;
-            padding: 6px 12px;
+            padding: 6px 10px;
             background-color: var(--primary);
             color: white !important;
             text-decoration: none;
