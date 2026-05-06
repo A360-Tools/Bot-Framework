@@ -391,8 +391,11 @@ public class HTMLGenerator {
 
         // Create a relative path to the screenshot
         String relativePath = "screenshots/" + FilenameUtils.getName(screenshotPath);
+        String escapedRelativePath = StringEscapeUtils.escapeHtml4(relativePath);
 
         // Return a link to the screenshot
-        return "<a href='" + relativePath + "' target='_blank' class='img-link'>View Screenshot</a>";
+        return "<a href='" + escapedRelativePath + "' target='_blank' class='img-link' " +
+                "aria-label='Screenshot' title='Screenshot' " +
+                "style='--screenshot-preview: url(\"" + escapedRelativePath + "\")'></a>";
     }
 }

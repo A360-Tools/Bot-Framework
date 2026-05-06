@@ -76,6 +76,10 @@
             background-color: #fff8e6;
         }
 
+        tbody tr:has(td.level-WARN):hover {
+            background-color: #ffedb3;
+        }
+
         .level-ERROR {
             color: var(--danger);
             font-weight: 500;
@@ -83,6 +87,10 @@
 
         tbody tr:has(td.level-ERROR) {
             background-color: #fce9e8;
+        }
+
+        tbody tr:has(td.level-ERROR):hover {
+            background-color: #f8d2cc;
         }
 
         .img-link, .vars-link {
@@ -94,6 +102,48 @@
             border-radius: 4px;
             font-weight: 500;
             transition: background-color 0.2s;
+        }
+
+        .img-link {
+            display: inline-flex;
+            align-items: center;
+            padding: 0;
+            position: relative;
+        }
+
+        .img-link::before {
+            content: "";
+            flex: 0 0 auto;
+            width: 88px;
+            height: 50px;
+            border: 1px solid rgba(255,255,255,0.75);
+            border-radius: 3px;
+            background-color: var(--surface);
+            background-image: var(--screenshot-preview);
+            background-position: center;
+            background-repeat: no-repeat;
+            background-size: cover;
+        }
+
+        .img-link:hover::after,
+        .img-link:focus-visible::after {
+            content: "";
+            position: absolute;
+            right: 0;
+            bottom: calc(100% + 10px);
+            width: 360px;
+            max-width: 70vw;
+            height: 220px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            background-color: var(--surface);
+            background-image: var(--screenshot-preview);
+            background-position: center;
+            background-repeat: no-repeat;
+            background-size: contain;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.25);
+            z-index: 1000;
+            pointer-events: none;
         }
 
         .img-link:hover, .vars-link:hover {
@@ -119,6 +169,18 @@
 
             .responsive-hide {
                 display: none;
+            }
+
+            .img-link::before {
+                width: 64px;
+                height: 40px;
+            }
+
+            .img-link:hover::after,
+            .img-link:focus-visible::after {
+                width: 260px;
+                max-width: 82vw;
+                height: 160px;
             }
         }
     </style>
