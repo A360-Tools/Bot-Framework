@@ -396,6 +396,9 @@ public class HTMLGenerator {
         // Return a link to the screenshot
         return "<a href='" + escapedRelativePath + "' target='_blank' class='img-link' " +
                 "aria-label='Screenshot' title='Screenshot' " +
-                "style='--screenshot-preview: url(\"" + escapedRelativePath + "\")'></a>";
+                "style='--screenshot-preview: url(\"" + escapedRelativePath + "\")'>" +
+                "<img src='" + escapedRelativePath + "' loading='lazy' decoding='async' " +
+                "width='88' height='50' alt='' />" +
+                "</a>";
     }
 }

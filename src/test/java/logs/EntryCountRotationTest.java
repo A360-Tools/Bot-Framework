@@ -299,8 +299,13 @@ public class EntryCountRotationTest {
 
         // Verify HTML content structure is maintained
         String originalContent = new String(Files.readAllBytes(originalFile.toPath()));
-        Assert.assertTrue(originalContent.contains("class='img-link'") || originalContent.contains(".png"),
+        Assert.assertTrue(originalContent.contains("class='img-link'"),
             "Screenshot references should be preserved");
+        Assert.assertTrue(originalContent.contains("<img"), "Screenshot thumbnail image should be preserved");
+        Assert.assertTrue(originalContent.contains("loading='lazy'"), "Screenshot image should lazy load");
+        Assert.assertTrue(originalContent.contains("decoding='async'"), "Screenshot image should decode asynchronously");
+        Assert.assertTrue(originalContent.contains("width='88'"), "Screenshot image should reserve thumbnail width");
+        Assert.assertTrue(originalContent.contains("height='50'"), "Screenshot image should reserve thumbnail height");
         Assert.assertTrue(originalContent.contains("Variables") || originalContent.contains("vars-link"),
             "Variable references should be preserved");
 
@@ -362,6 +367,11 @@ public class EntryCountRotationTest {
         // Verify HTML contains links to both
         String htmlContent = new String(Files.readAllBytes(Paths.get(logFilePath)));
         Assert.assertTrue(htmlContent.contains("class='img-link'"), "HTML should contain screenshot link");
+        Assert.assertTrue(htmlContent.contains("<img"), "HTML should contain screenshot thumbnail image");
+        Assert.assertTrue(htmlContent.contains("loading='lazy'"), "Screenshot image should lazy load");
+        Assert.assertTrue(htmlContent.contains("decoding='async'"), "Screenshot image should decode asynchronously");
+        Assert.assertTrue(htmlContent.contains("width='88'"), "Screenshot image should reserve thumbnail width");
+        Assert.assertTrue(htmlContent.contains("height='50'"), "Screenshot image should reserve thumbnail height");
         Assert.assertTrue(htmlContent.contains("vars-link"), "HTML should contain variable link");
     }
 
