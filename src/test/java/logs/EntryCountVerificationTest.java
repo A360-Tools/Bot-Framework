@@ -119,9 +119,14 @@ public class EntryCountVerificationTest {
         String htmlContent = new String(Files.readAllBytes(Paths.get(logFilePath)));
 
         // The HTMLGenerator creates relative paths like "screenshots/filename.png"
-        Assert.assertTrue(htmlContent.contains("screenshots/test_image.png") ||
-                         htmlContent.contains("View Screenshot"),
+        Assert.assertTrue(htmlContent.contains("screenshots/test_image.png"),
             "HTML should contain screenshot reference");
+        Assert.assertTrue(htmlContent.contains("class='img-link'"), "HTML should contain screenshot link");
+        Assert.assertTrue(htmlContent.contains("<img"), "HTML should contain screenshot thumbnail image");
+        Assert.assertTrue(htmlContent.contains("loading='lazy'"), "Screenshot image should lazy load");
+        Assert.assertTrue(htmlContent.contains("decoding='async'"), "Screenshot image should decode asynchronously");
+        Assert.assertTrue(htmlContent.contains("width='88'"), "Screenshot image should reserve thumbnail width");
+        Assert.assertTrue(htmlContent.contains("height='50'"), "Screenshot image should reserve thumbnail height");
 
         System.out.println("Screenshot path test completed. Log at: " + logFilePath);
     }
