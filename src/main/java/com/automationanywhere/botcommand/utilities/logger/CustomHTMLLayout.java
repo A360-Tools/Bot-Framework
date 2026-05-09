@@ -63,7 +63,7 @@ public class CustomHTMLLayout extends AbstractStringLayout {
         String message;
         String sourceBotPath = "";
         String variablesLink = "";
-        String screenshotLink = "";
+        String screenCell = "";
 
         // Parse the message and extract column details for current row
         Object[] parameters = event.getMessage().getParameters();
@@ -73,6 +73,10 @@ public class CustomHTMLLayout extends AbstractStringLayout {
             sourceBotPath = Optional.ofNullable(messageObject.get(Columns.SOURCE)).map(Object::toString).orElse("");
             String screenshotPath =
                     Optional.ofNullable(messageObject.get(Columns.SCREENSHOT)).map(Object::toString).orElse("");
+            String videoPath =
+                    Optional.ofNullable(messageObject.get(Columns.VIDEO)).map(Object::toString).orElse("");
+            String videoPosterPath =
+                    Optional.ofNullable(messageObject.get(Columns.VIDEO_POSTER)).map(Object::toString).orElse("");
 
             // Process variables if present
             if (messageObject.get(Columns.VARIABLES) != null && messageObject.get(Columns.VARIABLES) instanceof Map) {
@@ -101,8 +105,9 @@ public class CustomHTMLLayout extends AbstractStringLayout {
                 }
             }
 
-            // Get screenshot link if screenshot exists
-            screenshotLink = HTMLGenerator.getScreenshotHTML(screenshotPath);
+            // Render the renamed "Screen" column cell. Video takes priority when present;
+            // otherwise the existing screenshot path is used.
+            screenCell = HTMLGenerator.getScreenCellHTML(screenshotPath, videoPath, videoPosterPath);
         } else {
             message = event.getMessage().getFormattedMessage();
         }
@@ -129,7 +134,7 @@ public class CustomHTMLLayout extends AbstractStringLayout {
                 StringEscapeUtils.escapeHtml4(user),
                 HTMLGenerator.escapeWithWhitespaceMarkers(message),
                 variablesLink,
-                screenshotLink
+                screenCell
         );
 
         return formattedContent;
@@ -175,5 +180,7 @@ public class CustomHTMLLayout extends AbstractStringLayout {
         public static final String VARIABLES = "Variables";
         public static final String SCREENSHOT = "Screenshot";
         public static final String VARIABLES_FOLDER_PATH = "variablesFolderPath";
+        public static final String VIDEO = "Video";
+        public static final String VIDEO_POSTER = "VideoPoster";
     }
 }

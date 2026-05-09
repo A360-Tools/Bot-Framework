@@ -1007,4 +1007,102 @@ public class RenderingShowcaseTest {
         Assert.assertTrue(variablesHtml.contains("padding: 0"),
             "variables.html body should use padding: 0 for edge-to-edge layout");
     }
+
+    @Test
+    public void testVideoRecordingShowcase() throws Exception {
+        // Persistent artifact for visual review of the renamed "Screen" column
+        // with a real video clip. Skipped on machines without an interactive
+        // desktop because the bundled ffmpeg only supports gdigrab capture.
+        screen.process.DesktopAvailability.requireDesktop();
+
+        String testPath = "src/test/target/test-artifacts/showcase-video-"
+                + System.currentTimeMillis() + "/";
+        Files.createDirectories(Paths.get(testPath));
+
+        String logFilePath = testPath + "showcase.html";
+
+        java.util.Set<org.apache.logging.log4j.Level> levels = new java.util.HashSet<>();
+        levels.add(org.apache.logging.log4j.Level.WARN);
+        levels.add(org.apache.logging.log4j.Level.ERROR);
+
+        CustomLogger customLogger = new CustomLogger("VideoShowcase_" + UUID.randomUUID(),
+                logFilePath, 50, /* bufferSeconds */ 10, levels);
+
+        LogMessage logMessage = new LogMessage();
+        logMessage.setTestBotUri("Automation Anywhere/bots/test/video-showcase");
+
+        // 1. INFO before failure - no video, no still
+        logMessage.action(customLogger, LEVEL_INFO,
+            "Bot started; rolling buffer is filling",
+            false, DO_NOT_LOG_VARIABLE, null, null);
+
+        // 2. INFO with manual screenshot - existing path, unchanged
+        logMessage.action(customLogger, LEVEL_INFO,
+            "Initial state captured for baseline",
+            true, DO_NOT_LOG_VARIABLE, null, null);
+
+        // Wait until the ring has 6 segments (5 stable + 1 in-flight) before the
+        // first level-trigger. That gives the WARN clip ~5 s of footage rather
+        // than just the 1 s that the test-passing minimum would produce.
+        screen.process.RecorderTestSupport.awaitSessionMovSegments(
+            customLogger.getLoggerId(), 6, java.time.Duration.ofSeconds(15));
+
+        // 3. WARN - triggers video recording (level is in our set)
+        Map<String, Value> warnVars = new LinkedHashMap<>();
+        warnVars.put("retryCount", new NumberValue(2));
+        warnVars.put("lastError", new StringValue("intermittent timeout"));
+        logMessage.action(customLogger, LEVEL_WARN,
+            "Retrying after timeout - capturing recording for context",
+            false, LOG_VARIABLE, null, warnVars);
+
+        // 4. INFO between failures - no video
+        logMessage.action(customLogger, LEVEL_INFO,
+            "Continuing with retry attempt",
+            false, DO_NOT_LOG_VARIABLE, null, null);
+
+        // Wait for the ring to roll forward to 9 segments so the ERROR clip has
+        // ~8 s of footage and is visibly different from the WARN clip.
+        screen.process.RecorderTestSupport.awaitSessionMovSegments(
+            customLogger.getLoggerId(), 9, java.time.Duration.ofSeconds(15));
+
+        // 5. ERROR - triggers another video recording
+        Map<String, Value> errVars = new LinkedHashMap<>();
+        errVars.put("recordId", new StringValue("CUST-018273"));
+        errVars.put("step", new StringValue("submit-form"));
+        errVars.put("retryAttempts", new NumberValue(3));
+        logMessage.action(customLogger, LEVEL_ERROR,
+            "Maximum retries exceeded - aborting record",
+            false, LOG_VARIABLE, null, errVars);
+
+        // Stop the session - drains pending stage-2 encodes (up to 30s)
+        new StopLoggerSession().stop(customLogger);
+
+        // Sanity-check the artifacts before announcing the path
+        java.nio.file.Path clipsDir = Paths.get(testPath, "clips");
+        java.nio.file.Path screenshotsDir = Paths.get(testPath, "screenshots");
+        long mp4s = Files.isDirectory(clipsDir)
+                ? Files.list(clipsDir).filter(p -> p.toString().endsWith(".mp4")).count()
+                : 0;
+        long pngs = Files.isDirectory(screenshotsDir)
+                ? Files.list(screenshotsDir).filter(p -> p.toString().endsWith(".png")).count()
+                : 0;
+        // The drain timeout is 30s; with two AV1 encodes back-to-back, only the
+        // first may finish in time. The second's poster PNG will still be there
+        // (the still is taken synchronously before the encode is queued), so the
+        // HTML row has the still even when the mp4 is missing.
+        Assert.assertTrue(mp4s >= 1L,
+                "showcase should produce at least 1 mp4; got " + mp4s);
+        Assert.assertTrue(pngs >= 3,
+                "showcase should produce at least 3 PNGs (1 manual + 2 video posters); got " + pngs);
+
+        String html = new String(Files.readAllBytes(Paths.get(logFilePath)),
+                java.nio.charset.StandardCharsets.UTF_8);
+        Assert.assertTrue(html.contains("video-link"),
+                "rendered HTML must contain video-link class");
+        Assert.assertTrue(html.contains("<th>Screen</th>"),
+                "rendered HTML must contain the renamed Screen header");
+
+        System.out.println("Video showcase artifact: " + new File(logFilePath).getAbsolutePath());
+        System.out.println("  -> " + mp4s + " clip(s), " + pngs + " screenshot(s)");
+    }
 }

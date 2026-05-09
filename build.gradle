@@ -25,8 +25,7 @@ configure(allprojects){
 		groupName = 'com.automationanywhere'
 		testNgVersion = '7.12.0'
 		loggerVersion = '2.25.3'
-		jnaVersion = '5.3.1'
-		version '3.7.0'
+		version '3.8.0'
 	}
 	group "$groupName"
 
@@ -87,7 +86,7 @@ configure(allprojects){
 		implementation group: "org.apache.logging.log4j", name: "log4j-core", version: "$loggerVersion"
 
 		// https://mvnrepository.com/artifact/commons-io/commons-io
-		implementation 'commons-io:commons-io:2.21.0'
+		implementation 'commons-io:commons-io:2.22.0'
 		// https://mvnrepository.com/artifact/org.apache.poi/poi-ooxml
 		implementation 'org.apache.poi:poi-ooxml:5.5.1'
 
@@ -97,6 +96,19 @@ configure(allprojects){
 
 	test {
 		useTestNG()
+		testLogging {
+			// Print each test as it starts and finishes, plus everything the
+			// test wrote to System.out / System.err (including log4j output
+			// since log4j defaults to stderr). Mirrors what IntelliJ's
+			// native test runner shows, but routed through the Gradle path
+			// so the canonical task lifecycle still runs.
+			events 'started', 'passed', 'skipped', 'failed',
+			       'standard_out', 'standard_error'
+			showStandardStreams = true
+			exceptionFormat = 'full'
+			showCauses = true
+			showStackTraces = true
+		}
 	}
 
 }

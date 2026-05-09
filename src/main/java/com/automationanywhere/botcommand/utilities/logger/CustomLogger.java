@@ -1,5 +1,6 @@
 package com.automationanywhere.botcommand.utilities.logger;
 
+import com.automationanywhere.botcommand.utilities.screen.recorder.ScreenRecorder;
 import com.automationanywhere.toolchain.runtime.session.CloseableSessionObject;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.logging.log4j.Level;
@@ -16,7 +17,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -33,9 +36,21 @@ public class CustomLogger implements CloseableSessionObject {
     private final LoggerContext loggerContext;
     private final Map<Level, String> screenshotFolderPaths;
     private final Map<Level, String> variablesFolderPaths;
+    private final ScreenRecorder recorder;
 
-    // Constructor for a single log file for all levels
+    // Constructor for a single log file for all levels (no video recording)
     public CustomLogger(String loggerName, String logFilePath, int maxLogEntries) throws IOException {
+        this(loggerName, logFilePath, maxLogEntries, 0, new HashSet<>());
+    }
+
+    /**
+     * Constructor for a single log file for all levels, with optional screen recording.
+     *
+     * @param bufferSeconds   rolling-buffer length in seconds; ignored if {@code recordingLevels} is empty
+     * @param recordingLevels levels at which video clips should be saved; empty disables recording
+     */
+    public CustomLogger(String loggerName, String logFilePath, int maxLogEntries,
+                        int bufferSeconds, Set<Level> recordingLevels) throws IOException {
         this.loggerId = UUID.randomUUID().toString();
 
         // Create screenshot folder at the same location as log file
@@ -84,6 +99,10 @@ public class CustomLogger implements CloseableSessionObject {
 
         // Get logger from the new context
         this.logger = context.getLogger(loggerName);
+
+        // Optionally start the screen recorder. Returns DISABLED on any failure.
+        Path logDir = Paths.get(FilenameUtils.getFullPath(logFilePath));
+        this.recorder = ScreenRecorder.start(loggerId, logDir, bufferSeconds, recordingLevels);
     }
 
     private void createDirectories() throws IOException {
@@ -141,8 +160,19 @@ public class CustomLogger implements CloseableSessionObject {
             );
     }
 
-    // Constructor for multiple log files based on the level
+    // Constructor for multiple log files based on the level (no video recording)
     public CustomLogger(String loggerName, Map<Level, String> levelFilePathMap, int maxLogEntries) throws IOException {
+        this(loggerName, levelFilePathMap, maxLogEntries, 0, new HashSet<>());
+    }
+
+    /**
+     * Constructor for multiple log files based on level, with optional screen recording.
+     *
+     * @param bufferSeconds   rolling-buffer length in seconds; ignored if {@code recordingLevels} is empty
+     * @param recordingLevels levels at which video clips should be saved; empty disables recording
+     */
+    public CustomLogger(String loggerName, Map<Level, String> levelFilePathMap, int maxLogEntries,
+                        int bufferSeconds, Set<Level> recordingLevels) throws IOException {
         this.loggerId = UUID.randomUUID().toString();
         this.screenshotFolderPaths = new HashMap<>();
         this.variablesFolderPaths = new HashMap<>();
@@ -200,15 +230,45 @@ public class CustomLogger implements CloseableSessionObject {
 
         // Get logger from the new context
         this.logger = context.getLogger(loggerName);
+
+        // Optionally start the screen recorder. Recording artifacts (clips/, screenshots/posters)
+        // live next to the INFO log file because the HTML log uses relative paths.
+        Path recorderLogDir = Paths.get(FilenameUtils.getFullPath(
+                levelFilePathMap.getOrDefault(Level.INFO, levelFilePathMap.values().iterator().next())));
+        this.recorder = ScreenRecorder.start(loggerId, recorderLogDir, bufferSeconds, recordingLevels);
     }
 
     public Logger getLogger() {
         return logger;
     }
 
+    /** True when the supplied level is in the configured recording-levels set and recorder is healthy. */
+    public boolean shouldRecordVideoFor(Level level) {
+        return recorder.shouldRecordFor(level);
+    }
+
+    /**
+     * Snapshots the rolling buffer and queues an async stage-2 encode. Returns the
+     * eventual mp4 path (which may not exist until the encode finishes), or null
+     * if the encode could not be queued (recorder failed, queue full, ring empty).
+     */
+    public java.nio.file.Path snapshotForError(String errorUuid) {
+        return recorder.snapshotForError(errorUuid);
+    }
+
+    /** UUID identifying this session; useful for tests and salvage path naming. */
+    public String getLoggerId() {
+        return loggerId;
+    }
+
     @Override
     public void close() {
         if (!isClosed()) {
+            // Stop the screen recorder first (if any). Order matters: stage-1 stops
+            // writing to the ring before pending stage-2 encodes drain, and the
+            // session folder is deleted only after both are quiescent.
+            recorder.close();
+
             // Shutdown this specific logger context
             loggerContext.stop();
 

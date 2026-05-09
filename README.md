@@ -20,6 +20,7 @@ Designed to streamline bot development, enhance logging, and facilitate comprehe
 - Log file rollover based on file size.
 - Log file separation based on log level.
 - Screenshot capture alongside log messages for a complete logging experience.
+- **Rolling screen-recording buffer**: opt-in continuous capture of the last N seconds (5-300, default 30) of bot activity. When a log entry fires at a configured level (any combination of INFO/WARN/ERROR), the buffer is finalized into a browser-playable AV1 MP4 placed next to the log. On JVM crash, the rolling buffer at the moment of death is salvaged into a `crash-recording-<sessionId>.mp4` on the next bot startup.
 
 ### [Config Data Reading](https://github.com/A360-Tools/Bot-Framework/tree/main/docs/config)
 - Reads configuration data from CSV, Excel, JSON, and XML formats into dictionaries.
@@ -70,6 +71,21 @@ Designed to streamline bot development, enhance logging, and facilitate comprehe
 - **Documentation About/Caution Sequence/Comment/Sequence**: Offers a range of documentation utilities from basic commenting to detailed sequence documentation with caution highlights and screenshots.
 - **Log Message**: Provides session-based logging with options for detailed messages and screenshots.
 - **Logs Start/Stop Session**: Manages the lifecycle of logging sessions, from initiation to termination.
+
+## Bundled FFmpeg
+
+Screen-recording uses an FFmpeg 6.0 binary (~11 MB) bundled at `src/main/resources/ffmpeg/ffmpeg.exe` and extracted on first use to `%LOCALAPPDATA%\A360-BotFramework\ffmpeg\<hash>\ffmpeg.exe` on each Bot Runner. The build includes only AV1 (libaom) + ffvhuff encoders and the segment + concat + mp4 muxers - no x264, no H.265 - so the binary stays small. Distributed under LGPL-2.1 or later; full notice and build configuration are at `src/main/resources/ffmpeg/LICENSE-FFMPEG.txt`. Source code for FFmpeg is at https://ffmpeg.org/download.html.
+
+### Disk usage with screen recording on
+
+| Setting | Cost |
+|---|---|
+| Stage-1 rolling buffer (per session, %LOCALAPPDATA%) | ~30-100 MB at default 30 s buffer / 5 fps / 1080p |
+| Per-finalized clip (in `<logDir>/clips/`) | ~2-5 MB AV1 MP4 |
+| Per-error poster PNG (in `<logDir>/screenshots/`) | ~50-200 KB |
+| Stage-2 encode CPU | ~80-100% one core for 10-30 s wall time per error |
+
+Document this when planning bot deployments: enabling video on every INFO entry of a chatty bot will produce hundreds of MP4s. Stick to ERROR-only unless you have a specific need.
 
 ## Building the Project
 You can build this project using Gradle with the following command:

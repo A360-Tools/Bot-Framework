@@ -1,0 +1,76 @@
+FFmpeg Bundled Notice
+======================
+
+The file ffmpeg.exe shipped alongside this notice is the FFmpeg multimedia
+framework, used at runtime by the Bot-Framework screen-recording feature.
+
+Version:           FFmpeg 6.0
+Architecture:      Windows x86_64 (statically linked, stripped)
+SHA-256:           7dae68267fe9190e9bd5e2f58df89681a4126dc7e91235aaeb224ce2a53bb754
+Size:              11,512,424 bytes (approx. 11 MiB)
+
+License: GNU Lesser General Public License v2.1 or later (LGPL-2.1-or-later).
+The full text of the LGPL is published at:
+    https://www.gnu.org/licenses/old-licenses/lgpl-2.1.txt
+
+Source code:
+The complete corresponding source code for this build of FFmpeg is publicly
+available from the FFmpeg project at:
+    https://ffmpeg.org/download.html
+    https://git.ffmpeg.org/ffmpeg.git
+
+Build configuration of the bundled binary (as reported by `ffmpeg -version`):
+    --pkg-config-flags=--static
+    --extra-ldexeflags=-static
+    --disable-encoders
+    --disable-decoders
+    --disable-parsers
+    --disable-filters
+    --disable-muxers
+    --disable-demuxers
+    --disable-bsfs
+    --enable-libaom
+    --enable-encoder=libaom_av1
+    --enable-decoder=libaom_av1
+    --enable-encoder=ffvhuff
+    --enable-decoder=ffvhuff
+    --enable-parser=av1
+    --enable-bsf=av1_frame_merge
+    --enable-bsf=av1_frame_split
+    --enable-bsf=av1_metadata
+    --enable-filter=segment
+    --enable-filter=framerate
+    --enable-swscale
+    --enable-swscale-alpha
+    --enable-filter=scale
+    --enable-muxer=segment
+    --enable-muxer=mp4
+    --enable-demuxer=concat
+    --enable-demuxer=mov
+    --enable-static
+    --disable-w32threads
+    --disable-autodetect
+
+Linked libraries (LGPL/BSD-compatible):
+    libavutil      58.  2.100
+    libavcodec     60.  3.100
+    libavformat    60.  3.100
+    libavdevice    60.  1.100
+    libavfilter     9.  3.100
+    libswscale      7.  1.100
+    libswresample   4. 10.100
+
+Modifications:
+None. This binary is shipped verbatim. No patches have been applied.
+
+Compliance:
+This redistribution complies with LGPL-2.1+ section 6 by:
+  (a) including this notice prominently,
+  (b) pointing to the upstream source code location above, and
+  (c) shipping the binary in a form that allows the user to replace the
+      FFmpeg library by re-linking against a different copy.
+
+This notice satisfies the LGPL requirements for binary redistribution as
+part of the Bot-Framework custom package. It does not grant any rights
+to the rest of the Bot-Framework code, which is licensed separately - see
+the project root LICENSE/README.

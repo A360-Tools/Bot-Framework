@@ -143,6 +143,8 @@ public class LogMessage {
         try {
             Map<String, Value> variableValues = null;
             String screenshotPath = "";
+            String videoPosterPath = "";
+            String videoPath = "";
 
             // Convert string log level to Log4j Level
             Level log4jLevel = convertToLog4jLevel(logLevel);
@@ -155,8 +157,22 @@ public class LogMessage {
                 }
             }
 
-            if (captureScreenshot) {
-                // Get appropriate screenshot folder based on log level
+            if (session.shouldRecordVideoFor(log4jLevel)) {
+                // Always take a still poster - serves as <video poster> AND as the
+                // FileValue returned to the caller (so screenshot semantics are preserved).
+                String screenshotFolder = session.getScreenshotFolderPath(log4jLevel);
+                videoPosterPath = generateRandomScreenshotPath(screenshotFolder, logLevel);
+                CaptureScreen.captureDesktop(videoPosterPath, true);
+
+                // Snapshot the rolling buffer and queue async stage-2 encode.
+                String errorUuid = UUID.randomUUID().toString();
+                Path mp4 = session.snapshotForError(errorUuid);
+                videoPath = mp4 == null ? "" : mp4.toString();
+
+                // The poster doubles as the screenshot artifact for this row.
+                screenshotPath = videoPosterPath;
+            } else if (captureScreenshot) {
+                // Existing screenshot-only path - unchanged behavior.
                 String screenshotFolder = session.getScreenshotFolderPath(log4jLevel);
                 screenshotPath = generateRandomScreenshotPath(screenshotFolder, logLevel);
                 CaptureScreen.captureDesktop(screenshotPath, true);
@@ -165,6 +181,8 @@ public class LogMessage {
             Map<String, Object> message = new HashMap<>();
             message.put(CustomHTMLLayout.Columns.MESSAGE, logMessage);
             message.put(CustomHTMLLayout.Columns.SCREENSHOT, screenshotPath);
+            message.put(CustomHTMLLayout.Columns.VIDEO, videoPath);
+            message.put(CustomHTMLLayout.Columns.VIDEO_POSTER, videoPosterPath);
             message.put(CustomHTMLLayout.Columns.VARIABLES, variableValues);
             message.put(CustomHTMLLayout.Columns.SOURCE, getFormattedBotUri());
 

@@ -452,4 +452,40 @@ public class HTMLGenerator {
                 "width='88' height='50' alt='' />" +
                 "</a>";
     }
+
+    /**
+     * Returns the HTML for the renamed "Screen" column cell.
+     *
+     * <p>Priority: video link (with poster image as the thumbnail) takes
+     * precedence; otherwise falls through to the existing screenshot link.
+     * Empty input on both produces an empty cell.
+     */
+    public static String getScreenCellHTML(String screenshotPath,
+                                           String videoPath,
+                                           String videoPosterPath) {
+        if (videoPath != null && !videoPath.isEmpty()) {
+            String videoRel = "clips/" + FilenameUtils.getName(videoPath);
+            String posterRel = (videoPosterPath != null && !videoPosterPath.isEmpty())
+                    ? "screenshots/" + FilenameUtils.getName(videoPosterPath)
+                    : "";
+            String videoEsc = StringEscapeUtils.escapeHtml4(videoRel);
+            String posterEsc = StringEscapeUtils.escapeHtml4(posterRel);
+
+            StringBuilder sb = new StringBuilder(256);
+            sb.append("<a href='").append(videoEsc).append("' target='_blank' class='img-link video-link' ")
+              .append("aria-label='Recording' title='Open recording'");
+            if (!posterEsc.isEmpty()) {
+                sb.append(" style='--screenshot-preview: url(\"").append(posterEsc).append("\")'");
+            }
+            sb.append(">");
+            if (!posterEsc.isEmpty()) {
+                sb.append("<img src='").append(posterEsc)
+                  .append("' loading='lazy' decoding='async' width='88' height='50' alt='' />");
+            }
+            sb.append("<span class='play-overlay' aria-hidden='true'>&#9654;</span>")
+              .append("</a>");
+            return sb.toString();
+        }
+        return getScreenshotHTML(screenshotPath);
+    }
 }

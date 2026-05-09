@@ -195,7 +195,8 @@ public class LoggerTest {
                 null, // These are not used for COMMON_FILE_ALL_LEVEL
                 null,
                 null,
-                10
+                10,
+                false, 30, false, false, false
         );
 
         // Ensure the session was initialized properly
@@ -267,7 +268,8 @@ public class LoggerTest {
                 infoLogPath,
                 warnLogPath,
                 errorLogPath,
-                10
+                10,
+                false, 30, false, false, false
         );
 
         // Ensure the session was initialized properly
@@ -341,8 +343,8 @@ public class LoggerTest {
     @Test
     public void testMultipleLoggerInstances() throws Exception {
         // Create two separate logger instances
-        SessionValue session1 = LoggerSession.start(COMMON_FILE_ALL_LEVEL, instance1Path, null, null, null, 10);
-        SessionValue session2 = LoggerSession.start(COMMON_FILE_ALL_LEVEL, instance2Path, null, null, null, 10);
+        SessionValue session1 = LoggerSession.start(COMMON_FILE_ALL_LEVEL, instance1Path, null, null, null, 10, false, 30, false, false, false);
+        SessionValue session2 = LoggerSession.start(COMMON_FILE_ALL_LEVEL, instance2Path, null, null, null, 10, false, 30, false, false, false);
 
         // Ensure both sessions were initialized properly
         Assert.assertNotNull(session1);
@@ -401,7 +403,7 @@ public class LoggerTest {
     @Test
     public void testLogMessageWithoutScreenshot() throws Exception {
         // Test logging without capturing screenshots
-        SessionValue sessionValue = LoggerSession.start(COMMON_FILE_ALL_LEVEL, commonLogPath, null, null, null, 10);
+        SessionValue sessionValue = LoggerSession.start(COMMON_FILE_ALL_LEVEL, commonLogPath, null, null, null, 10, false, 30, false, false, false);
 
         CustomLogger logger = (CustomLogger) sessionValue.getSession();
 
@@ -438,7 +440,7 @@ public class LoggerTest {
         // Verifies that LogMessage emits a variables-link in the log file when
         // logVariable=YES and omits it when logVariable=NO. Variable file
         // content rendering is covered by RenderingShowcaseTest.
-        SessionValue sessionValue = LoggerSession.start(COMMON_FILE_ALL_LEVEL, commonLogPath, null, null, null, 10);
+        SessionValue sessionValue = LoggerSession.start(COMMON_FILE_ALL_LEVEL, commonLogPath, null, null, null, 10, false, 30, false, false, false);
 
         CustomLogger logger = (CustomLogger) sessionValue.getSession();
 
@@ -470,7 +472,7 @@ public class LoggerTest {
 
         // Create a session specifically for this test
         SessionValue sessionValue = LoggerSession.start(COMMON_FILE_ALL_LEVEL,
-                baseTestPath + "size_test.html", null, null, null, 10);
+                baseTestPath + "size_test.html", null, null, null, 10, false, 30, false, false, false);
 
         CustomLogger logger = (CustomLogger) sessionValue.getSession();
 
@@ -518,7 +520,8 @@ public class LoggerTest {
                 null,
                 null,
                 null,
-                10
+                10,
+                false, 30, false, false, false
         );
 
         CustomLogger logger = (CustomLogger) sessionValue.getSession();
@@ -575,7 +578,8 @@ public class LoggerTest {
                 null,
                 null,
                 null,
-                10
+                10,
+                false, 30, false, false, false
         );
 
         CustomLogger logger = (CustomLogger) sessionValue.getSession();
@@ -632,7 +636,8 @@ public class LoggerTest {
                 null,
                 null,
                 null,
-                10
+                10,
+                false, 30, false, false, false
         );
 
         CustomLogger logger = (CustomLogger) sessionValue.getSession();
@@ -693,7 +698,8 @@ public class LoggerTest {
                 null,
                 null,
                 null,
-                10
+                10,
+                false, 30, false, false, false
         );
 
         CustomLogger logger = (CustomLogger) sessionValue.getSession();

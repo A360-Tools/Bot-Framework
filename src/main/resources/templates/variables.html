@@ -217,22 +217,40 @@
            pseudo-element on <summary>, which means clicks on it bubble to
            the summary and toggle the parent <details> with no JavaScript.
            Scoped to details:not(.full-width) so tables and records (which
-           have their own column-header structure) are not given a line. */
+           have their own column-header structure) are not given a line.
+
+           The visible line is 2 px, but the clickable hit-zone is 20 px wide
+           (drawn via a transparent gradient with the line painted in the
+           middle). Hovering anywhere in that 20 px column lights the line
+           up and makes the thread feel like a forgiving toggle target. */
         details:not(.full-width)[open] > summary::after {
             content: "";
             position: absolute;
-            left: 14px;
+            left: 5px;
             top: var(--summary-h);
             bottom: 0;
-            width: 2px;
-            background-color: var(--border);
+            width: 20px;
+            background:
+                linear-gradient(to right,
+                    transparent 0,
+                    transparent 9px,
+                    var(--border) 9px,
+                    var(--border) 11px,
+                    transparent 11px,
+                    transparent 100%);
             cursor: pointer;
-            transition: background-color 0.15s ease, width 0.15s ease;
+            transition: background 0.15s ease;
         }
 
         details:not(.full-width)[open] > summary:hover::after {
-            background-color: var(--primary-light);
-            width: 3px;
+            background:
+                linear-gradient(to right,
+                    transparent 0,
+                    transparent 8px,
+                    var(--primary-light) 8px,
+                    var(--primary-light) 12px,
+                    transparent 12px,
+                    transparent 100%);
         }
 
         /* Push children to the right of the thread-line. */
@@ -248,7 +266,16 @@
            glitch where some browsers shrink the summary on toggle and stop
            it from spanning full width when the table grows past viewport. */
         details.full-width > summary {
-            display: block;
+            /* Pin to --summary-h so the sticky <th> at top: var(--summary-h)
+               stacks flush against this summary's bottom edge. Without an
+               explicit height, the summary's natural (padding + line-height
+               + border) size could fall short of --summary-h and a strip of
+               scrolling rows would peek through the gap. flex + center keeps
+               the disclosure triangle and label vertically aligned inside
+               the fixed height. */
+            display: flex;
+            align-items: center;
+            height: var(--summary-h);
             width: 100%;
             box-sizing: border-box;
             position: -webkit-sticky;
