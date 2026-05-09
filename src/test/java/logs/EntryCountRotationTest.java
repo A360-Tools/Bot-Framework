@@ -1,19 +1,16 @@
 package logs;
 
 import com.automationanywhere.botcommand.actions.logs.LogMessage;
-import com.automationanywhere.botcommand.actions.logs.StartLoggerSession;
 import com.automationanywhere.botcommand.actions.logs.StopLoggerSession;
 import com.automationanywhere.botcommand.data.Value;
 import com.automationanywhere.botcommand.data.impl.*;
 import com.automationanywhere.botcommand.data.model.Schema;
 import com.automationanywhere.botcommand.data.model.table.Row;
 import com.automationanywhere.botcommand.data.model.table.Table;
-import com.automationanywhere.botcommand.utilities.logger.CustomHTMLLayout;
 import com.automationanywhere.botcommand.utilities.logger.CustomLogger;
 import com.automationanywhere.botcommand.utilities.logger.EntryCountBasedTriggeringPolicy;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.logging.log4j.Level;
-import org.apache.logging.log4j.Logger;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
@@ -22,7 +19,6 @@ import org.testng.Assert;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;

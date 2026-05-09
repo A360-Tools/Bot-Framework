@@ -117,7 +117,7 @@ public class CustomHTMLLayout extends AbstractStringLayout {
                         "<td>%s</td>" +
                         "<td class='responsive-hide'>%s</td>" +
                         "<td class='responsive-hide'>%s</td>" +
-                        "<td>%s</td>" +
+                        "<td class='message-cell'>%s</td>" +
                         "<td>%s</td>" +
                         "<td>%s</td>" +
                         "</tr>",
@@ -127,7 +127,7 @@ public class CustomHTMLLayout extends AbstractStringLayout {
                 StringEscapeUtils.escapeHtml4(sourceBotPath),
                 StringEscapeUtils.escapeHtml4(machine),
                 StringEscapeUtils.escapeHtml4(user),
-                StringEscapeUtils.escapeHtml4(message),
+                HTMLGenerator.escapeWithWhitespaceMarkers(message),
                 variablesLink,
                 screenshotLink
         );
@@ -145,6 +145,11 @@ public class CustomHTMLLayout extends AbstractStringLayout {
         return header;
     }
 
+    /**
+     * Built reflectively by Log4j2 via the @PluginBuilderFactory entry point.
+     * Static analysis cannot see the framework instantiation.
+     */
+    @SuppressWarnings("unused")
     public static class Builder implements org.apache.logging.log4j.core.util.Builder<CustomHTMLLayout> {
 
         @PluginBuilderAttribute

@@ -20,6 +20,8 @@ import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * @author Sumit Kumar
@@ -29,6 +31,46 @@ public class HTMLGenerator {
     private static final Logger LOGGER = LogManager.getLogger(HTMLGenerator.class);
     private static final String NULL = "NULL";
     private static final String TEMPLATE_PATH = "/templates/variables.html";
+    private static final Pattern TRAILING_SPACES = Pattern.compile("( +)(?=\\n|$)", Pattern.MULTILINE);
+    private static final String NL_MARKER = "<span class='ws-marker ws-nl' aria-hidden='true'>↵</span>\n";
+    private static final String TAB_MARKER = "<span class='ws-marker ws-tab' aria-hidden='true'>→</span>\t";
+
+    /**
+     * HTML-escapes the input and inserts visible glyphs for newlines, tabs,
+     * and trailing spaces so users can spot whitespace bugs in rendered
+     * logs. Markers carry aria-hidden and rely on user-select: none in CSS
+     * so they do not leak into copy/paste.
+     */
+    public static String escapeWithWhitespaceMarkers(String s) {
+        if (s == null || s.isEmpty()) {
+            return s == null ? "" : s;
+        }
+        String escaped = StringEscapeUtils.escapeHtml4(s);
+
+        Matcher trailing = TRAILING_SPACES.matcher(escaped);
+        if (trailing.find()) {
+            StringBuilder buf = new StringBuilder(escaped.length() + 32);
+            int last = 0;
+            do {
+                buf.append(escaped, last, trailing.start());
+                int n = trailing.end() - trailing.start();
+                buf.append("<span class='ws-marker ws-trail' aria-hidden='true'>")
+                   .append("·".repeat(n))
+                   .append("</span>");
+                last = trailing.end();
+            } while (trailing.find());
+            buf.append(escaped, last, escaped.length());
+            escaped = buf.toString();
+        }
+
+        if (escaped.indexOf('\t') >= 0) {
+            escaped = escaped.replace("\t", TAB_MARKER);
+        }
+        if (escaped.indexOf('\n') >= 0) {
+            escaped = escaped.replace("\n", NL_MARKER);
+        }
+        return escaped;
+    }
 
     public static String generateHTML(Map<String, Value> valueMap) {
         if (valueMap == null || valueMap.isEmpty()) {
@@ -103,7 +145,7 @@ public class HTMLGenerator {
         name = name != null ? name : NULL;
 
         // Only create a variable card if a name is provided (for top-level variables)
-        boolean isTopLevel = name != null && !name.startsWith("Index ");
+        boolean isTopLevel = !name.startsWith("Index ");
 
         if (isTopLevel) {
             htmlBuilder.append("<div class='variable-card'>\n")
@@ -160,6 +202,10 @@ public class HTMLGenerator {
                 .append(" items</summary>\n");
 
         if (!list.isEmpty()) {
+            // Wrap children so a single continuous thread-line on the left
+            // (rendered via summary::after) sits next to them with padding,
+            // and the children push to the right of the line.
+            htmlBuilder.append("<div class='nested-content'>\n");
             for (int i = 0; i < list.size(); i++) {
                 Value itemValue = list.get(i);
                 String indexName = "Index " + i;
@@ -186,6 +232,7 @@ public class HTMLGenerator {
 
                 htmlBuilder.append("</div>\n");
             }
+            htmlBuilder.append("</div>\n");
         }
 
         htmlBuilder.append("</details>\n");
@@ -228,30 +275,34 @@ public class HTMLGenerator {
                 .append(dictionaryMap.size())
                 .append(" entries</summary>\n");
 
-        for (Map.Entry<String, Value> entry : dictionaryMap.entrySet()) {
-            String key = entry.getKey();
-            Value val = entry.getValue();
+        if (!dictionaryMap.isEmpty()) {
+            htmlBuilder.append("<div class='nested-content'>\n");
+            for (Map.Entry<String, Value> entry : dictionaryMap.entrySet()) {
+                String key = entry.getKey();
+                Value val = entry.getValue();
 
-            htmlBuilder.append("<div class='variable-card'>\n")
-                    .append("<div class='variable-name'>")
-                    .append(StringEscapeUtils.escapeHtml4(key))
-                    .append("</div>\n");
-
-            if (val == null) {
-                htmlBuilder.append("<div class='variable-value'>NULL</div>\n");
-            } else {
-                String valType = val.getClass().getSimpleName().toLowerCase()
-                        .replace("object", "")
-                        .replace("value", "").toUpperCase();
-
-                htmlBuilder.append("<div class='variable-type'>")
-                        .append(StringEscapeUtils.escapeHtml4(valType))
+                htmlBuilder.append("<div class='variable-card'>\n")
+                        .append("<div class='variable-name'>")
+                        .append(StringEscapeUtils.escapeHtml4(key))
                         .append("</div>\n");
 
-                // Use appendVariableValueWithoutCard instead of separate switch cases
-                appendVariableValueWithoutCard(val, htmlBuilder);
-            }
+                if (val == null) {
+                    htmlBuilder.append("<div class='variable-value'>NULL</div>\n");
+                } else {
+                    String valType = val.getClass().getSimpleName().toLowerCase()
+                            .replace("object", "")
+                            .replace("value", "").toUpperCase();
 
+                    htmlBuilder.append("<div class='variable-type'>")
+                            .append(StringEscapeUtils.escapeHtml4(valType))
+                            .append("</div>\n");
+
+                    // Use appendVariableValueWithoutCard instead of separate switch cases
+                    appendVariableValueWithoutCard(val, htmlBuilder);
+                }
+
+                htmlBuilder.append("</div>\n");
+            }
             htmlBuilder.append("</div>\n");
         }
 
@@ -369,18 +420,18 @@ public class HTMLGenerator {
     }
 
     private static void appendScalarValue(Value scalarValue, StringBuilder htmlBuilder) {
-        String objectStringvalue = "";
+        String objectStringValue = "";
         if (scalarValue instanceof CredentialObject) {
-            objectStringvalue = ((CredentialObject) scalarValue).get().getInsecureString();
+            objectStringValue = ((CredentialObject) scalarValue).get().getInsecureString();
         } else if (scalarValue instanceof NumberValue
                 || scalarValue instanceof StringValue
                 || scalarValue instanceof DateTimeValue
                 || scalarValue instanceof BooleanValue) {
-            objectStringvalue = scalarValue.get().toString();
+            objectStringValue = scalarValue.get().toString();
         }
 
         htmlBuilder.append("<div class='variable-value'>")
-                .append(StringEscapeUtils.escapeHtml4(objectStringvalue))
+                .append(escapeWithWhitespaceMarkers(objectStringValue))
                 .append("</div>\n");
     }
 

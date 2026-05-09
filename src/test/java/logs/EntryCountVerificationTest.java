@@ -1,5 +1,7 @@
 package logs;
 
+import com.automationanywhere.botcommand.actions.logs.LogMessage;
+import com.automationanywhere.botcommand.actions.logs.StopLoggerSession;
 import com.automationanywhere.botcommand.utilities.logger.CustomHTMLLayout;
 import com.automationanywhere.botcommand.utilities.logger.CustomLogger;
 import org.apache.commons.io.FilenameUtils;
@@ -93,34 +95,44 @@ public class EntryCountVerificationTest {
     }
 
     @Test
-    public void testScreenshotPathInHTML() throws IOException {
-        // Create test directory
+    public void testScreenshotPathInHTML() throws Exception {
+        // Drive the real production flow: LogMessage.action(captureScreenshot=true)
+        // captures the desktop via CaptureScreen, writes the PNG, and emits the
+        // screenshot column. The test asserts the captured file exists and the
+        // generated HTML references it via the expected relative path.
         String testPath = "src/test/target/test-artifacts/screenshot-path-" + System.currentTimeMillis() + "/";
         Files.createDirectories(Paths.get(testPath));
 
         String logFilePath = testPath + "screenshot-test.html";
         CustomLogger customLogger = new CustomLogger("ScreenshotLogger_" + UUID.randomUUID(),
                                                       logFilePath, 10);
-        Logger logger = customLogger.getLogger();
+
+        LogMessage logMessage = new LogMessage();
+        logMessage.setTestBotUri("Automation Anywhere/bots/test/screenshot-path-bot");
+
+        logMessage.action(
+            customLogger,
+            "INFO",
+            "Test message with screenshot",
+            true,
+            "NO",
+            null,
+            null
+        );
+
+        new StopLoggerSession().stop(customLogger);
 
         String screenshotsDir = testPath + "screenshots";
+        File[] screenshots = new File(screenshotsDir).listFiles((dir, name) -> name.endsWith(".png"));
+        Assert.assertNotNull(screenshots, "Screenshots directory should contain a captured PNG");
+        Assert.assertEquals(screenshots.length, 1, "Exactly one screenshot should have been captured");
+        Assert.assertTrue(screenshots[0].length() > 0, "Captured screenshot file should have content");
 
-        // Log entry with screenshot path
-        Map<String, Object> message = new HashMap<>();
-        message.put(CustomHTMLLayout.Columns.MESSAGE, "Test message with screenshot");
-        message.put(CustomHTMLLayout.Columns.SOURCE, "Test/Screenshot");
-        message.put(CustomHTMLLayout.Columns.SCREENSHOT, screenshotsDir + "/test_image.png");
-        message.put(CustomHTMLLayout.Columns.VARIABLES, null);
-        logger.info(message);
-
-        customLogger.close();
-
-        // Check the HTML content
+        String capturedFileName = screenshots[0].getName();
         String htmlContent = new String(Files.readAllBytes(Paths.get(logFilePath)));
 
-        // The HTMLGenerator creates relative paths like "screenshots/filename.png"
-        Assert.assertTrue(htmlContent.contains("screenshots/test_image.png"),
-            "HTML should contain screenshot reference");
+        Assert.assertTrue(htmlContent.contains("screenshots/" + capturedFileName),
+            "HTML should reference the captured screenshot via the relative 'screenshots/' path");
         Assert.assertTrue(htmlContent.contains("class='img-link'"), "HTML should contain screenshot link");
         Assert.assertTrue(htmlContent.contains("<img"), "HTML should contain screenshot thumbnail image");
         Assert.assertTrue(htmlContent.contains("loading='lazy'"), "Screenshot image should lazy load");

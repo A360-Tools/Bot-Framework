@@ -1,0 +1,33 @@
+# Local Gradle config template.
+#
+# Copy this file to `gradle.properties` (gitignored) and fill in the
+# JDK 11 path for your machine. Each developer needs their own copy
+# because the path below points to a user-specific install location.
+#
+# Why JDK 11:
+#   - AA360 Custom Packages run on Java 11 in Control Room.
+#   - The build's java.toolchain in build.gradle already forces
+#     compilation to Java 11.
+#   - Pinning the Gradle daemon JVM to JDK 11 here keeps the daemon
+#     consistent with the target AND avoids Groovy 3.0.24 class-file
+#     errors that hit when the daemon runs on JDK 22+ (Gradle 8.14
+#     bundles Groovy 3.0.24, which cannot parse class file major
+#     versions above 65).
+#
+# Quick setup:
+#   1. cp gradle.properties.example gradle.properties
+#   2. Edit `org.gradle.java.home` below to point at your JDK 11.
+#   3. ./gradlew --stop  (so the daemon picks up the new JDK).
+#
+# Common JDK 11 install locations:
+#   JetBrains-managed:  ${USER_HOME}/.jdks/azul-11.x.x
+#                       ${USER_HOME}/.jdks/temurin-11.x.x
+#                       ${USER_HOME}/.jdks/openjdk-11.x.x
+#   Adoptium installer: C:/Program Files/Eclipse Adoptium/jdk-11.x.x-hotspot
+#   Zulu installer:     C:/Program Files/Zulu/zulu-11
+#   Linux/macOS apt:    /usr/lib/jvm/java-11-openjdk-amd64
+#   sdkman:             ${HOME}/.sdkman/candidates/java/11.x.x-tem
+#
+# Replace the placeholder path with the absolute path to your JDK 11
+# install directory (the one that contains bin/java).
+#org.gradle.java.home=/path/to/your/jdk-11

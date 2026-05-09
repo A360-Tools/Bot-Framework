@@ -6,160 +6,377 @@
     <title>Variables Data</title>
     <style>
         :root {
-            --primary: #4285f4;
-            --primary-light: #8ab4f8;
-            --secondary: #34a853;
-            --secondary-light: #82d893;
-            --danger: #ea4335;
-            --warning: #fbbc05;
+            --primary: #1a73e8;
+            --primary-soft: #e8f0fe;
+            --primary-light: #aecbfa;
+            --primary-dark: #1557b0;
+            --secondary: #1e8e3e;
             --surface: #ffffff;
-            --background: #f8f9fa;
+            --surface-2: #f8f9fa;
             --text-primary: #202124;
             --text-secondary: #5f6368;
-            --border: #dadce0;
+            --border: #e0e3e7;
+            --row-hover: rgba(26, 115, 232, 0.06);
+            --radius-sm: 6px;
+            --gap: clamp(12px, 2vw, 24px);
+            --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+            --summary-h: 44px;
         }
 
-        * {
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --primary: #8ab4f8;
+                --primary-soft: #1f3a5f;
+                --primary-light: #c8dafa;
+                --primary-dark: #aecbfa;
+                --secondary: #81c995;
+                --surface: #1e1f22;
+                --surface-2: #2b2d30;
+                --text-primary: #e8eaed;
+                --text-secondary: #9aa0a6;
+                --border: #3c4043;
+                --row-hover: rgba(138, 180, 248, 0.1);
+            }
+        }
+
+        *, *::before, *::after {
             box-sizing: border-box;
-            margin: 0;
-            padding: 0;
+        }
+
+        html {
+            background-color: var(--surface);
         }
 
         body {
-            font-family: 'Segoe UI', Roboto, Oxygen, Ubuntu, 'Helvetica Neue', sans-serif;
-            background-color: var(--background);
+            font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: var(--surface);
             color: var(--text-primary);
             line-height: 1.5;
-            padding: 0;
+            font-size: 14px;
             margin: 0;
+            padding: 0;
+            /* fit-content lets the body grow to its widest descendant so
+               wide tables drag header, cards, and details summaries with
+               them. min-width: 100% keeps it at least viewport-wide so
+               narrow content still spans full screen. Without this, the
+               sticky summary above a wide table stays viewport-narrow
+               while the table extends past, looking misaligned. */
+            width: fit-content;
             min-width: 100%;
-            width: fit-content; /* Allow body to expand based on content */
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
         }
 
         header {
             background: linear-gradient(135deg, var(--primary), var(--secondary));
             color: white;
-            padding: 0;
-            text-align: center;
-            margin-bottom: 20px;
-            border-radius: 0;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            width: 100%;
+            padding: clamp(14px, 2.5vw, 24px) var(--gap);
+            margin: 0 0 12px;
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: clamp(18px, 2.2vw, 24px);
+            font-weight: 600;
+            letter-spacing: -0.02em;
         }
 
         .container {
             display: flex;
             flex-direction: column;
-            gap: 20px;
-            width: 100%;
-            /* Remove max-width constraint to allow full expansion */
-            margin: 0 auto;
-            min-width: fit-content;
         }
 
         .variable-card {
             background-color: var(--surface);
-            border-radius: 8px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
-            padding: 16px;
-            display: flex;
-            flex-direction: column;
-            margin-bottom: 16px;
-            width: 100%;
-            min-width: fit-content; /* Allow card to expand with content */
+            border-bottom: 1px solid var(--border);
+            padding: 14px var(--gap);
         }
 
+        /* Nested cards no longer carry their own left border because the
+           parent details > summary::after draws a single continuous line
+           down the entire branch. Bottom border is dropped so the inner
+           cards visually flow together along the thread line. */
+        .variable-card .variable-card {
+            border-bottom: none;
+            margin-top: 10px;
+            padding: 10px 14px;
+        }
+
+        /* variable-name and variable-type sit on the same row.
+           Spacing between this header pair and the value/details/nested
+           card below comes from the next-sibling margin-top rule. */
         .variable-name {
+            display: inline-block;
+            vertical-align: middle;
+            margin: 0 10px 0 0;
             font-weight: 600;
-            margin-bottom: 8px;
-            color: var(--primary);
+            color: var(--primary-dark);
+            font-size: 15px;
+            word-break: break-word;
         }
 
         .variable-type {
-            font-size: 0.9em;
+            display: inline-block;
+            vertical-align: middle;
+            margin: 0;
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
             color: var(--text-secondary);
-            margin-bottom: 8px;
+            background-color: var(--surface-2);
+            border: 1px solid var(--border);
+            padding: 3px 10px;
+            border-radius: 999px;
+        }
+
+        .variable-card > .variable-type ~ .variable-value,
+        .variable-card > .variable-type ~ details,
+        .variable-card > .variable-type ~ .table-container,
+        .variable-card > .variable-type ~ .variable-card {
+            margin-top: 10px;
         }
 
         .variable-value {
-            background-color: var(--background);
-            border-radius: 4px;
-            padding: 8px;
-            font-family: monospace;
+            background-color: var(--surface-2);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 10px 12px;
+            font-family: var(--mono);
+            font-size: 13px;
             white-space: pre-wrap;
             word-break: break-word;
-            margin-top: auto;
+            overflow-x: auto;
+        }
+
+        .ws-marker {
+            color: var(--text-secondary);
+            opacity: 0.55;
+            user-select: none;
+        }
+
+        .ws-tab {
+            font-size: 0.85em;
+            margin-right: -0.4em;
+        }
+
+        .ws-nl {
+            font-size: 0.85em;
+            margin-left: 2px;
+        }
+
+        .ws-trail {
+            font-family: var(--mono);
         }
 
         details {
             margin-top: 8px;
-            width: 100%;
-            min-width: fit-content; /* Allow details to expand with content */
+            position: relative;   /* containing block for summary::after thread-line */
         }
 
-        summary {
+        details > summary {
             cursor: pointer;
-            padding: 8px;
-            background-color: var(--primary-light);
+            padding: 10px 14px;
+            background-color: var(--surface-2);
             color: var(--text-primary);
-            border-radius: 4px;
-            margin-bottom: 8px;
-        }
-
-        /* Remove the table wrapper with overflow-x - let content expand naturally */
-        .table-container {
-            width: 100%;
-            min-width: fit-content;
-            margin-bottom: 16px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
-            border-radius: 4px;
-        }
-
-        table {
-            border-collapse: collapse;
-            width: 100%;
-            margin-top: 8px;
-            background-color: var(--surface);
-            table-layout: auto; /* Let columns size based on content */
-        }
-
-        th, td {
             border: 1px solid var(--border);
-            padding: 8px;
-            text-align: left;
-            min-width: 120px; /* Minimum width for each column */
+            border-radius: var(--radius-sm);
+            margin-bottom: 8px;
+            font-weight: 500;
+            user-select: none;
+            list-style: none;
+            transition: background-color 0.15s ease;
         }
 
-        th {
+        details > summary::-webkit-details-marker {
+            display: none;
+        }
+
+        details > summary::before {
+            content: "";
+            display: inline-block;
+            width: 0;
+            height: 0;
+            border-left: 5px solid var(--text-secondary);
+            border-top: 4px solid transparent;
+            border-bottom: 4px solid transparent;
+            margin-right: 10px;
+            vertical-align: 2px;
+            transition: transform 0.15s ease;
+        }
+
+        details[open] > summary::before {
+            transform: rotate(90deg);
+        }
+
+        details > summary:hover {
+            background-color: var(--primary-soft);
+        }
+
+        /* Connected thread-line for nested list/dict children. The line is a
+           pseudo-element on <summary>, which means clicks on it bubble to
+           the summary and toggle the parent <details> with no JavaScript.
+           Scoped to details:not(.full-width) so tables and records (which
+           have their own column-header structure) are not given a line. */
+        details:not(.full-width)[open] > summary::after {
+            content: "";
+            position: absolute;
+            left: 14px;
+            top: var(--summary-h);
+            bottom: 0;
+            width: 2px;
+            background-color: var(--border);
+            cursor: pointer;
+            transition: background-color 0.15s ease, width 0.15s ease;
+        }
+
+        details:not(.full-width)[open] > summary:hover::after {
             background-color: var(--primary-light);
+            width: 3px;
+        }
+
+        /* Push children to the right of the thread-line. */
+        .nested-content {
+            padding-left: 24px;
+        }
+
+        /* details.full-width wraps tables and records. Sticking the summary
+           keeps the "Table: X rows x Y columns" label visible while scrolling
+           through long tables, so users can collapse and skip ahead without
+           scrolling back. The <th> row stacks below at top: var(--summary-h).
+           Explicit display: block + width: 100% + box-sizing fixes a layout
+           glitch where some browsers shrink the summary on toggle and stop
+           it from spanning full width when the table grows past viewport. */
+        details.full-width > summary {
+            display: block;
+            width: 100%;
+            box-sizing: border-box;
+            position: -webkit-sticky;
             position: sticky;
             top: 0;
-            z-index: 10;
+            z-index: 6;
+            margin-bottom: 0;
+            border-radius: 0;
         }
 
-        td {
+        /* No overflow on the container so it is not a scroll container.
+           That lets sticky <th> below bind to the page scroll port instead
+           of getting trapped inside a nested scroll context. Wide tables
+           extend past the page and trigger page-level horizontal scroll,
+           which is the only way pure CSS can keep both sticky thead on
+           page scroll and reachable wide content. */
+        .table-container {
+            border-top: 1px solid var(--border);
+            border-bottom: 1px solid var(--border);
+            margin-top: -1px;
+            margin-bottom: 12px;
+            background-color: var(--surface);
+        }
+
+        .table-container table {
+            border-collapse: collapse;
+            width: 100%;
+            margin: 0;
+            background-color: var(--surface);
+            table-layout: auto;
+        }
+
+        .table-container th,
+        .table-container td {
+            padding: 10px 14px;
+            text-align: left;
+            overflow-wrap: break-word;
+            min-width: 140px;
+        }
+
+        .table-container th {
+            background-color: var(--surface-2);
+            font-weight: 600;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: var(--text-secondary);
+            border-bottom: 1px solid var(--border);
+            position: -webkit-sticky;
+            position: sticky;
+            top: var(--summary-h);
+            z-index: 5;
+            box-shadow: inset 0 -1px 0 var(--border), 0 2px 4px rgba(60, 64, 67, 0.06);
+        }
+
+        .table-container td {
+            border-bottom: 1px solid var(--border);
             vertical-align: top;
-            word-break: break-word; /* Allow text to wrap inside cells */
+            font-size: 13px;
         }
 
-        tr:hover {
-            background-color: rgba(0,0,0,0.05);
+        .table-container tr:has(td):last-child td {
+            border-bottom: none;
+        }
+
+        .table-container tr:has(td):hover {
+            background-color: var(--row-hover);
+        }
+
+        /* Inside table cells, render scalar values inline rather than as
+           code-boxes — the cell already provides visual structure. Nested
+           complex values (records/tables) keep their own styling. */
+        .table-container td > .variable-value {
+            background: transparent;
+            border: none;
+            border-radius: 0;
+            padding: 0;
+            margin: 0;
+            font-family: inherit;
+            font-size: inherit;
+            overflow-x: visible;
         }
 
         .full-width {
             width: 100%;
-            min-width: fit-content;
         }
 
-        .variable-card .variable-card {
-            border-left: 3px solid var(--primary-light);
+        @media (max-width: 1024px) {
+            .table-container th,
+            .table-container td {
+                padding: 9px 12px;
+                min-width: 130px;
+            }
         }
 
-        /* Ensure header spans the whole content width even when scrolling */
-        @media (min-width: 1200px) {
-            header {
-                width: 100%;
-                min-width: fit-content;
+        @media (max-width: 768px) {
+            body {
+                font-size: 13px;
+            }
+
+            .variable-name {
+                font-size: 14px;
+                margin-right: 8px;
+            }
+
+            .variable-type {
+                font-size: 9px;
+                padding: 2px 8px;
+            }
+
+            .table-container th,
+            .table-container td {
+                padding: 8px 10px;
+                min-width: 110px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .table-container th,
+            .table-container td {
+                padding: 6px 8px;
+                min-width: 90px;
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                transition: none !important;
             }
         }
     </style>
