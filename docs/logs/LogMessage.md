@@ -1,7 +1,7 @@
 # Log Message
 
 ## Overview
-`Log Message` records a message to the session log file and optionally captures a screenshot, enriching log diagnostics. If the parent logger session has screen recording enabled for this entry's log level, the rolling video buffer is also finalized into an MP4 placed next to the log, and a still image of the desktop is captured to serve as the video poster (and is returned as the screenshot file path).
+`Log Message` records a message to the session log file and optionally captures a screenshot, enriching log diagnostics. If the parent logger session has screen recording enabled for this entry's log level, the rolling video buffer is also finalized into an MP4 placed next to the log, and a still image of the desktop is captured to serve as the HTML video preview thumbnail.
 
 ![image](https://github.com/A360-Tools/Bot-Framework/assets/82057278/8110493b-9bea-478c-9d78-cd864ee581c2)
 
@@ -21,7 +21,7 @@
 ### Capture Screenshot
 - **Type:** `Boolean`
 - **Default:** `false`
-- **Description:** Indicates whether to capture a screenshot with the log message. When the parent session has screen recording enabled for this entry's log level, a still is always captured as the video poster regardless of this flag.
+- **Description:** Whether to expose a screenshot file path in this action's return value. When the parent session has screen recording enabled for this entry's log level, a still is always captured behind the scenes as the HTML video preview thumbnail; that internal still is exposed as the returned `ScreenshotPath` only when this flag is checked. With both video on and this flag on, the same still is reused for both purposes (no double capture).
 
 ### Log Variable Values
 - **Options:** "Yes" or "No"
@@ -39,7 +39,7 @@
 
 * **Type:** `File`
 * **Assignment Variable:** `ScreenshotPath` (File, optional)
-* **Description:** Returns the path of the screenshot PNG that was captured for this log entry, if any. Populated when "Capture Screenshot" is true, or when the parent session is recording video for this entry's log level (in which case the returned path is the video poster). Empty when no still was captured.
+* **Description:** The path of the screenshot PNG captured for this log entry, populated only when "Capture Screenshot" is checked. Empty when the box is unchecked, even if the parent session is recording video and a video preview thumbnail was captured internally.
 
 ## Exceptions
 

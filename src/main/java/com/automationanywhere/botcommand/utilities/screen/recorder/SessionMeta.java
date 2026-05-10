@@ -51,11 +51,9 @@ public final class SessionMeta {
         this.bufferSeconds = json.getInt("bufferSeconds");
         this.recordingLevels = parseLevels(json.getJSONArray("recordingLevels"));
         this.startedAt = Instant.parse(json.getString("startedAt"));
-        this.packageVersion = json.optString("packageVersion", "");
-        this.jvmPid = json.optLong("jvmPid", -1L);
-        // Default FAST when missing so pre-existing meta files (written before
-        // encodingMode was persisted) salvage with the current default encoder.
-        this.encodingMode = parseEncodingMode(json.optString("encodingMode", null));
+        this.packageVersion = json.getString("packageVersion");
+        this.jvmPid = json.getLong("jvmPid");
+        this.encodingMode = EncodingMode.valueOf(json.getString("encodingMode"));
     }
 
     public static SessionMeta read(Path file) throws IOException {
@@ -92,16 +90,5 @@ public final class SessionMeta {
             }
         }
         return result;
-    }
-
-    private static EncodingMode parseEncodingMode(String value) {
-        if (value == null || value.isEmpty()) {
-            return EncodingMode.FAST;
-        }
-        try {
-            return EncodingMode.valueOf(value);
-        } catch (IllegalArgumentException e) {
-            return EncodingMode.FAST;
-        }
     }
 }

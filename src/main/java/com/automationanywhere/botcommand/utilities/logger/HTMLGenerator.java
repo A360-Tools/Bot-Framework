@@ -463,8 +463,8 @@ public class HTMLGenerator {
      *       requested for this level but the encoder pool rejected the task,
      *       the recorder failed, or the ring had nothing to snapshot). Click
      *       opens the screenshot itself.</li>
-     *   <li>Plain screenshot link (legacy {@code captureScreenshot=true}
-     *       path; recording was not requested for this level).</li>
+     *   <li>Plain screenshot link (the {@code captureScreenshot=true}
+     *       branch when recording was not requested for this level).</li>
      * </ol>
      * <p>Empty input on all three produces an empty cell.
      */

@@ -13,7 +13,10 @@ import org.apache.logging.log4j.core.config.builder.api.LayoutComponentBuilder;
 import org.apache.logging.log4j.core.config.builder.impl.BuiltConfiguration;
 import org.apache.logging.log4j.core.config.builder.impl.DefaultConfigurationBuilder;
 
+import java.io.File;
 import java.io.IOException;
+import java.io.RandomAccessFile;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -88,6 +91,11 @@ public class CustomLogger implements CloseableSessionObject {
 
         builder.add(builder.newRootLogger(Level.INFO));
 
+        // Strip the previous session's trailing footer BEFORE Log4j2 opens
+        // the file. Once context.start() runs, RollingFileManager grabs an
+        // append-mode handle that prevents truncation on Windows.
+        stripTrailingFooterIfPresent(logFilePath);
+
         // Initialize the context with the configuration
         BuiltConfiguration config = builder.build();
         context.start(config);
@@ -157,6 +165,74 @@ public class CustomLogger implements CloseableSessionObject {
             );
     }
 
+    /**
+     * Removes the closing HTML footer from an existing log file so the next
+     * session's entries append inside the open {@code <tbody>} instead of
+     * after the closing tags. Truncates the file at the byte offset of the
+     * first {@code </tbody>} marker found.
+     *
+     * <p>This is the standard mechanism that makes append-across-sessions
+     * work: each session writes the footer on close, the next session
+     * strips it on open, writes its entries, and writes a new footer on
+     * its own close.
+     *
+     * <p><strong>Must run before Log4j2's RollingFileManager opens the
+     * file.</strong> On Windows, the manager opens the file with a share
+     * mode that grants reads but blocks rename/truncate from any other
+     * handle, so this strip cannot happen from inside a triggering policy's
+     * {@code initialize()} hook (the file is already locked by then).
+     *
+     * <p>No-op when:
+     * <ul>
+     *     <li>the file does not exist or is empty (fresh session),</li>
+     *     <li>no {@code </tbody>} marker is present (the previous JVM died
+     *         before writing the footer on close; nothing to strip and
+     *         every existing {@code <tr>} row stays intact).</li>
+     * </ul>
+     *
+     * <p>Safe under any UTF-8 content: {@code </tbody>} is pure ASCII and
+     * the byte sequence cannot occur inside a multi-byte UTF-8 character
+     * (continuation bytes are 0x80-0xBF, ASCII bytes are 0x00-0x7F).
+     *
+     * <p>Best-effort: any IOException is swallowed. The worst-case fallout
+     * is a slightly-malformed log render, never a logger startup failure.
+     */
+    private static void stripTrailingFooterIfPresent(String filePath) {
+        File file = new File(filePath);
+        if (!file.isFile() || file.length() == 0) {
+            return;
+        }
+        try {
+            byte[] data = Files.readAllBytes(file.toPath());
+            byte[] marker = "</tbody>".getBytes(StandardCharsets.US_ASCII);
+            int offset = indexOfBytes(data, marker);
+            if (offset < 0) {
+                return;
+            }
+            try (RandomAccessFile raf = new RandomAccessFile(file, "rw")) {
+                raf.setLength(offset);
+            }
+        } catch (IOException ignored) {
+            // best-effort; logger startup must not fail on this
+        }
+    }
+
+    private static int indexOfBytes(byte[] haystack, byte[] needle) {
+        if (needle.length == 0 || haystack.length < needle.length) {
+            return -1;
+        }
+        outer:
+        for (int i = 0; i <= haystack.length - needle.length; i++) {
+            for (int j = 0; j < needle.length; j++) {
+                if (haystack[i + j] != needle[j]) {
+                    continue outer;
+                }
+            }
+            return i;
+        }
+        return -1;
+    }
+
     // Constructor for multiple log files based on the level (no video recording)
     public CustomLogger(String loggerName, Map<Level, String> levelFilePathMap, int maxLogEntries) throws IOException {
         this(loggerName, levelFilePathMap, maxLogEntries, 0, new HashSet<>(), EncodingMode.FAST);
@@ -218,6 +294,12 @@ public class CustomLogger implements CloseableSessionObject {
         );
 
         builder.add(builder.newRootLogger(Level.INFO));
+
+        // Strip the previous session's trailing footer from each per-level
+        // file BEFORE Log4j2 opens any of them. See the helper's javadoc.
+        for (String levelPath : levelFilePathMap.values()) {
+            stripTrailingFooterIfPresent(levelPath);
+        }
 
         // Initialize the context with the configuration
         BuiltConfiguration config = builder.build();

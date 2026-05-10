@@ -117,6 +117,8 @@
 
         tbody tr:hover {
             background-color: var(--row-hover);
+            outline: 2px solid var(--primary);
+            outline-offset: -2px;
         }
 
         tbody tr:has(td.level-WARN) {
@@ -125,6 +127,7 @@
 
         tbody tr:has(td.level-WARN):hover {
             background-color: var(--warning-soft-hover);
+            outline-color: var(--warning-dark);
         }
 
         tbody tr:has(td.level-ERROR) {
@@ -133,6 +136,7 @@
 
         tbody tr:has(td.level-ERROR):hover {
             background-color: var(--danger-soft-hover);
+            outline-color: var(--danger);
         }
 
         tbody tr:last-child td {

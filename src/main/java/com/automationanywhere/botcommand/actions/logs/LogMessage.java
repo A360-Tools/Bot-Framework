@@ -158,8 +158,9 @@ public class LogMessage {
             }
 
             if (session.shouldRecordVideoFor(log4jLevel)) {
-                // Always take a still poster - serves as <video poster> AND as the
-                // FileValue returned to the caller (so screenshot semantics are preserved).
+                // Always take a still poster: the HTML log uses it as the
+                // <video poster> preview thumbnail regardless of whether the
+                // user opted in to a returned screenshot path.
                 String screenshotFolder = session.getScreenshotFolderPath(log4jLevel);
                 videoPosterPath = generateRandomScreenshotPath(screenshotFolder, logLevel);
                 CaptureScreen.captureDesktop(videoPosterPath, true);
@@ -169,9 +170,13 @@ public class LogMessage {
                 Path mp4 = session.snapshotForError(errorUuid);
                 videoPath = mp4 == null ? "" : mp4.toString();
 
-                // The poster doubles as the screenshot artifact for this row.
-                screenshotPath = videoPosterPath;
-            } else if (captureScreenshot) {
+                // Only expose the poster as the action's returned screenshot
+                // path when the user explicitly opted in. Reusing the poster
+                // here avoids a second screen capture when both are on.
+                if (Boolean.TRUE.equals(captureScreenshot)) {
+                    screenshotPath = videoPosterPath;
+                }
+            } else if (Boolean.TRUE.equals(captureScreenshot)) {
                 // Existing screenshot-only path - unchanged behavior.
                 String screenshotFolder = session.getScreenshotFolderPath(log4jLevel);
                 screenshotPath = generateRandomScreenshotPath(screenshotFolder, logLevel);

@@ -11,13 +11,6 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.AtomicMoveNotSupportedException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -76,94 +69,44 @@ public class EntryCountBasedTriggeringPolicy extends AbstractTriggeringPolicy {
     }
 
     /**
-     * Counts existing log entries in the file by counting &lt;tr&gt;&lt;td&gt; patterns.
-     * This pattern matches only data rows, excluding header rows which use &lt;th&gt; instead.
-     * Also removes the HTML footer if present to allow proper appending.
-     * This enables proper entry counting across program restarts when appending to existing files.
+     * Counts existing log entries in the file by counting &lt;tr&gt;&lt;td&gt;
+     * patterns. This pattern matches only data rows, excluding header rows
+     * which use &lt;th&gt; instead.
+     *
+     * <p>Pure read-only: footer stripping happens earlier in
+     * {@code CustomLogger.stripTrailingFooterIfPresent} before Log4j2 opens
+     * the file. By the time this method runs, RollingFileManager already
+     * holds an append-mode handle on the file, which on Windows blocks any
+     * truncate/rename from this thread. Reading is unaffected because the
+     * manager's share mode grants read access.
      *
      * @param filePath Path to the log file
-     * @return Number of existing log entries in the file, or 0 if file doesn't exist or can't be read
+     * @return Number of existing log entries in the file, or 0 if file
+     *         doesn't exist or can't be read
      */
     private int countExistingEntries(String filePath) {
         File file = new File(filePath);
-
-        // If file doesn't exist or is empty, no entries exist
         if (!file.exists() || file.length() == 0) {
             return 0;
         }
 
         int count = 0;
-        boolean footerFound = false;
-        List<String> allLines = new ArrayList<>();
-
         try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
             String line;
             while ((line = reader.readLine()) != null) {
-                allLines.add(line);
                 String lowerLine = line.toLowerCase();
-
-                // Count occurrences of <tr><td> to count only data rows (excludes header rows with <th>)
                 int index = 0;
                 while ((index = lowerLine.indexOf("<tr><td>", index)) != -1) {
                     count++;
-                    index += 8; // Move past "<tr><td>" (8 characters) to find next occurrence
-                }
-
-                // Check if this line contains the footer
-                if (!footerFound && (lowerLine.contains("</tbody>") || lowerLine.contains("</table>"))) {
-                    footerFound = true;
+                    index += 8;
                 }
             }
         } catch (IOException e) {
-            // If we can't read the file, assume no entries
-            // This is a safe default as it's better to potentially rollover early
-            // than to exceed the max entry limit
+            // Safe fallback: 0 means "treat as fresh file", so we may
+            // rollover slightly early on a transient read failure, never
+            // overshoot the maxEntries cap.
             return 0;
         }
-
-        // If footer was found, remove it from the file. Write to a sibling
-        // temp file and atomically rename over the original: a crash mid-write
-        // leaves the original intact, whereas an in-place truncate-then-rewrite
-        // would lose every prior entry on power loss.
-        if (footerFound && !allLines.isEmpty()) {
-            Path original = file.toPath();
-            Path tmp = original.resolveSibling(file.getName() + ".rewrite-tmp");
-            try {
-                StringBuilder rebuilt = new StringBuilder(allLines.size() * 64);
-                for (int i = 0; i < allLines.size(); i++) {
-                    String line = allLines.get(i);
-                    String lowerLine = line.toLowerCase();
-                    int footerIndex = lowerLine.indexOf("</tbody>");
-                    if (footerIndex == -1) {
-                        footerIndex = lowerLine.indexOf("</table>");
-                    }
-                    if (footerIndex >= 0) {
-                        line = line.substring(0, footerIndex);
-                    }
-                    rebuilt.append(line);
-                    if (i < allLines.size() - 1) {
-                        rebuilt.append(System.lineSeparator());
-                    }
-                }
-                Files.write(tmp, rebuilt.toString().getBytes(StandardCharsets.UTF_8));
-                try {
-                    Files.move(tmp, original,
-                            StandardCopyOption.ATOMIC_MOVE,
-                            StandardCopyOption.REPLACE_EXISTING);
-                } catch (AtomicMoveNotSupportedException e) {
-                    Files.move(tmp, original, StandardCopyOption.REPLACE_EXISTING);
-                }
-            } catch (IOException e) {
-                // Best-effort cleanup of the temp file; original is untouched.
-                try {
-                    Files.deleteIfExists(tmp);
-                } catch (IOException ignored) {
-                }
-                // If we can't rewrite, log file will continue to work but footer will be duplicated
-                // This is not critical, just a warning condition
-            }
-        }
-
         return count;
     }
 
