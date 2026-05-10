@@ -67,11 +67,11 @@ public class VideoRecordingIntegrationTest {
                 logFile.toString(),
                 null, null, null,
                 100,
-                /* captureScreenRecording */ true,
-                /* videoBufferSeconds      */ 5,
+                /* captureScreenRecording  */ "VIDEO_ENABLED",
                 /* videoOnInfo             */ false,
                 /* videoOnWarn             */ false,
-                /* videoOnError            */ true);
+                /* videoOnError            */ true,
+                /* videoBufferSeconds      */ 5);
         logger = (CustomLogger) sv.getSession();
         Assert.assertTrue(logger.shouldRecordVideoFor(org.apache.logging.log4j.Level.ERROR),
                 "logger must report video-on for ERROR after start()");
@@ -89,13 +89,16 @@ public class VideoRecordingIntegrationTest {
         logMessage.action(logger, LEVEL_ERROR, "the actual failure",
                 false, DO_NOT_LOG_VARIABLE, null, null);
 
-        // Stop the logger - this drains the encoder queue (up to 30s) and
-        // synchronously waits for any in-flight encode to finish.
+        // Stop the logger. close() blocks until the encoder pool drains
+        // (typically ~5-15 s with libaom-av1) and the session folder is
+        // deleted. AA invokes this same path automatically via the
+        // CloseableSessionObject contract when no Stop Logger Session is
+        // present in the bot.
         stopSession.stop(logger);
 
-        // Assertions
         Path clipsDir = baseDir.resolve("clips");
         Path screenshotsDir = baseDir.resolve("screenshots");
+
         Assert.assertTrue(Files.isDirectory(clipsDir),
                 "clips/ directory should exist next to log.html");
         long mp4Count = countByExt(clipsDir, ".mp4");
@@ -119,12 +122,13 @@ public class VideoRecordingIntegrationTest {
         Assert.assertTrue(html.contains("<th>Screen</th>"),
                 "the Screen column header must be present");
 
-        // The session-private workspace under %LOCALAPPDATA% must be cleaned
+        // The session-private workspace under %LOCALAPPDATA% is cleaned by
+        // close() above as part of its drain.
         Path appData = com.automationanywhere.botcommand.utilities.screen.recorder
                 .FfmpegBinary.appDataRoot();
         Path sessionFolder = appData.resolve("sessions").resolve(logger.getLoggerId());
         Assert.assertFalse(Files.exists(sessionFolder),
-                "session folder must be removed after stop(); still at " + sessionFolder);
+                "session folder must be removed after close(); still at " + sessionFolder);
     }
 
     @Test
@@ -135,7 +139,7 @@ public class VideoRecordingIntegrationTest {
                 logFile.toString(),
                 null, null, null,
                 100,
-                true, 5, false, false, true);
+                "VIDEO_ENABLED", false, false, true, 5);
         logger = (CustomLogger) sv.getSession();
 
         // No need to wait for the buffer here - INFO is not in recordingLevels,

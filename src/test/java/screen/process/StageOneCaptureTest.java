@@ -74,9 +74,9 @@ public class StageOneCaptureTest {
         recorder.close();
         Assert.assertTrue(recorder.isClosed());
 
-        // Session folder is deleted on close
         Assert.assertFalse(Files.exists(sessionFolder),
-                "session folder must be removed after close(); still exists at " + sessionFolder);
+                "session folder must be removed after close(); still exists at "
+                        + sessionFolder);
     }
 
     @Test

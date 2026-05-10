@@ -19,7 +19,9 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
@@ -47,6 +49,25 @@ public abstract class ScreenRecorder implements AutoCloseable {
 
     private static final Logger LOGGER = LogManager.getLogger(ScreenRecorder.class);
 
+    /**
+     * Maximum time {@link RealScreenRecorder#close()} waits for in-flight
+     * encodes before forcibly interrupting them. Sized for libaom-av1 with
+     * {@link #ENCODER_PARALLELISM} workers: realistic bots logging a handful
+     * of errors drain in ~5-30 s; 300 s is the safety ceiling for pathological
+     * bursts.
+     *
+     * <p>The drain runs inside {@code CustomLogger.close()} (the
+     * {@code CloseableSessionObject.close()} contract). AA's session container
+     * invokes this reliably whether or not the bot calls
+     * {@code Stop Logger Session} explicitly. We tried registering a
+     * {@code BotShutdownHook} as a faster alternative, but AA's bot runner
+     * only honours hooks discovered at code-gen time inside its own first-party
+     * packages - {@code addBotShutdownHook(...)} from a custom package is
+     * accepted but never invoked (verified empirically: every run of our bot
+     * reports "total hooks: 0" in {@code Bot_*.executeBotShutdownHooks}).
+     */
+    private static final Duration CLOSE_DRAIN_TIMEOUT = Duration.ofSeconds(300);
+
     /** Sentinel used when video is disabled or setup failed. Always returned, never null. */
     public static final ScreenRecorder DISABLED = new Disabled();
 
@@ -56,15 +77,28 @@ public abstract class ScreenRecorder implements AutoCloseable {
     private static final Duration GRACEFUL_STOP = Duration.ofSeconds(3);
 
     /**
-     * How long {@link #close()} waits for queued stage-2 encodes to finish
-     * before cancelling them. Sized in tandem with
-     * {@code ClipFinalizer.QUEUE_CAPACITY = 5}: 5 encodes &times; ~30 s each plus
-     * 30 s headroom = 180 s. This bounds the worst-case bot-agent shutdown
-     * latency at the cost of dropping the tail of pathological error bursts
-     * (6th+ rapid errors lose their video; the poster PNG taken before queueing
-     * is unaffected).
+     * Maximum number of concurrent stage-2 encodes per session. The bundled
+     * ffmpeg only ships with libaom-av1 (-cpu-used 8) so each encode is
+     * ~5-15 s and CPU-bound; 4 workers gives parallelism on multi-core hosts
+     * without oversubscribing typical 4-core bot runners. Excess submissions
+     * queue and run as workers free up. The bot thread never waits on a
+     * worker - it submits and returns immediately.
      */
-    private static final Duration DRAIN_TIMEOUT = Duration.ofSeconds(180);
+    private static final int ENCODER_PARALLELISM = 4;
+
+    /**
+     * Upper bound on the synchronous wait inside {@code start()} for stage-1 to
+     * produce its first two stable segments. ffmpeg gdigrab needs roughly one
+     * {@code SEGMENT_TIME_SECONDS} interval plus startup overhead before the
+     * first .mov is flushed; two segments are needed because
+     * {@link RealScreenRecorder#stableSegments()} drops the in-flight one.
+     * Past this deadline we give up waiting and proceed: the recorder stays
+     * attached and will produce clips once segments materialise, but errors
+     * fired before that happens will be silent (no clip).
+     */
+    private static final Duration WARMUP_TIMEOUT = Duration.ofSeconds(10);
+
+    private static final Duration WARMUP_POLL_INTERVAL = Duration.ofMillis(100);
 
     /**
      * Starts a recorder for the given session. Returns {@link #DISABLED} if
@@ -119,7 +153,7 @@ public abstract class ScreenRecorder implements AutoCloseable {
         @Override public boolean isClosed() { return true; }
     }
 
-    private static final class RealScreenRecorder extends ScreenRecorder {
+    static final class RealScreenRecorder extends ScreenRecorder {
         private final String sessionId;
         private final Path logDir;
         private final int bufferSeconds;
@@ -131,7 +165,7 @@ public abstract class ScreenRecorder implements AutoCloseable {
         private final Path ffmpegExe;
         private final ProcessGuard guard;
         private final Process stage1Process;
-        private final ClipFinalizer finalizer;
+        private final ThreadPoolExecutor encoderPool;
         private final AtomicBoolean stopping = new AtomicBoolean(false);
         private final AtomicBoolean failed = new AtomicBoolean(false);
         private final AtomicBoolean closed = new AtomicBoolean(false);
@@ -167,7 +201,88 @@ public abstract class ScreenRecorder implements AutoCloseable {
                 throw e;
             }
             startStderrWatchdog();
-            this.finalizer = new ClipFinalizer(ffmpegExe, sessionId);
+            this.encoderPool = newEncoderPool(sessionId);
+            awaitWarmup();
+        }
+
+        /**
+         * Per-session daemon worker pool for stage-2 encodes. Daemon threads
+         * because their lifecycle is bounded by {@link #close()}, which drains
+         * the pool synchronously before returning. JVM-wide hooks cannot be
+         * relied on in the AA Bot Runner host - the JVM is terminated after
+         * the bot's last action regardless of thread daemon-ness or registered
+         * shutdown hooks.
+         */
+        private static ThreadPoolExecutor newEncoderPool(String sessionId) {
+            ThreadPoolExecutor pool = new ThreadPoolExecutor(
+                    ENCODER_PARALLELISM, ENCODER_PARALLELISM,
+                    0L, TimeUnit.MILLISECONDS,
+                    new LinkedBlockingQueue<>(),
+                    r -> {
+                        Thread t = new Thread(r, "a360-clip-encoder-" + shortId(sessionId));
+                        t.setDaemon(true);
+                        return t;
+                    });
+            return pool;
+        }
+
+        /**
+         * Blocks until stage-1 has flushed at least two segments to the ring
+         * (so {@link #stableSegments()} can return non-empty), or until the
+         * stage-1 process dies, or until {@link #WARMUP_TIMEOUT} elapses.
+         * Never throws: if warmup fails we still return a working recorder
+         * that callers can use; subsequent {@code shouldRecordFor()} calls
+         * reflect actual stage-1 health.
+         */
+        private void awaitWarmup() {
+            Instant start = Instant.now();
+            Instant deadline = start.plus(WARMUP_TIMEOUT);
+            long pollMs = WARMUP_POLL_INTERVAL.toMillis();
+            while (true) {
+                if (!stage1Process.isAlive()) {
+                    failed.set(true);
+                    LOGGER.warn("ScreenRecorder session {} stage-1 died during warmup (exit={})",
+                            sessionId, safeExitValue());
+                    return;
+                }
+                if (countMovSegments() >= 2) {
+                    long ms = Duration.between(start, Instant.now()).toMillis();
+                    LOGGER.info("ScreenRecorder session {} warm in {} ms", sessionId, ms);
+                    return;
+                }
+                if (!Instant.now().isBefore(deadline)) {
+                    LOGGER.warn("ScreenRecorder session {} did not produce 2 stable segments "
+                                    + "within {} ms; proceeding without warm buffer",
+                            sessionId, WARMUP_TIMEOUT.toMillis());
+                    return;
+                }
+                try {
+                    Thread.sleep(pollMs);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    LOGGER.warn("ScreenRecorder session {} warmup interrupted; proceeding",
+                            sessionId);
+                    return;
+                }
+            }
+        }
+
+        private long countMovSegments() {
+            try (Stream<Path> stream = Files.list(ringDir)) {
+                return stream
+                        .filter(p -> p.getFileName().toString().toLowerCase().endsWith(".mov"))
+                        .count();
+            } catch (IOException e) {
+                return 0L;
+            }
+        }
+
+        private int safeExitValue() {
+            try {
+                return stage1Process.exitValue();
+            } catch (IllegalThreadStateException e) {
+                return -1;
+            }
         }
 
         private void writeMeta() throws IOException {
@@ -268,19 +383,39 @@ public abstract class ScreenRecorder implements AutoCloseable {
 
                 Path targetMp4 = logDir.resolve("clips").resolve(errorUuid + ".mp4");
                 try {
-                    finalizer.enqueue(scratchDir, targetMp4);
+                    encoderPool.execute(() -> runEncode(scratchDir, targetMp4));
+                    return targetMp4;
                 } catch (RejectedExecutionException rejected) {
+                    // Pool was shut down between our closed-check and submit
                     deleteRecursivelyQuietly(scratchDir);
-                    LOGGER.debug("Encoder queue full for session {}; dropping video for {}",
+                    LOGGER.debug("Encoder pool rejected task for session {} ({})",
                             sessionId, errorUuid);
                     return null;
                 }
-                return targetMp4;
             } catch (IOException e) {
                 LOGGER.warn("snapshotForError({}) failed for session {}: {}",
                         errorUuid, sessionId, e.toString());
                 return null;
             }
+        }
+
+        /**
+         * Encoder task body. Runs on a worker thread of {@link #encoderPool}.
+         * Always cleans up its scratch dir; if interrupted via shutdownNow
+         * the scratch dir is left behind for next-startup CrashSweep.
+         */
+        private void runEncode(Path scratchDir, Path targetMp4) {
+            try {
+                ClipFinalizer.encodeSegmentsToMp4(ffmpegExe, scratchDir, targetMp4);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                LOGGER.debug("Encode interrupted for {}; scratch left for next-startup sweep",
+                        targetMp4);
+                return;   // skip scratch cleanup; CrashSweep will do it
+            } catch (Throwable t) {
+                LOGGER.warn("Failed to finalize clip {}: {}", targetMp4, t.toString());
+            }
+            deleteRecursivelyQuietly(scratchDir);
         }
 
         /**
@@ -310,6 +445,13 @@ public abstract class ScreenRecorder implements AutoCloseable {
             }
         }
 
+        /**
+         * Drains the encoder pool synchronously and deletes the session
+         * folder. AA invokes this via {@code CloseableSessionObject.close()}
+         * either when the bot reaches {@code Stop Logger Session} or when
+         * the session container is cleaned up at bot end. Either way, this
+         * is the only callback we can rely on, so the wait happens here.
+         */
         @Override
         public void close() {
             if (!closed.compareAndSet(false, true)) {
@@ -317,8 +459,20 @@ public abstract class ScreenRecorder implements AutoCloseable {
             }
             stopping.set(true);
             stopStage1();
-            finalizer.drain(DRAIN_TIMEOUT);
-            deleteMarkerQuietly();
+            encoderPool.shutdown();
+            boolean drained = false;
+            try {
+                drained = encoderPool.awaitTermination(
+                        CLOSE_DRAIN_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+            if (!drained) {
+                encoderPool.shutdownNow();
+                LOGGER.warn("Encoder pool did not drain within {} for session {}; "
+                                + "interrupting in-flight encodes",
+                        CLOSE_DRAIN_TIMEOUT, sessionId);
+            }
             guard.close();
             deleteRecursivelyQuietly(sessionFolder);
         }
@@ -341,13 +495,6 @@ public abstract class ScreenRecorder implements AutoCloseable {
             } catch (InterruptedException e) {
                 stage1Process.destroyForcibly();
                 Thread.currentThread().interrupt();
-            }
-        }
-
-        private void deleteMarkerQuietly() {
-            try {
-                Files.deleteIfExists(activeMarker);
-            } catch (IOException ignored) {
             }
         }
 

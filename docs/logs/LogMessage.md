@@ -1,7 +1,7 @@
 # Log Message
 
 ## Overview
-`Log Message` records a message to the session log file and optionally captures a screenshot, enriching log diagnostics.
+`Log Message` records a message to the session log file and optionally captures a screenshot, enriching log diagnostics. If the parent logger session has screen recording enabled for this entry's log level, the rolling video buffer is also finalized into an MP4 placed next to the log, and a still image of the desktop is captured to serve as the video poster (and is returned as the screenshot file path).
 
 ![image](https://github.com/A360-Tools/Bot-Framework/assets/82057278/8110493b-9bea-478c-9d78-cd864ee581c2)
 
@@ -20,7 +20,8 @@
 
 ### Capture Screenshot
 - **Type:** `Boolean`
-- **Description:** Indicates whether to capture a screenshot with the log message.
+- **Default:** `false`
+- **Description:** Indicates whether to capture a screenshot with the log message. When the parent session has screen recording enabled for this entry's log level, a still is always captured as the video poster regardless of this flag.
 
 ### Log Variable Values
 - **Options:** "Yes" or "No"
@@ -36,7 +37,9 @@
 
 ## Output
 
-No direct output is returned to the user. This action logs the specified message, variables, and optional screenshot to the configured log file.
+* **Type:** `File`
+* **Assignment Variable:** `ScreenshotPath` (File, optional)
+* **Description:** Returns the path of the screenshot PNG that was captured for this log entry, if any. Populated when "Capture Screenshot" is true, or when the parent session is recording video for this entry's log level (in which case the returned path is the video poster). Empty when no still was captured.
 
 ## Exceptions
 

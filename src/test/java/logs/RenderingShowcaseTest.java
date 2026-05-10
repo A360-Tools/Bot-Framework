@@ -1074,22 +1074,27 @@ public class RenderingShowcaseTest {
             "Maximum retries exceeded - aborting record",
             false, LOG_VARIABLE, null, errVars);
 
-        // Stop the session - drains pending stage-2 encodes (up to 30s)
+        // Stop the session. close() is non-blocking: stage-2 encodes finish on
+        // the per-session encoder pool's worker threads after stop returns.
         new StopLoggerSession().stop(customLogger);
 
-        // Sanity-check the artifacts before announcing the path
+        // Wait for at least one mp4 to land. With libaom-av1 -cpu-used 8 each
+        // encode is ~5-15 s; two parallel encodes contend for CPU so the first
+        // typically finishes first while the second trails. Poll generously.
         java.nio.file.Path clipsDir = Paths.get(testPath, "clips");
         java.nio.file.Path screenshotsDir = Paths.get(testPath, "screenshots");
+        screen.process.RecorderTestSupport.awaitMp4Clips(
+                clipsDir, 1, java.time.Duration.ofSeconds(60));
+
         long mp4s = Files.isDirectory(clipsDir)
                 ? Files.list(clipsDir).filter(p -> p.toString().endsWith(".mp4")).count()
                 : 0;
         long pngs = Files.isDirectory(screenshotsDir)
                 ? Files.list(screenshotsDir).filter(p -> p.toString().endsWith(".png")).count()
                 : 0;
-        // The drain timeout is 30s; with two AV1 encodes back-to-back, only the
-        // first may finish in time. The second's poster PNG will still be there
-        // (the still is taken synchronously before the encode is queued), so the
-        // HTML row has the still even when the mp4 is missing.
+        // The encoder pool may still have the second clip in flight when this
+        // assertion runs; the poster PNG is taken synchronously before submit,
+        // so the HTML row carries the still even when the mp4 is yet to land.
         Assert.assertTrue(mp4s >= 1L,
                 "showcase should produce at least 1 mp4; got " + mp4s);
         Assert.assertTrue(pngs >= 3,

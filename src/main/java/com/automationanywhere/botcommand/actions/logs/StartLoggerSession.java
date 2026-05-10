@@ -37,6 +37,8 @@ import static com.automationanywhere.commandsdk.model.AttributeType.FILE;
 public class StartLoggerSession {
     private static final String COMMON_FILE_ALL_LEVEL = "COMMON_FILE";
     private static final String CONFIGURABLE_FILE_ALL_LEVEL = "CONFIGURABLE_FILE";
+    private static final String NO_VIDEO = "NO_VIDEO";
+    private static final String VIDEO_ENABLED = "VIDEO_ENABLED";
 
 
     @Execute
@@ -85,40 +87,44 @@ public class StartLoggerSession {
             @GreaterThan("0")
             Number maxLogEntries,
 
-            @Idx(index = "3", type = AttributeType.BOOLEAN)
-            @Pkg(label = "Capture screen recording on log entries",
-                    description = "When true, records the desktop continuously into a rolling buffer; "
-                            + "on selected log levels, the last N seconds are saved as an MP4 next to the log.",
-                    default_value = "false", default_value_type = DataType.BOOLEAN)
+            @Idx(index = "3", type = AttributeType.SELECT, options = {
+                    @Idx.Option(index = "3.1", pkg = @Pkg(label = "No video", value = NO_VIDEO)),
+                    @Idx.Option(index = "3.2", pkg = @Pkg(label = "Capture rolling video", value = VIDEO_ENABLED))})
+            @Pkg(label = "Screen recording",
+                    description = "When 'Capture rolling video' is chosen, the desktop is captured "
+                            + "continuously into a rolling buffer; for each log entry at one of the "
+                            + "selected levels below, the last N seconds are saved as an MP4 next to the log.",
+                    default_value = NO_VIDEO, default_value_type = DataType.STRING)
+            @SelectModes
             @NotEmpty
-            Boolean captureScreenRecording,
+            String captureScreenRecording,
 
-            @Idx(index = "4", type = AttributeType.NUMBER)
-            @Pkg(label = "Buffer seconds (only used when capture is on)",
-                    default_value = "30", default_value_type = DataType.NUMBER)
-            @NumberInteger
-            @GreaterThanEqualTo("5")
-            @LessThanEqualTo("300")
-            Number videoBufferSeconds,
-
-            @Idx(index = "5", type = AttributeType.BOOLEAN)
+            @Idx(index = "3.2.1", type = AttributeType.BOOLEAN)
             @Pkg(label = "Record video on INFO entries",
                     default_value = "false", default_value_type = DataType.BOOLEAN)
             Boolean videoOnInfo,
 
-            @Idx(index = "6", type = AttributeType.BOOLEAN)
+            @Idx(index = "3.2.2", type = AttributeType.BOOLEAN)
             @Pkg(label = "Record video on WARN entries",
                     default_value = "false", default_value_type = DataType.BOOLEAN)
             Boolean videoOnWarn,
 
-            @Idx(index = "7", type = AttributeType.BOOLEAN)
+            @Idx(index = "3.2.3", type = AttributeType.BOOLEAN)
             @Pkg(label = "Record video on ERROR entries",
                     default_value = "true", default_value_type = DataType.BOOLEAN)
-            Boolean videoOnError
+            Boolean videoOnError,
+
+            @Idx(index = "3.2.4", type = AttributeType.NUMBER)
+            @Pkg(label = "Video buffer seconds",
+                    default_value = "30", default_value_type = DataType.NUMBER)
+            @NumberInteger
+            @GreaterThanEqualTo("5")
+            @LessThanEqualTo("300")
+            Number videoBufferSeconds
 
     ) {
         try {
-            boolean videoEnabled = Boolean.TRUE.equals(captureScreenRecording);
+            boolean videoEnabled = VIDEO_ENABLED.equals(captureScreenRecording);
             Set<Level> recordingLevels = new HashSet<>();
             if (videoEnabled) {
                 if (Boolean.TRUE.equals(videoOnInfo))  recordingLevels.add(Level.INFO);

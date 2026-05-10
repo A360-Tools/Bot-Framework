@@ -84,4 +84,42 @@ public final class RecorderTestSupport {
             throws IOException, InterruptedException {
         awaitMovSegments(sessionRing(sessionId), minSegments, timeout);
     }
+
+    /**
+     * Polls {@code clipsDir} until at least {@code minClips} {@code .mp4}
+     * files exist, or {@code timeout} elapses. Use after
+     * {@code StopLoggerSession.stop()} - close() is non-blocking, so encodes
+     * may finish on background threads after the session closes.
+     */
+    public static void awaitMp4Clips(Path clipsDir, int minClips, Duration timeout)
+            throws InterruptedException {
+        long deadline = System.nanoTime() + timeout.toNanos();
+        long count;
+        while (true) {
+            count = countByExt(clipsDir, ".mp4");
+            if (count >= minClips) {
+                return;
+            }
+            if (System.nanoTime() >= deadline) {
+                break;
+            }
+            Thread.sleep(100);
+        }
+        throw new AssertionError("timed out after " + timeout + " waiting for >="
+                + minClips + " .mp4 clips in " + clipsDir
+                + " (last seen: " + count + ")");
+    }
+
+    private static long countByExt(Path dir, String ext) {
+        if (!Files.isDirectory(dir)) {
+            return 0;
+        }
+        try (Stream<Path> s = Files.list(dir)) {
+            String lower = ext.toLowerCase();
+            return s.filter(p -> p.toString().toLowerCase().endsWith(lower))
+                    .count();
+        } catch (IOException e) {
+            return 0;
+        }
+    }
 }

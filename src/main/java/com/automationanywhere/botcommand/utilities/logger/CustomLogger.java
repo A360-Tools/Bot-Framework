@@ -256,6 +256,7 @@ public class CustomLogger implements CloseableSessionObject {
         return recorder.snapshotForError(errorUuid);
     }
 
+
     /** UUID identifying this session; useful for tests and salvage path naming. */
     public String getLoggerId() {
         return loggerId;
