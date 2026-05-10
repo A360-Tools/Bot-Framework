@@ -3,6 +3,8 @@
 ## Overview
 
 `Start Logger Session` initializes a new logging session, enabling the creation of log files. You can choose to log all levels (INFO, WARN, ERROR) to a single HTML file or configure separate HTML files for each level. The command rolls over log files based on a configurable maximum number of entries per file, and optionally enables a rolling screen-recording buffer that finalizes a video clip whenever a log entry fires at a selected level.
+
+> **Always pair with `Stop Logger Session` in a Finally block** so log buffers flush and any pending video clips finalize, even when the bot exits via an exception. `Stop Logger Session` is idempotent, so a Finally invocation after a normal stop is safe.
 ![image](https://github.com/user-attachments/assets/cb497a74-d255-4e5a-9b8b-4e8e2933aa00)
 ![image](https://github.com/user-attachments/assets/0c8da229-737e-459d-95e5-fcd3b30a343d)
 
@@ -87,7 +89,16 @@
 * **Type:** `Number`
 * **Default:** `30`
 * **Description:** Length in seconds of the rolling video buffer. When a log entry triggers a recording, the finalized clip contains roughly the last N seconds of bot activity ending at that entry's timestamp.
-* **Constraints:** Integer between 5 and 300 inclusive.
+* **Constraints:** Integer between 5 and 90 inclusive.
+
+### Encoding mode
+
+* **Condition:** Required if "Screen recording" is set to `Capture rolling video`.
+* **Type:** `Select`
+* **Options:**
+  * `Fast: larger files, faster encoding (recommended)`: H.264 ultrafast preset. Each clip encodes in ~0.5-1 s and lands at ~5-15 MB. Choose this when the bot runner has free CPU and disk space is plentiful.
+  * `Compact: smaller files, slower encoding`: AV1 (libaom, cpu-used 8). Each clip encodes in ~5-15 s and lands at ~1-3 MB. Choose this when long-term clip storage matters more than encode latency.
+* **Default:** `Fast`
 
 ## Output
 
@@ -103,5 +114,7 @@ Throws `BotCommandException` if:
 * Required file paths are empty based on the selected "Append option".
 * Provided file paths do not end with the `.html` extension.
 * "Maximum log entries per file" is not greater than 0.
-* "Video buffer seconds" is outside the 5-300 range.
+* "Video buffer seconds" is outside the 5-90 range.
 * Any other error occurs during logger session initialization (e.g., file access issues). The specific error message will be included.
+
+If the screen recorder fails to start (for example, when running headless or when the bundled ffmpeg cannot extract), the session degrades silently to the existing screenshot-only path rather than failing the bot.

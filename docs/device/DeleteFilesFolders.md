@@ -1,64 +1,76 @@
 # Clean Directory
-## Important: Use version 3.0.3 or above for improved and fixed abilities
+
 ## Overview
 
 `Clean Directory` removes files and/or folders within a specified directory based on a set of rules, including age
-threshold and selection method.
+threshold, selection method, and skip patterns. The base folder itself is never deleted, only its contents.
 
 ![image](https://github.com/A360-Tools/Bot-Framework/assets/82057278/c7646e32-4c73-4d54-a6e1-18ec92d5c37d)
 
 ## Parameters
 
-### Enter Base Folder Path
+### Target folder to clean
 
-- **Description:** The directory within which files/folders will be scanned for deletion.
+- **Description:** Base folder path where cleanup will be performed. This folder itself will never be deleted, only its contents.
 
-### Deletion Option
+### What to delete
 
-- **Options:** "Directories and Files" or "Files Only"
-- **Description:** Specifies whether to delete both directories and files or files only.
+- **Options:** `"Both files and folders"` or `"Files only (keep folder structure)"`
+- **Default:** `"Both files and folders"`
+- **Description:** Whether to delete both files and folders, or files only while preserving the folder structure.
 
-### All Subdirectories Are Searched As Well
+### Include all subfolders
 
 - **Type:** `Boolean`
-- **Description:** Indicates whether the action should apply to all subdirectories.
+- **Default:** `true`
+- **Description:** When checked, processes all nested folders. When unchecked, only processes immediate folder contents.
 
-### Enter Threshold Number
+### Delete items older than
 
 - **Type:** `Number`
-- **Description:** Age threshold for deletion; files/folders older than this number will be deleted.
+- **Default:** `30`
+- **Description:** Age threshold for deletion. Example: `7` (with Days selected) deletes items 7+ days old. Use `0` to delete all items regardless of age.
+- **Constraints:** Non-negative integer.
 
-### Threshold Unit
+### Time unit
 
-- **Options:** "DAY", "HOUR", "MINUTE", "SECOND"
+- **Options:** `"Days"`, `"Hours"`, `"Minutes"`, `"Seconds"`
+- **Default:** `"Days"`
 - **Description:** Unit of time for the age threshold.
 
-### Ignore Specific Folder Paths
+### Age based on
+
+- **Options:** `"Creation date (when file was created)"` or `"Last modified date (when file was last changed)"`
+- **Default:** `"Last modified date"`
+- **Description:** Which timestamp to compare against the age threshold. For logs, prefer `"Last modified"` since they are continuously updated.
+
+### Skip specific folders (preserve them)
 
 - **Type:** `Boolean`
-- **Description:** Enables skipping specific folders based on a regex pattern.Path is compared against OS
-  specific path and path separator.
+- **Default:** `false`
+- **Description:** Enables skipping specific folders based on a regex pattern. Path is compared against the OS-specific absolute path.
 
-### Folder Path Regex Pattern
+### Folder pattern to skip (regex)
 
-- **Condition:** Required if ignoring specific folders.
-- **Description:** Regex pattern to match folder paths that should be skipped.
+- **Condition:** Required when "Skip specific folders" is checked.
+- **Description:** Regex pattern matched against the folder's full absolute path. Examples: `.*\\backup$` skips folders named `backup`; `.*\\(archive|important).*` skips folders containing `archive` or `important`.
 
-### Ignore Specific File Paths
+### Skip specific files (preserve them)
 
 - **Type:** `Boolean`
-- **Description:** Enables skipping specific files based on a regex pattern. Path is compared against OS
-  specific path and path separator.
+- **Default:** `false`
+- **Description:** Enables skipping specific files based on a regex pattern. Path is compared against the OS-specific absolute path.
 
-### File Path Regex Pattern
+### File pattern to skip (regex)
 
-- **Condition:** Required if ignoring specific files.
-- **Description:** Regex pattern to match file paths that should be skipped.
+- **Condition:** Required when "Skip specific files" is checked.
+- **Description:** Regex pattern matched against the file's full absolute path. Examples: `.*\.log$` skips `.log` files; `.*\.(txt|csv)$` skips `.txt` and `.csv` files.
 
-### If Certain Files/Folders Cannot Be Deleted
+### When files cannot be deleted (locked/in-use)
 
-- **Options:** "Throw error" or "Ignore"
-- **Description:** Determines behavior when some files/folders cannot be deleted.
+- **Options:** `"Stop and throw error (fail the bot)"` or `"Continue silently (skip locked files)"`
+- **Default:** `"Continue silently (skip locked files)"`
+- **Description:** Behavior when some files cannot be deleted (typically because they are locked by another process). Choose `"Continue silently"` for log cleanup where files may be actively written; choose `"Stop and throw error"` when every targeted file must be deleted.
 
 ## Output
 
@@ -68,6 +80,7 @@ No explicit output is returned by this command; it performs deletion actions bas
 
 Throws `BotCommandException` if:
 
-- The base folder path is invalid or inaccessible.
-- Specified files/folders cannot be deleted and the option to throw an error is selected.
+- The base folder path does not exist or is inaccessible.
+- A regex pattern under "Folder pattern to skip" or "File pattern to skip" is invalid.
+- A file cannot be deleted **and** "When files cannot be deleted" is set to `"Stop and throw error"`. With the default `"Continue silently"`, locked-file failures are logged at warning level and skipped.
 - Any unexpected error occurs during the deletion process.

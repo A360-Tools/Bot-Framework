@@ -8,6 +8,7 @@ Designed to streamline bot development, enhance logging, and facilitate comprehe
 ## Use Cases
 - **Framework Templating**: Ideal for organizations looking to standardize bot development practices across multiple teams.
 - **Detailed Logging**: Suited for complex workflows where detailed traceability and error tracking are crucial.
+- **Visual Failure Replay**: Optionally attach a short MP4 of the seconds leading up to each WARN/ERROR entry, so post-mortems show exactly what the screen looked like at the moment of failure. See [Robust Logging](#robust-logging) and [Bundled FFmpeg](#bundled-ffmpeg) below.
 - **Process Documentation**: Perfect for documenting automated processes within the bot, ensuring clarity and ease of maintenance.
 
 ## Key Features
@@ -17,10 +18,10 @@ Designed to streamline bot development, enhance logging, and facilitate comprehe
 - Automatic capture of source task details, environment details for enhanced traceability.
 - Visualization of complex/nested variables for efficient debugging and tracking.
 - HTML format for logs to enable monitoring from various devices while minimizing the risk of unintended file locking.
-- Log file rollover based on file size.
-- Log file separation based on log level.
+- Log file rollover based on a configurable maximum number of entries per file (default 1000).
+- Log file separation per level: send all log levels to a single file, or split INFO / WARN / ERROR into separate files.
 - Screenshot capture alongside log messages for a complete logging experience.
-- **Rolling screen-recording buffer**: opt-in continuous capture of the last N seconds (5-300, default 30) of bot activity. When a log entry fires at a configured level (any combination of INFO/WARN/ERROR), the buffer is finalized into a browser-playable AV1 MP4 placed next to the log. On JVM crash, the rolling buffer at the moment of death is salvaged into a `crash-recording-<sessionId>.mp4` on the next bot startup.
+- **Rolling screen-recording buffer**: opt-in continuous capture of the last N seconds (5-90, default 30) of bot activity. When a log entry fires at a configured level (any combination of INFO/WARN/ERROR), the buffer is finalized into a browser-playable MP4 placed next to the log. Choose between **Fast** (H.264, larger files, faster encoding, recommended) and **Compact** (AV1, smaller files, slower encoding) per session. On JVM crash or drain timeout, both the rolling buffer and any pending per-error clips are salvaged on the next bot startup so the HTML log's video links self-heal at the paths they already reference.
 
 ### [Config Data Reading](https://github.com/A360-Tools/Bot-Framework/tree/main/docs/config)
 - Reads configuration data from CSV, Excel, JSON, and XML formats into dictionaries.
@@ -67,25 +68,26 @@ Designed to streamline bot development, enhance logging, and facilitate comprehe
 - **Config Read CSV/Excel/JSON/XML**: Streamlines the import of configuration data into dictionaries from various file formats.
 - **Device Close Application**: Facilitates the closing of applications with close and terminate requests.
 - **Device Create Folders**: Automates the creation of directories, ensuring the existence of necessary parent directories.
-- **Device Delete Files/Folders**: Allows for the rule-based deletion of files or folders, with options to exclude specific items.
+- **Device Clean Directory**: Allows for the rule-based deletion of files or folders, with options to exclude specific items by regex pattern and to skip locked files instead of failing the bot.
 - **Documentation About/Caution Sequence/Comment/Sequence**: Offers a range of documentation utilities from basic commenting to detailed sequence documentation with caution highlights and screenshots.
 - **Log Message**: Provides session-based logging with options for detailed messages and screenshots.
-- **Logs Start/Stop Session**: Manages the lifecycle of logging sessions, from initiation to termination.
+- **Logs Start/Stop Session**: Manages the lifecycle of logging sessions, from initiation to termination. Always pair `Start Logger Session` with `Stop Logger Session` in a Finally block so logs flush and any pending video clips finalize.
 
 ## Bundled FFmpeg
 
-Screen-recording uses an FFmpeg 6.0 binary (~11 MB) bundled at `src/main/resources/ffmpeg/ffmpeg.exe` and extracted on first use to `%LOCALAPPDATA%\A360-BotFramework\ffmpeg\<hash>\ffmpeg.exe` on each Bot Runner. The build includes only AV1 (libaom) + ffvhuff encoders and the segment + concat + mp4 muxers - no x264, no H.265 - so the binary stays small. Distributed under LGPL-2.1 or later; full notice and build configuration are at `src/main/resources/ffmpeg/LICENSE-FFMPEG.txt`. Source code for FFmpeg is at https://ffmpeg.org/download.html.
+Screen-recording uses an FFmpeg 6.0 binary (~12-15 MB) bundled at `src/main/resources/ffmpeg/ffmpeg.exe` and extracted on first use to `%LOCALAPPDATA%\A360-BotFramework\ffmpeg\<hash>\ffmpeg.exe` on each Bot Runner. The build enables only the libx264 (Fast mode), libaom-av1 (Compact mode), and ffvhuff (rolling buffer) encoders, plus the segment + concat + mp4 muxers, so the binary stays small. Because libx264 is GPL, the bundled ffmpeg is distributed under GPL-2.0 or later; full notice and build configuration are at `src/main/resources/ffmpeg/LICENSE-FFMPEG.txt` and `tools/ffmpeg-build/Dockerfile`. Source code for FFmpeg is at https://ffmpeg.org/download.html.
 
 ### Disk usage with screen recording on
 
 | Setting | Cost |
 |---|---|
 | Stage-1 rolling buffer (per session, %LOCALAPPDATA%) | ~30-100 MB at default 30 s buffer / 5 fps / 1080p |
-| Per-finalized clip (in `<logDir>/clips/`) | ~2-5 MB AV1 MP4 |
+| Per-finalized clip (Fast / H.264) | ~5-15 MB MP4, encodes in ~0.5-1 s |
+| Per-finalized clip (Compact / AV1) | ~1-3 MB MP4, encodes in ~5-15 s |
 | Per-error poster PNG (in `<logDir>/screenshots/`) | ~50-200 KB |
-| Stage-2 encode CPU | ~80-100% one core for 10-30 s wall time per error |
+| Stage-2 encode CPU | ~80-100% one core for the encode duration above |
 
-Document this when planning bot deployments: enabling video on every INFO entry of a chatty bot will produce hundreds of MP4s. Stick to ERROR-only unless you have a specific need.
+Document this when planning bot deployments: enabling video on every INFO entry of a chatty bot will produce hundreds of MP4s. Stick to ERROR-only unless you have a specific need. Pick **Fast** when the bot runner has free CPU but disk is plentiful; pick **Compact** when long-term clip storage matters more than encode latency.
 
 ## Building the Project
 You can build this project using Gradle with the following command:

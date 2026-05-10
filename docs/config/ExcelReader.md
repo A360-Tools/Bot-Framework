@@ -9,7 +9,7 @@ Read values from an Excel file and store them in a dictionary format. Excel appl
 ## Features
 
 - Parses Excel files (.xls, .xlsx) and outputs a dictionary with key-value pairs.
-- Supports reading from specified sheet names within the Excel file.
+- Supports selecting the source sheet by name or by zero-based index.
 - Offers options for parsing based on column indexes or headers.
 - Provides functionality to handle password-protected Excel files.
 - Allows trimming of values before storing in the resulting dictionary.
@@ -22,11 +22,24 @@ Read values from an Excel file and store them in a dictionary format. Excel appl
 - **Description:** Path to the Excel file to be read.
 - **Constraints:** Must be a non-empty string. Supported file extensions are `.xls` and `.xlsx`.
 
-### `sheetName`
+### `selectSheetBy`
+
+- **Type:** `String`
+- **Options:** `"Name"` or `"Index"`
+- **Default:** `"Name"`
+- **Description:** Whether to identify the source sheet by its name or by its zero-based position in the workbook.
+
+### `sheetName` (Conditional on `selectSheetBy` being `"Name"`)
 
 - **Type:** `String`
 - **Description:** Name of the Excel sheet from which to read the data.
 - **Constraints:** Must be a non-empty string.
+
+### `sheetIndex` (Conditional on `selectSheetBy` being `"Index"`)
+
+- **Type:** `Double`
+- **Description:** Zero-based index of the sheet to read (0 is the first sheet).
+- **Constraints:** Must be a non-negative integer.
 
 ### `isPasswordProtected`
 
