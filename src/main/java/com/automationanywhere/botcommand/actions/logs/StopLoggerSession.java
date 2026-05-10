@@ -1,6 +1,5 @@
 package com.automationanywhere.botcommand.actions.logs;
 
-import com.automationanywhere.botcommand.exception.BotCommandException;
 import com.automationanywhere.botcommand.utilities.logger.CustomLogger;
 import com.automationanywhere.commandsdk.annotations.*;
 import com.automationanywhere.commandsdk.annotations.rules.NotEmpty;
@@ -31,10 +30,13 @@ public class StopLoggerSession {
             @SessionObject
             CustomLogger session) {
         if (session.isClosed()) {
-            throw new BotCommandException("Logger session is already closed");
-        } else {
-            session.close();
+            // Idempotent: this action is documented to be called from a Finally
+            // block, which means the happy-path Stop and the Finally Stop both
+            // run. Throwing here would mask whatever exception was already
+            // unwinding the bot.
+            return;
         }
+        session.close();
     }
 
 

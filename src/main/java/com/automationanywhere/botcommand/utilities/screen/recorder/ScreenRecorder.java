@@ -24,7 +24,6 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -141,7 +140,7 @@ public abstract class ScreenRecorder implements AutoCloseable {
         try {
             Path appDataRoot = FfmpegBinary.appDataRoot();
             Path ffmpegExe = FfmpegBinary.locate();
-            CrashSweep.scheduleOnce(appDataRoot, ffmpegExe, mode);
+            CrashSweep.scheduleOnce(appDataRoot, ffmpegExe);
             return new RealScreenRecorder(sessionId, logDir, bufferSeconds,
                     new HashSet<>(recordingLevels), appDataRoot, ffmpegExe, mode);
         } catch (Throwable t) {
@@ -195,8 +194,13 @@ public abstract class ScreenRecorder implements AutoCloseable {
         private final AtomicBoolean stopping = new AtomicBoolean(false);
         private final AtomicBoolean failed = new AtomicBoolean(false);
         private final AtomicBoolean closed = new AtomicBoolean(false);
-        private final AtomicLong lastChunkId = new AtomicLong(Long.MIN_VALUE);
-        private final AtomicReference<Path> lastClipPath = new AtomicReference<>();
+        // Single atomic ref so the (chunkId, clipPath) pair is always read and
+        // written as a unit. With two separate atomics, a concurrent caller
+        // could observe a torn state where the chunkId has been advanced to
+        // the new chunk but the clipPath still points at the previous chunk's
+        // mp4, and return that stale path.
+        private final AtomicReference<DedupSlot> dedupSlot =
+                new AtomicReference<>(DedupSlot.EMPTY);
 
         RealScreenRecorder(String sessionId,
                            Path logDir,
@@ -324,7 +328,8 @@ public abstract class ScreenRecorder implements AutoCloseable {
                     recordingLevels,
                     Instant.now(),
                     packageVersion,
-                    pid);
+                    pid,
+                    encodingMode);
             meta.write(sessionFolder.resolve("session.meta"));
         }
 
@@ -404,11 +409,9 @@ public abstract class ScreenRecorder implements AutoCloseable {
             // loops. Cross-level: any prior call within the chunk wins
             // regardless of which level fired it.
             long chunkId = System.currentTimeMillis() / DEDUP_CHUNK_MILLIS;
-            if (lastChunkId.get() == chunkId) {
-                Path cached = lastClipPath.get();
-                if (cached != null) {
-                    return cached;
-                }
+            DedupSlot slot = dedupSlot.get();
+            if (slot.chunkId == chunkId && slot.clipPath != null) {
+                return slot.clipPath;
             }
             try {
                 List<Path> segments = stableSegments();
@@ -427,8 +430,7 @@ public abstract class ScreenRecorder implements AutoCloseable {
                 Path targetMp4 = logDir.resolve("clips").resolve(errorUuid + ".mp4");
                 try {
                     encoderPool.execute(() -> runEncode(scratchDir, targetMp4));
-                    lastChunkId.set(chunkId);
-                    lastClipPath.set(targetMp4);
+                    dedupSlot.set(new DedupSlot(chunkId, targetMp4));
                     return targetMp4;
                 } catch (RejectedExecutionException rejected) {
                     // Queue is at capacity (ENCODER_QUEUE_CAPACITY) or the pool
@@ -494,11 +496,28 @@ public abstract class ScreenRecorder implements AutoCloseable {
         }
 
         /**
-         * Drains the encoder pool synchronously and deletes the session
-         * folder. AA invokes this via {@code CloseableSessionObject.close()}
+         * Drains the encoder pool synchronously, then either deletes the
+         * session folder (clean exit) or leaves it on disk for next-startup
+         * recovery (drain timed out before all encodes finished).
+         *
+         * <p>AA invokes this via {@code CloseableSessionObject.close()}
          * either when the bot reaches {@code Stop Logger Session} or when
          * the session container is cleaned up at bot end. Either way, this
          * is the only callback we can rely on, so the wait happens here.
+         *
+         * <p>If the encoder pool drains within {@link #CLOSE_DRAIN_TIMEOUT}
+         * every queued clip has finalized to {@code <logDir>/clips/<uuid>.mp4}
+         * and the session folder under {@code %LOCALAPPDATA%} is removed.
+         *
+         * <p>If the drain times out (typical for COMPACT mode under heavy
+         * loop-warning load with limited AA cleanup window), pending
+         * {@code scratch/<uuid>/} subdirs hold the segments copied at
+         * snapshot time and the matching {@code clips/<uuid>.mp4} paths
+         * already appear in the HTML log. We leave the session folder on
+         * disk (including {@code session.active}) so the next JVM's
+         * {@link CrashSweep} re-encodes those scratches and lands the
+         * missing mp4s at the exact paths the HTML rows already reference.
+         * The HTML's broken video links self-heal on the next bot run.
          */
         @Override
         public void close() {
@@ -518,11 +537,18 @@ public abstract class ScreenRecorder implements AutoCloseable {
             if (!drained) {
                 encoderPool.shutdownNow();
                 LOGGER.warn("Encoder pool did not drain within {} for session {}; "
-                                + "interrupting in-flight encodes",
-                        CLOSE_DRAIN_TIMEOUT, sessionId);
+                                + "preserving residual scratches under {} for next-startup "
+                                + "CrashSweep recovery",
+                        CLOSE_DRAIN_TIMEOUT, sessionId, sessionFolder);
             }
             guard.close();
-            deleteRecursivelyQuietly(sessionFolder);
+            if (drained) {
+                deleteRecursivelyQuietly(sessionFolder);
+            }
+            // If !drained, leave sessionFolder (session.active marker, ring/,
+            // scratch/<uuid>/) on disk. CrashSweep on the next JVM start will
+            // claim it, re-encode each pending scratch into <logDir>/clips/,
+            // and remove the residual folder.
         }
 
         private void stopStage1() {
@@ -549,6 +575,23 @@ public abstract class ScreenRecorder implements AutoCloseable {
         @Override
         public boolean isClosed() {
             return closed.get();
+        }
+    }
+
+    /**
+     * Snapshot of the most recently produced (chunkId, clipPath) pair. Stored
+     * inside an {@link AtomicReference} so the pair is read and written
+     * atomically. Immutable; constructed once per successful snapshot.
+     */
+    private static final class DedupSlot {
+        static final DedupSlot EMPTY = new DedupSlot(Long.MIN_VALUE, null);
+
+        final long chunkId;
+        final Path clipPath;
+
+        DedupSlot(long chunkId, Path clipPath) {
+            this.chunkId = chunkId;
+            this.clipPath = clipPath;
         }
     }
 

@@ -95,8 +95,14 @@ public class CustomHTMLLayout extends AbstractStringLayout {
                             logEventId);
 
                     if (!variablesFilePath.isEmpty()) {
+                        // Escape the href for parity with every other dynamic
+                        // attribute in this row. The current filename scheme
+                        // (variables/variables_<UUID>.html) is safe, but a
+                        // future change to include user-supplied content would
+                        // otherwise become a stored-XSS vector.
                         variablesLink =
-                                "<a href='" + variablesFilePath + "' target='_blank' class='vars-link'>" + variablesCount + "</a>";
+                                "<a href='" + StringEscapeUtils.escapeHtml4(variablesFilePath)
+                                        + "' target='_blank' class='vars-link'>" + variablesCount + "</a>";
                     } else {
                         variablesLink = variablesCount;
                     }

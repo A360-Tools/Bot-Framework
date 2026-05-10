@@ -69,25 +69,44 @@ public final class ClipFinalizer {
                 .redirectErrorStream(true)
                 .start();
 
+        // ffmpeg's combined stdout/stderr must be drained continuously: with
+        // -loglevel error normal runs are quiet, but a failing encode can emit
+        // more than the OS pipe buffer (~64 KB on Windows), at which point the
+        // ffmpeg writer blocks and waitFor never sees the process exit until
+        // the timeout fires. Drain on a background thread; capture the first
+        // few lines for error reporting.
+        OutputCapture capture = new OutputCapture();
+        Thread drainer = new Thread(
+                () -> drainInto(process.getInputStream(), capture),
+                "a360-clip-encoder-drain");
+        drainer.setDaemon(true);
+        drainer.start();
+
         int exitCode;
         try {
             boolean done = process.waitFor(ENCODE_TIMEOUT_SECONDS, TimeUnit.SECONDS);
             if (!done) {
                 process.destroyForcibly();
+                joinQuietly(drainer, 500);
                 throw new IOException("ffmpeg encode timed out after "
-                        + ENCODE_TIMEOUT_SECONDS + " s for " + targetMp4);
+                        + ENCODE_TIMEOUT_SECONDS + " s for " + targetMp4
+                        + capture.suffix());
             }
             exitCode = process.exitValue();
         } catch (InterruptedException e) {
             process.destroyForcibly();
+            joinQuietly(drainer, 500);
             Thread.currentThread().interrupt();
             throw e;
         }
 
+        // Process has exited; drainer should finish promptly. Bound the wait
+        // so a stuck reader can't pin this thread.
+        joinQuietly(drainer, 1000);
+
         if (exitCode != 0) {
-            String tail = readFirstLines(process);
             throw new IOException("ffmpeg encode exit code " + exitCode
-                    + " for " + targetMp4 + (tail.isEmpty() ? "" : "; tail: " + tail));
+                    + " for " + targetMp4 + capture.suffix());
         }
 
         if (!Files.exists(tmpOut) || Files.size(tmpOut) == 0) {
@@ -179,18 +198,43 @@ public final class ClipFinalizer {
         }
     }
 
-    private static String readFirstLines(Process process) {
-        final int max = 8;
+    private static void drainInto(java.io.InputStream in, OutputCapture capture) {
         try (java.io.BufferedReader reader = new java.io.BufferedReader(
-                new java.io.InputStreamReader(process.getInputStream(), StandardCharsets.UTF_8))) {
-            List<String> lines = new ArrayList<>(max);
+                new java.io.InputStreamReader(in, StandardCharsets.UTF_8))) {
             String line;
-            while (lines.size() < max && (line = reader.readLine()) != null) {
-                lines.add(line);
+            while ((line = reader.readLine()) != null) {
+                capture.accept(line);
             }
-            return String.join(" | ", lines);
-        } catch (IOException e) {
-            return "";
+        } catch (IOException ignored) {
+            // Stream closed (process exited or destroyed); drainer exits.
+        }
+    }
+
+    private static void joinQuietly(Thread t, long millis) {
+        try {
+            t.join(millis);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+    }
+
+    /**
+     * Thread-safe capture of the first few lines of ffmpeg output for inclusion
+     * in error messages. Subsequent lines are still drained from the pipe (so
+     * ffmpeg never blocks on a full buffer) but not stored.
+     */
+    private static final class OutputCapture {
+        private static final int MAX_LINES = 8;
+        private final List<String> firstLines = new ArrayList<>(MAX_LINES);
+
+        synchronized void accept(String line) {
+            if (firstLines.size() < MAX_LINES) {
+                firstLines.add(line);
+            }
+        }
+
+        synchronized String suffix() {
+            return firstLines.isEmpty() ? "" : "; tail: " + String.join(" | ", firstLines);
         }
     }
 }

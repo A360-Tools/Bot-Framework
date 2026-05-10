@@ -50,7 +50,8 @@ public class SessionMetaTest {
                 levels,
                 started,
                 "3.7.0",
-                14728);
+                14728,
+                com.automationanywhere.botcommand.utilities.screen.recorder.EncodingMode.COMPACT);
 
         Path file = tempDir.resolve("session.meta");
         original.write(file);
@@ -64,6 +65,8 @@ public class SessionMetaTest {
         Assert.assertEquals(loaded.startedAt, started);
         Assert.assertEquals(loaded.packageVersion, "3.7.0");
         Assert.assertEquals(loaded.jvmPid, 14728L);
+        Assert.assertEquals(loaded.encodingMode,
+                com.automationanywhere.botcommand.utilities.screen.recorder.EncodingMode.COMPACT);
     }
 
     @Test
@@ -75,7 +78,8 @@ public class SessionMetaTest {
                 new HashSet<>(),
                 Instant.now(),
                 "test",
-                1);
+                1,
+                com.automationanywhere.botcommand.utilities.screen.recorder.EncodingMode.FAST);
         Path file = tempDir.resolve("empty.meta");
         original.write(file);
 
@@ -92,7 +96,8 @@ public class SessionMetaTest {
                 new HashSet<>(),
                 Instant.now(),
                 "v",
-                1);
+                1,
+                com.automationanywhere.botcommand.utilities.screen.recorder.EncodingMode.FAST);
         Path nested = tempDir.resolve("a/b/c/session.meta");
         meta.write(nested);
 
@@ -105,7 +110,8 @@ public class SessionMetaTest {
         source.add(Level.INFO);
 
         SessionMeta meta = new SessionMeta(
-                "id", "C:\\logs", 30, source, Instant.now(), "v", 1);
+                "id", "C:\\logs", 30, source, Instant.now(), "v", 1,
+                com.automationanywhere.botcommand.utilities.screen.recorder.EncodingMode.FAST);
 
         // Mutating the source should not affect meta
         source.add(Level.ERROR);

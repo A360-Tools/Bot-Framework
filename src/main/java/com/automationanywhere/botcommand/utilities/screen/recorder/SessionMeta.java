@@ -27,10 +27,12 @@ public final class SessionMeta {
     public final Instant startedAt;
     public final String packageVersion;
     public final long jvmPid;
+    public final EncodingMode encodingMode;
 
     public SessionMeta(String sessionId, String logDir, int bufferSeconds,
                        Set<Level> recordingLevels, Instant startedAt,
-                       String packageVersion, long jvmPid) {
+                       String packageVersion, long jvmPid,
+                       EncodingMode encodingMode) {
         this.schemaVersion = CURRENT_SCHEMA_VERSION;
         this.sessionId = sessionId;
         this.logDir = logDir;
@@ -39,6 +41,7 @@ public final class SessionMeta {
         this.startedAt = startedAt;
         this.packageVersion = packageVersion;
         this.jvmPid = jvmPid;
+        this.encodingMode = encodingMode != null ? encodingMode : EncodingMode.FAST;
     }
 
     private SessionMeta(JSONObject json) {
@@ -50,6 +53,9 @@ public final class SessionMeta {
         this.startedAt = Instant.parse(json.getString("startedAt"));
         this.packageVersion = json.optString("packageVersion", "");
         this.jvmPid = json.optLong("jvmPid", -1L);
+        // Default FAST when missing so pre-existing meta files (written before
+        // encodingMode was persisted) salvage with the current default encoder.
+        this.encodingMode = parseEncodingMode(json.optString("encodingMode", null));
     }
 
     public static SessionMeta read(Path file) throws IOException {
@@ -67,6 +73,7 @@ public final class SessionMeta {
         json.put("startedAt", startedAt.toString());
         json.put("packageVersion", packageVersion);
         json.put("jvmPid", jvmPid);
+        json.put("encodingMode", encodingMode.name());
 
         Files.createDirectories(file.getParent());
         Files.write(file, json.toString(2).getBytes(StandardCharsets.UTF_8));
@@ -85,5 +92,16 @@ public final class SessionMeta {
             }
         }
         return result;
+    }
+
+    private static EncodingMode parseEncodingMode(String value) {
+        if (value == null || value.isEmpty()) {
+            return EncodingMode.FAST;
+        }
+        try {
+            return EncodingMode.valueOf(value);
+        } catch (IllegalArgumentException e) {
+            return EncodingMode.FAST;
+        }
     }
 }

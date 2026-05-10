@@ -10,8 +10,12 @@ import org.apache.logging.log4j.core.config.plugins.PluginBuilderFactory;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
-import java.io.FileWriter;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.AtomicMoveNotSupportedException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -117,31 +121,44 @@ public class EntryCountBasedTriggeringPolicy extends AbstractTriggeringPolicy {
             return 0;
         }
 
-        // If footer was found, remove it from the file
+        // If footer was found, remove it from the file. Write to a sibling
+        // temp file and atomically rename over the original: a crash mid-write
+        // leaves the original intact, whereas an in-place truncate-then-rewrite
+        // would lose every prior entry on power loss.
         if (footerFound && !allLines.isEmpty()) {
-            try (FileWriter writer = new FileWriter(file, false)) {
-                // Process all lines, removing footer from whichever line contains it
+            Path original = file.toPath();
+            Path tmp = original.resolveSibling(file.getName() + ".rewrite-tmp");
+            try {
+                StringBuilder rebuilt = new StringBuilder(allLines.size() * 64);
                 for (int i = 0; i < allLines.size(); i++) {
                     String line = allLines.get(i);
                     String lowerLine = line.toLowerCase();
-
-                    // Check if this line contains the footer
                     int footerIndex = lowerLine.indexOf("</tbody>");
                     if (footerIndex == -1) {
                         footerIndex = lowerLine.indexOf("</table>");
                     }
-
                     if (footerIndex >= 0) {
-                        // Truncate line at footer position
                         line = line.substring(0, footerIndex);
                     }
-
-                    writer.write(line);
+                    rebuilt.append(line);
                     if (i < allLines.size() - 1) {
-                        writer.write(System.lineSeparator());
+                        rebuilt.append(System.lineSeparator());
                     }
                 }
+                Files.write(tmp, rebuilt.toString().getBytes(StandardCharsets.UTF_8));
+                try {
+                    Files.move(tmp, original,
+                            StandardCopyOption.ATOMIC_MOVE,
+                            StandardCopyOption.REPLACE_EXISTING);
+                } catch (AtomicMoveNotSupportedException e) {
+                    Files.move(tmp, original, StandardCopyOption.REPLACE_EXISTING);
+                }
             } catch (IOException e) {
+                // Best-effort cleanup of the temp file; original is untouched.
+                try {
+                    Files.deleteIfExists(tmp);
+                } catch (IOException ignored) {
+                }
                 // If we can't rewrite, log file will continue to work but footer will be duplicated
                 // This is not critical, just a warning condition
             }

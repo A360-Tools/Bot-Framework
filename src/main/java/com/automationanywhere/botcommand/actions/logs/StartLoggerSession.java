@@ -27,7 +27,7 @@ import static com.automationanywhere.commandsdk.model.AttributeType.FILE;
 @BotCommand
 @CommandPkg(label = "Start Logger Session",
         name = "logs_start_session",
-        description = "Create new logger session",
+        description = "Create a logger session. Always call Stop Logger Session in a Finally block to flush logs and finalize any pending video clips.",
         group_label = "Logs",
         icon = "log_session.svg", node_label = "{{returnTo}}",
         return_settings = {ReturnSettingsType.SESSION_TARGET},
@@ -94,9 +94,8 @@ public class StartLoggerSession {
                     @Idx.Option(index = "3.1", pkg = @Pkg(label = "No video", value = NO_VIDEO)),
                     @Idx.Option(index = "3.2", pkg = @Pkg(label = "Capture rolling video", value = VIDEO_ENABLED))})
             @Pkg(label = "Screen recording",
-                    description = "When 'Capture rolling video' is chosen, the desktop is captured "
-                            + "continuously into a rolling buffer; for each log entry at one of the "
-                            + "selected levels below, the last N seconds are saved as an MP4 next to the log.",
+                    description = "Saves a short MP4 clip next to each log entry at the selected "
+                            + "levels, covering the seconds leading up to that entry.",
                     default_value = NO_VIDEO, default_value_type = DataType.STRING)
             @SelectModes
             @NotEmpty
@@ -127,12 +126,12 @@ public class StartLoggerSession {
 
             @Idx(index = "3.2.5", type = AttributeType.SELECT, options = {
                     @Idx.Option(index = "3.2.5.1",
-                            pkg = @Pkg(label = "Fast (H.264 ultrafast, larger files)", value = ENCODING_FAST)),
+                            pkg = @Pkg(label = "Fast: larger files, faster encoding (recommended)", value = ENCODING_FAST)),
                     @Idx.Option(index = "3.2.5.2",
-                            pkg = @Pkg(label = "Compact (AV1, smaller files but slower)", value = ENCODING_COMPACT))})
+                            pkg = @Pkg(label = "Compact: smaller files, slower encoding", value = ENCODING_COMPACT))})
             @Pkg(label = "Encoding mode",
-                    description = "Fast: H.264 ultrafast preset, quick to encode but larger files. "
-                            + "Compact: AV1 cpu-used 8, smaller files but slower encoding.",
+                    description = "Fast is recommended for most cases. Choose Compact only when "
+                            + "disk space matters more than encoding speed.",
                     default_value = ENCODING_FAST, default_value_type = DataType.STRING)
             @SelectModes
             @NotEmpty
