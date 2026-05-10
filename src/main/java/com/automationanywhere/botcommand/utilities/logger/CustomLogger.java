@@ -1,5 +1,6 @@
 package com.automationanywhere.botcommand.utilities.logger;
 
+import com.automationanywhere.botcommand.utilities.screen.recorder.EncodingMode;
 import com.automationanywhere.botcommand.utilities.screen.recorder.ScreenRecorder;
 import com.automationanywhere.toolchain.runtime.session.CloseableSessionObject;
 import org.apache.commons.io.FilenameUtils;
@@ -21,15 +22,11 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * @author Sumit Kumar
  */
 public class CustomLogger implements CloseableSessionObject {
-
-    // Static map to track all logger contexts by unique ID
-    private static final ConcurrentHashMap<String, LoggerContext> LOGGER_CONTEXTS = new ConcurrentHashMap<>();
 
     private final Logger logger;
     private final String loggerId;
@@ -40,7 +37,7 @@ public class CustomLogger implements CloseableSessionObject {
 
     // Constructor for a single log file for all levels (no video recording)
     public CustomLogger(String loggerName, String logFilePath, int maxLogEntries) throws IOException {
-        this(loggerName, logFilePath, maxLogEntries, 0, new HashSet<>());
+        this(loggerName, logFilePath, maxLogEntries, 0, new HashSet<>(), EncodingMode.FAST);
     }
 
     /**
@@ -48,9 +45,11 @@ public class CustomLogger implements CloseableSessionObject {
      *
      * @param bufferSeconds   rolling-buffer length in seconds; ignored if {@code recordingLevels} is empty
      * @param recordingLevels levels at which video clips should be saved; empty disables recording
+     * @param encodingMode    encoder used when finalizing per-error clips; ignored when recording is off
      */
     public CustomLogger(String loggerName, String logFilePath, int maxLogEntries,
-                        int bufferSeconds, Set<Level> recordingLevels) throws IOException {
+                        int bufferSeconds, Set<Level> recordingLevels,
+                        EncodingMode encodingMode) throws IOException {
         this.loggerId = UUID.randomUUID().toString();
 
         // Create screenshot folder at the same location as log file
@@ -92,9 +91,6 @@ public class CustomLogger implements CloseableSessionObject {
         // Initialize the context with the configuration
         BuiltConfiguration config = builder.build();
         context.start(config);
-
-        // Store the context
-        LOGGER_CONTEXTS.put(loggerId, context);
         this.loggerContext = context;
 
         // Get logger from the new context
@@ -102,7 +98,8 @@ public class CustomLogger implements CloseableSessionObject {
 
         // Optionally start the screen recorder. Returns DISABLED on any failure.
         Path logDir = Paths.get(FilenameUtils.getFullPath(logFilePath));
-        this.recorder = ScreenRecorder.start(loggerId, logDir, bufferSeconds, recordingLevels);
+        this.recorder = ScreenRecorder.start(loggerId, logDir, bufferSeconds, recordingLevels,
+                encodingMode);
     }
 
     private void createDirectories() throws IOException {
@@ -162,7 +159,7 @@ public class CustomLogger implements CloseableSessionObject {
 
     // Constructor for multiple log files based on the level (no video recording)
     public CustomLogger(String loggerName, Map<Level, String> levelFilePathMap, int maxLogEntries) throws IOException {
-        this(loggerName, levelFilePathMap, maxLogEntries, 0, new HashSet<>());
+        this(loggerName, levelFilePathMap, maxLogEntries, 0, new HashSet<>(), EncodingMode.FAST);
     }
 
     /**
@@ -170,9 +167,11 @@ public class CustomLogger implements CloseableSessionObject {
      *
      * @param bufferSeconds   rolling-buffer length in seconds; ignored if {@code recordingLevels} is empty
      * @param recordingLevels levels at which video clips should be saved; empty disables recording
+     * @param encodingMode    encoder used when finalizing per-error clips; ignored when recording is off
      */
     public CustomLogger(String loggerName, Map<Level, String> levelFilePathMap, int maxLogEntries,
-                        int bufferSeconds, Set<Level> recordingLevels) throws IOException {
+                        int bufferSeconds, Set<Level> recordingLevels,
+                        EncodingMode encodingMode) throws IOException {
         this.loggerId = UUID.randomUUID().toString();
         this.screenshotFolderPaths = new HashMap<>();
         this.variablesFolderPaths = new HashMap<>();
@@ -223,9 +222,6 @@ public class CustomLogger implements CloseableSessionObject {
         // Initialize the context with the configuration
         BuiltConfiguration config = builder.build();
         context.start(config);
-
-        // Store the context
-        LOGGER_CONTEXTS.put(loggerId, context);
         this.loggerContext = context;
 
         // Get logger from the new context
@@ -235,7 +231,8 @@ public class CustomLogger implements CloseableSessionObject {
         // live next to the INFO log file because the HTML log uses relative paths.
         Path recorderLogDir = Paths.get(FilenameUtils.getFullPath(
                 levelFilePathMap.getOrDefault(Level.INFO, levelFilePathMap.values().iterator().next())));
-        this.recorder = ScreenRecorder.start(loggerId, recorderLogDir, bufferSeconds, recordingLevels);
+        this.recorder = ScreenRecorder.start(loggerId, recorderLogDir, bufferSeconds, recordingLevels,
+                encodingMode);
     }
 
     public Logger getLogger() {
@@ -272,9 +269,6 @@ public class CustomLogger implements CloseableSessionObject {
 
             // Shutdown this specific logger context
             loggerContext.stop();
-
-            // Remove from the map of contexts
-            LOGGER_CONTEXTS.remove(loggerId);
         }
     }
 
@@ -288,15 +282,6 @@ public class CustomLogger implements CloseableSessionObject {
     }
 
     /**
-     * Returns the screenshot folder path for the INFO level
-     *
-     * @return default screenshot folder path (INFO level)
-     */
-    public String getScreenshotFolderPath() {
-        return screenshotFolderPaths.getOrDefault(Level.INFO, "");
-    }
-
-    /**
      * Returns the variables folder path for the specified log level
      *
      * @param level Log level
@@ -305,14 +290,5 @@ public class CustomLogger implements CloseableSessionObject {
      */
     public String getVariablesFolderPath(Level level) {
         return variablesFolderPaths.getOrDefault(level, variablesFolderPaths.get(Level.INFO));
-    }
-
-    /**
-     * Returns the variables folder path for the INFO level
-     *
-     * @return default variables folder path (INFO level)
-     */
-    public String getVariablesFolderPath() {
-        return variablesFolderPaths.getOrDefault(Level.INFO, "");
     }
 }

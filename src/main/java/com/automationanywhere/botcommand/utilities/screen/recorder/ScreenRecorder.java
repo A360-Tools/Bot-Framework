@@ -24,6 +24,8 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -101,6 +103,27 @@ public abstract class ScreenRecorder implements AutoCloseable {
     private static final Duration WARMUP_POLL_INTERVAL = Duration.ofMillis(100);
 
     /**
+     * Encoder pool's bounded backlog. With 1-second chunk dedup at most one
+     * encode is submitted per second on a tight loop, and a fast encoder
+     * drains 4-8/sec, so a queue depth of 16 is comfortably above steady
+     * state. Submissions beyond this rejecting is the desired behavior:
+     * {@link RealScreenRecorder#snapshotForError} returns null on rejection
+     * and the HTML log surfaces a "video unavailable" badge for that row.
+     */
+    private static final int ENCODER_QUEUE_CAPACITY = 16;
+
+    /**
+     * Granularity at which {@link RealScreenRecorder#snapshotForError(String)}
+     * dedups across log entries: every entry whose timestamp falls in the same
+     * 1-second chunk shares a single clip. Aligned with
+     * {@link #SEGMENT_TIME_SECONDS} so two snapshots within the same chunk
+     * would have produced byte-identical clips anyway (no new ring segment
+     * has flushed in between). Drops loop-warning workloads from N clips to
+     * roughly N / chunks-touched without sacrificing visual fidelity.
+     */
+    private static final long DEDUP_CHUNK_MILLIS = 1000L;
+
+    /**
      * Starts a recorder for the given session. Returns {@link #DISABLED} if
      * {@code recordingLevels} is empty, {@code bufferSeconds} is non-positive,
      * or any setup step fails. Triggers a one-time crash-orphan sweep on the
@@ -109,16 +132,18 @@ public abstract class ScreenRecorder implements AutoCloseable {
     public static ScreenRecorder start(String sessionId,
                                        Path logDir,
                                        int bufferSeconds,
-                                       Set<Level> recordingLevels) {
+                                       Set<Level> recordingLevels,
+                                       EncodingMode encodingMode) {
         if (recordingLevels == null || recordingLevels.isEmpty() || bufferSeconds <= 0) {
             return DISABLED;
         }
+        EncodingMode mode = encodingMode != null ? encodingMode : EncodingMode.FAST;
         try {
             Path appDataRoot = FfmpegBinary.appDataRoot();
             Path ffmpegExe = FfmpegBinary.locate();
-            CrashSweep.scheduleOnce(appDataRoot, ffmpegExe);
+            CrashSweep.scheduleOnce(appDataRoot, ffmpegExe, mode);
             return new RealScreenRecorder(sessionId, logDir, bufferSeconds,
-                    new HashSet<>(recordingLevels), appDataRoot, ffmpegExe);
+                    new HashSet<>(recordingLevels), appDataRoot, ffmpegExe, mode);
         } catch (Throwable t) {
             LOGGER.warn("Screen recorder disabled for session {}: {}",
                     sessionId, t.toString());
@@ -158,6 +183,7 @@ public abstract class ScreenRecorder implements AutoCloseable {
         private final Path logDir;
         private final int bufferSeconds;
         private final Set<Level> recordingLevels;
+        private final EncodingMode encodingMode;
         private final Path sessionFolder;
         private final Path ringDir;
         private final Path scratchRoot;
@@ -169,17 +195,21 @@ public abstract class ScreenRecorder implements AutoCloseable {
         private final AtomicBoolean stopping = new AtomicBoolean(false);
         private final AtomicBoolean failed = new AtomicBoolean(false);
         private final AtomicBoolean closed = new AtomicBoolean(false);
+        private final AtomicLong lastChunkId = new AtomicLong(Long.MIN_VALUE);
+        private final AtomicReference<Path> lastClipPath = new AtomicReference<>();
 
         RealScreenRecorder(String sessionId,
                            Path logDir,
                            int bufferSeconds,
                            Set<Level> recordingLevels,
                            Path appDataRoot,
-                           Path ffmpegExe) throws IOException {
+                           Path ffmpegExe,
+                           EncodingMode encodingMode) throws IOException {
             this.sessionId = sessionId;
             this.logDir = logDir;
             this.bufferSeconds = bufferSeconds;
             this.recordingLevels = recordingLevels;
+            this.encodingMode = encodingMode;
             this.ffmpegExe = ffmpegExe;
 
             this.sessionFolder = appDataRoot.resolve("sessions").resolve(sessionId);
@@ -214,16 +244,15 @@ public abstract class ScreenRecorder implements AutoCloseable {
          * shutdown hooks.
          */
         private static ThreadPoolExecutor newEncoderPool(String sessionId) {
-            ThreadPoolExecutor pool = new ThreadPoolExecutor(
+            return new ThreadPoolExecutor(
                     ENCODER_PARALLELISM, ENCODER_PARALLELISM,
                     0L, TimeUnit.MILLISECONDS,
-                    new LinkedBlockingQueue<>(),
+                    new LinkedBlockingQueue<>(ENCODER_QUEUE_CAPACITY),
                     r -> {
                         Thread t = new Thread(r, "a360-clip-encoder-" + shortId(sessionId));
                         t.setDaemon(true);
                         return t;
                     });
-            return pool;
         }
 
         /**
@@ -367,6 +396,20 @@ public abstract class ScreenRecorder implements AutoCloseable {
             if (closed.get() || failed.get()) {
                 return null;
             }
+            // Dedup at 1-second granularity (DEDUP_CHUNK_MILLIS, aligned with
+            // SEGMENT_TIME_SECONDS). Two warnings inside the same chunk would
+            // produce byte-identical clips - same stable ring segments - so
+            // returning the cached path here saves a ring->scratch copy on the
+            // bot thread and keeps the encoder queue from filling on tight
+            // loops. Cross-level: any prior call within the chunk wins
+            // regardless of which level fired it.
+            long chunkId = System.currentTimeMillis() / DEDUP_CHUNK_MILLIS;
+            if (lastChunkId.get() == chunkId) {
+                Path cached = lastClipPath.get();
+                if (cached != null) {
+                    return cached;
+                }
+            }
             try {
                 List<Path> segments = stableSegments();
                 if (segments.isEmpty()) {
@@ -384,9 +427,14 @@ public abstract class ScreenRecorder implements AutoCloseable {
                 Path targetMp4 = logDir.resolve("clips").resolve(errorUuid + ".mp4");
                 try {
                     encoderPool.execute(() -> runEncode(scratchDir, targetMp4));
+                    lastChunkId.set(chunkId);
+                    lastClipPath.set(targetMp4);
                     return targetMp4;
                 } catch (RejectedExecutionException rejected) {
-                    // Pool was shut down between our closed-check and submit
+                    // Queue is at capacity (ENCODER_QUEUE_CAPACITY) or the pool
+                    // was shut down between our closed-check and submit. Either
+                    // way the snapshot won't encode; clean up scratch and let
+                    // the caller render a "video unavailable" indicator.
                     deleteRecursivelyQuietly(scratchDir);
                     LOGGER.debug("Encoder pool rejected task for session {} ({})",
                             sessionId, errorUuid);
@@ -406,7 +454,7 @@ public abstract class ScreenRecorder implements AutoCloseable {
          */
         private void runEncode(Path scratchDir, Path targetMp4) {
             try {
-                ClipFinalizer.encodeSegmentsToMp4(ffmpegExe, scratchDir, targetMp4);
+                ClipFinalizer.encodeSegmentsToMp4(ffmpegExe, scratchDir, targetMp4, encodingMode);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 LOGGER.debug("Encode interrupted for {}; scratch left for next-startup sweep",

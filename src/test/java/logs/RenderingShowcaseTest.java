@@ -18,6 +18,7 @@ import org.testng.Assert;
 import org.testng.annotations.Test;
 
 import java.io.File;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.time.ZonedDateTime;
@@ -1026,7 +1027,8 @@ public class RenderingShowcaseTest {
         levels.add(org.apache.logging.log4j.Level.ERROR);
 
         CustomLogger customLogger = new CustomLogger("VideoShowcase_" + UUID.randomUUID(),
-                logFilePath, 50, /* bufferSeconds */ 10, levels);
+                logFilePath, 50, /* bufferSeconds */ 10, levels,
+                com.automationanywhere.botcommand.utilities.screen.recorder.EncodingMode.COMPACT);
 
         LogMessage logMessage = new LogMessage();
         logMessage.setTestBotUri("Automation Anywhere/bots/test/video-showcase");
@@ -1086,12 +1088,8 @@ public class RenderingShowcaseTest {
         screen.process.RecorderTestSupport.awaitMp4Clips(
                 clipsDir, 1, java.time.Duration.ofSeconds(60));
 
-        long mp4s = Files.isDirectory(clipsDir)
-                ? Files.list(clipsDir).filter(p -> p.toString().endsWith(".mp4")).count()
-                : 0;
-        long pngs = Files.isDirectory(screenshotsDir)
-                ? Files.list(screenshotsDir).filter(p -> p.toString().endsWith(".png")).count()
-                : 0;
+        long mp4s = countMatching(clipsDir, ".mp4");
+        long pngs = countMatching(screenshotsDir, ".png");
         // The encoder pool may still have the second clip in flight when this
         // assertion runs; the poster PNG is taken synchronously before submit,
         // so the HTML row carries the still even when the mp4 is yet to land.
@@ -1100,7 +1098,7 @@ public class RenderingShowcaseTest {
         Assert.assertTrue(pngs >= 3,
                 "showcase should produce at least 3 PNGs (1 manual + 2 video posters); got " + pngs);
 
-        String html = new String(Files.readAllBytes(Paths.get(logFilePath)),
+        String html = Files.readString(Paths.get(logFilePath),
                 java.nio.charset.StandardCharsets.UTF_8);
         Assert.assertTrue(html.contains("video-link"),
                 "rendered HTML must contain video-link class");
@@ -1109,5 +1107,14 @@ public class RenderingShowcaseTest {
 
         System.out.println("Video showcase artifact: " + new File(logFilePath).getAbsolutePath());
         System.out.println("  -> " + mp4s + " clip(s), " + pngs + " screenshot(s)");
+    }
+
+    private static long countMatching(java.nio.file.Path dir, String suffix) throws IOException {
+        if (!Files.isDirectory(dir)) {
+            return 0L;
+        }
+        try (java.util.stream.Stream<java.nio.file.Path> stream = Files.list(dir)) {
+            return stream.filter(p -> p.toString().endsWith(suffix)).count();
+        }
     }
 }

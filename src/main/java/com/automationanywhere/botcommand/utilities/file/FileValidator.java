@@ -56,15 +56,6 @@ public class FileValidator {
         }
     }
 
-    public void validateDirectory() {
-        validateCommonConditions();
-
-        // Additional directory-specific validations
-        if (!Files.isDirectory(path)) {
-            throw new IllegalArgumentException("Specified path is not a directory: " + path);
-        }
-
-    }
 }
 
 

@@ -29,9 +29,16 @@ public final class FfmpegBinary {
     /**
      * Full SHA-256 of the bundled ffmpeg.exe. Compile-time constant; the build
      * verifies the bundled resource hashes to this value via FfmpegBinaryTest.
+     *
+     * <p>Current bundle: ffmpeg n6.0 cross-compiled via {@code tools/ffmpeg-build}
+     * with libx264 (GPL) and libaom-av1 enabled. Encoders, decoders, muxers,
+     * demuxers, parsers, filters, and bitstream filters are all disabled by
+     * default and individually re-enabled only for what the recorder
+     * pipelines need. {@code FAST} mode uses libx264 -preset ultrafast;
+     * {@code COMPACT} uses libaom-av1 -cpu-used 8.
      */
     public static final String BUNDLED_SHA256 =
-            "7dae68267fe9190e9bd5e2f58df89681a4126dc7e91235aaeb224ce2a53bb754";
+            "10e59216cc6439f5bfdf0fe778c2538d0c14f8c2106c5e9fc38591981494bf59";
 
     /** First 12 hex chars of {@link #BUNDLED_SHA256} - used as the cache subfolder. */
     public static final String BUNDLED_HASH_PREFIX = BUNDLED_SHA256.substring(0, 12);

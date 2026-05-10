@@ -53,6 +53,29 @@ public class HTMLScreenCellTest {
     }
 
     @Test
+    public void videoUnavailableShowsPosterWithBadge() {
+        // Recording was requested for this row (poster captured) but the
+        // encoder pool rejected the task or the recorder failed: videoPath
+        // empty, videoPosterPath set. The cell should show the poster as a
+        // clickable image (linking to itself) with a "no video" badge.
+        String html = HTMLGenerator.getScreenCellHTML(
+                "C:\\logs\\screenshots\\error_uuid.png",
+                "",
+                "C:\\logs\\screenshots\\error_uuid.png");
+
+        Assert.assertTrue(html.contains("video-unavailable"),
+                "video-unavailable class should be applied when poster exists but video is missing");
+        Assert.assertTrue(html.contains("no-video-badge"),
+                "no-video badge span should be present");
+        Assert.assertFalse(html.contains("video-link"),
+                "video-link class must not be applied when there is no video");
+        Assert.assertFalse(html.contains("play-overlay"),
+                "play overlay must not appear when there is no video");
+        Assert.assertTrue(html.contains("screenshots/error_uuid.png"),
+                "the link target and img src should both be the poster screenshot");
+    }
+
+    @Test
     public void htmlEscapesPaths() {
         // A path with characters that must be escaped in HTML attributes
         String html = HTMLGenerator.getScreenCellHTML(

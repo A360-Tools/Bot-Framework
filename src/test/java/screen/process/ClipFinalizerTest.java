@@ -1,6 +1,7 @@
 package screen.process;
 
 import com.automationanywhere.botcommand.utilities.screen.recorder.ClipFinalizer;
+import com.automationanywhere.botcommand.utilities.screen.recorder.EncodingMode;
 import com.automationanywhere.botcommand.utilities.screen.recorder.FfmpegBinary;
 import org.testng.Assert;
 import org.testng.annotations.AfterMethod;
@@ -44,7 +45,10 @@ public class ClipFinalizerTest {
                 "fixture should produce at least 2 .mov segments; got " + segments.size());
 
         Path target = outputDir.resolve("out.mp4");
-        ClipFinalizer.encodeSegmentsToMp4(ffmpegExe, fixtureDir, target);
+        // The bundled ffmpeg currently lacks libx264, so we exercise COMPACT
+        // (libaom-av1). Once the binary is rebuilt with --enable-gpl
+        // --enable-libx264, add a parallel FAST-mode case.
+        ClipFinalizer.encodeSegmentsToMp4(ffmpegExe, fixtureDir, target, EncodingMode.COMPACT);
 
         Assert.assertTrue(Files.exists(target), "output mp4 must exist at " + target);
         long size = Files.size(target);
@@ -65,7 +69,7 @@ public class ClipFinalizerTest {
     @Test(expectedExceptions = IOException.class)
     public void emptyDirectoryThrows() throws Exception {
         Path target = outputDir.resolve("empty.mp4");
-        ClipFinalizer.encodeSegmentsToMp4(ffmpegExe, fixtureDir, target);
+        ClipFinalizer.encodeSegmentsToMp4(ffmpegExe, fixtureDir, target, EncodingMode.COMPACT);
     }
 
     /**

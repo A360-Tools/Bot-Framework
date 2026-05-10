@@ -13,15 +13,12 @@ public class ProcessGuardTest {
 
     @Test
     public void spawnReturnsAliveProcess() throws IOException, InterruptedException {
-        ProcessGuard guard = new ProcessGuard();
-        try {
+        try (ProcessGuard guard = new ProcessGuard()) {
             Process p = spawnLongRunningFfmpeg(guard);
             Assert.assertTrue(p.isAlive(), "spawned process should be alive");
             // Cleanup
             p.destroyForcibly();
             p.waitFor(3, TimeUnit.SECONDS);
-        } finally {
-            guard.close();
         }
     }
 

@@ -1,9 +1,5 @@
 package config;
 
-/**
- * @author Sumit Kumar
- */
-
 import com.automationanywhere.botcommand.actions.config.XMLReader;
 import com.automationanywhere.botcommand.data.Value;
 import com.automationanywhere.botcommand.data.impl.DictionaryValue;
@@ -15,6 +11,9 @@ import org.testng.annotations.Test;
 
 import java.util.Map;
 
+/**
+ * @author Sumit Kumar
+ */
 public class XMLReaderTest {
 
     private static final String SAMPLE_XML_FILE_PATH = "src/test/sample/test.xml";

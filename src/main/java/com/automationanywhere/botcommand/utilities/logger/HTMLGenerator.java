@@ -456,9 +456,17 @@ public class HTMLGenerator {
     /**
      * Returns the HTML for the renamed "Screen" column cell.
      *
-     * <p>Priority: video link (with poster image as the thumbnail) takes
-     * precedence; otherwise falls through to the existing screenshot link.
-     * Empty input on both produces an empty cell.
+     * <p>Priority:
+     * <ol>
+     *   <li>Video link with poster as thumbnail (recording succeeded).</li>
+     *   <li>Poster-only thumbnail with a "no video" badge (recording was
+     *       requested for this level but the encoder pool rejected the task,
+     *       the recorder failed, or the ring had nothing to snapshot). Click
+     *       opens the screenshot itself.</li>
+     *   <li>Plain screenshot link (legacy {@code captureScreenshot=true}
+     *       path; recording was not requested for this level).</li>
+     * </ol>
+     * <p>Empty input on all three produces an empty cell.
      */
     public static String getScreenCellHTML(String screenshotPath,
                                            String videoPath,
@@ -485,6 +493,21 @@ public class HTMLGenerator {
             sb.append("<span class='play-overlay' aria-hidden='true'>&#9654;</span>")
               .append("</a>");
             return sb.toString();
+        }
+        if (videoPosterPath != null && !videoPosterPath.isEmpty()) {
+            // Recording was requested for this row but no clip is available.
+            // Show the poster (a complete artifact in its own right) and a
+            // small badge so the user knows why no play icon is present.
+            String posterRel = "screenshots/" + FilenameUtils.getName(videoPosterPath);
+            String posterEsc = StringEscapeUtils.escapeHtml4(posterRel);
+            return "<a href='" + posterEsc + "' target='_blank' class='img-link video-unavailable' "
+                    + "aria-label='Screenshot (video unavailable)' "
+                    + "title='Video unavailable; opens screenshot' "
+                    + "style='--screenshot-preview: url(\"" + posterEsc + "\")'>"
+                    + "<img src='" + posterEsc
+                    + "' loading='lazy' decoding='async' width='88' height='50' alt='' />"
+                    + "<span class='no-video-badge' aria-hidden='true'>no video</span>"
+                    + "</a>";
         }
         return getScreenshotHTML(screenshotPath);
     }

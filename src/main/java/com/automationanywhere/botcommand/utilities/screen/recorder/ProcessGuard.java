@@ -12,12 +12,12 @@ import java.util.concurrent.TimeUnit;
 /**
  * Tracks spawned child processes and ensures they die with the JVM.
  *
- * <p>Strategy mirrors AA's own {@code BotClipRecorderService}: spawn via plain
- * {@link ProcessBuilder}, hold the {@link Process} reference, and rely on a
- * single JVM-wide shutdown hook to {@link Process#destroyForcibly()} every
- * tracked child on graceful exit. Hard JVM kills (taskkill /f, OOM-killer,
- * power loss) skip the hook and leak the child until the next-startup
- * orphan-sweep in {@link CrashSweep} cleans up the abandoned ring folder.
+ * <p>Strategy: spawn via plain {@link ProcessBuilder}, hold the
+ * {@link Process} reference, and rely on a single JVM-wide shutdown hook to
+ * {@link Process#destroyForcibly()} every tracked child on graceful exit.
+ * Hard JVM kills (taskkill /f, OOM-killer, power loss) skip the hook and
+ * leak the child until the next-startup orphan-sweep in {@link CrashSweep}
+ * cleans up the abandoned ring folder.
  *
  * <p>This intentionally does not use Windows JobObject. JNA's platform
  * mappings do not expose the JobObject API surface in any current release

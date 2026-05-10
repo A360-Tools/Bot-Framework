@@ -61,7 +61,9 @@ public class VideoRecordingIntegrationTest {
 
     @Test
     public void errorEntryProducesMp4AndPosterAndHtmlLinks() throws Exception {
-        // Start logger with video on, ERROR-only, 5s buffer
+        // Start logger with video on, ERROR-only, 5s buffer.
+        // COMPACT encoder mode because the bundled ffmpeg lacks libx264 today;
+        // the FAST default produces "video unavailable" until the binary is rebuilt.
         SessionValue sv = session.start(
                 COMMON_FILE_ALL_LEVEL,
                 logFile.toString(),
@@ -71,7 +73,8 @@ public class VideoRecordingIntegrationTest {
                 /* videoOnInfo             */ false,
                 /* videoOnWarn             */ false,
                 /* videoOnError            */ true,
-                /* videoBufferSeconds      */ 5);
+                /* videoBufferSeconds      */ 5,
+                /* encodingMode            */ "COMPACT");
         logger = (CustomLogger) sv.getSession();
         Assert.assertTrue(logger.shouldRecordVideoFor(org.apache.logging.log4j.Level.ERROR),
                 "logger must report video-on for ERROR after start()");
@@ -114,7 +117,7 @@ public class VideoRecordingIntegrationTest {
                 "at least one error_*.png poster should exist; found " + posterCount);
 
         // HTML file references the video link via the new CSS class
-        String html = new String(Files.readAllBytes(logFile), StandardCharsets.UTF_8);
+        String html = Files.readString(logFile, StandardCharsets.UTF_8);
         Assert.assertTrue(html.contains("video-link"),
                 "rendered log.html must contain 'video-link' class for the error row");
         Assert.assertTrue(html.contains("clips/") && html.contains(".mp4"),
@@ -132,6 +135,40 @@ public class VideoRecordingIntegrationTest {
     }
 
     @Test
+    public void fastModeProducesH264Mp4() throws Exception {
+        // Same end-to-end flow as the COMPACT case, but with FAST encoding mode
+        // (libx264 -preset ultrafast). Verifies the bundled binary's libx264
+        // path lands a playable mp4. Uses a 3-second buffer to keep the test
+        // quick - libx264 ultrafast finishes in well under a second.
+        SessionValue sv = session.start(
+                COMMON_FILE_ALL_LEVEL,
+                logFile.toString(),
+                null, null, null,
+                100,
+                "VIDEO_ENABLED", false, false, true, 3, "FAST");
+        logger = (CustomLogger) sv.getSession();
+        Assert.assertTrue(logger.shouldRecordVideoFor(org.apache.logging.log4j.Level.ERROR));
+
+        RecorderTestSupport.awaitSessionMovSegments(logger.getLoggerId(), 2,
+                java.time.Duration.ofSeconds(10));
+
+        logMessage.action(logger, LEVEL_ERROR, "fast-mode failure",
+                false, DO_NOT_LOG_VARIABLE, null, null);
+
+        stopSession.stop(logger);
+
+        Path clipsDir = baseDir.resolve("clips");
+        Assert.assertTrue(Files.isDirectory(clipsDir),
+                "clips/ directory should exist next to log.html");
+        long mp4Count = countByExt(clipsDir, ".mp4");
+        Assert.assertEquals(mp4Count, 1L,
+                "FAST mode must produce exactly one mp4; found " + mp4Count);
+        long mp4Size = sumSizeByExt(clipsDir, ".mp4");
+        Assert.assertTrue(mp4Size > 1000,
+                "FAST mp4 should be at least ~1 KB; got " + mp4Size + " bytes");
+    }
+
+    @Test
     public void nonRecordingLevelDoesNotProduceMp4() throws Exception {
         // Start with video on, but ONLY for ERROR; log an INFO and a WARN.
         SessionValue sv = session.start(
@@ -139,7 +176,7 @@ public class VideoRecordingIntegrationTest {
                 logFile.toString(),
                 null, null, null,
                 100,
-                "VIDEO_ENABLED", false, false, true, 5);
+                "VIDEO_ENABLED", false, false, true, 5, "COMPACT");
         logger = (CustomLogger) sv.getSession();
 
         // No need to wait for the buffer here - INFO is not in recordingLevels,

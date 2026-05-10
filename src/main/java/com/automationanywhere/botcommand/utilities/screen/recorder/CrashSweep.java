@@ -12,7 +12,6 @@ import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
-import java.util.Comparator;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Stream;
 
@@ -54,29 +53,32 @@ final class CrashSweep {
     }
 
     /** Schedules at most one sweep across the entire JVM lifetime. Returns immediately. */
-    static void scheduleOnce(Path appDataRoot, Path ffmpegExe) {
+    static void scheduleOnce(Path appDataRoot, Path ffmpegExe, EncodingMode mode) {
         if (!SCHEDULED.compareAndSet(false, true)) {
             return;
         }
-        Thread t = new Thread(() -> sweep(appDataRoot, ffmpegExe), "a360-recorder-sweep");
+        EncodingMode salvageMode = mode != null ? mode : EncodingMode.FAST;
+        Thread t = new Thread(() -> sweep(appDataRoot, ffmpegExe, salvageMode),
+                "a360-recorder-sweep");
         t.setDaemon(true);
         t.setPriority(Thread.MIN_PRIORITY);
         t.start();
     }
 
-    private static void sweep(Path appDataRoot, Path ffmpegExe) {
+    private static void sweep(Path appDataRoot, Path ffmpegExe, EncodingMode mode) {
         Path sessionsRoot = appDataRoot.resolve("sessions");
         if (!Files.isDirectory(sessionsRoot)) {
             return;
         }
         try (Stream<Path> dirs = Files.list(sessionsRoot)) {
-            dirs.forEach(folder -> processOne(folder, appDataRoot, ffmpegExe));
+            dirs.forEach(folder -> processOne(folder, appDataRoot, ffmpegExe, mode));
         } catch (IOException e) {
             LOGGER.debug("Sweep listing failed at {}: {}", sessionsRoot, e.toString());
         }
     }
 
-    private static void processOne(Path folder, Path appDataRoot, Path ffmpegExe) {
+    private static void processOne(Path folder, Path appDataRoot, Path ffmpegExe,
+                                   EncodingMode mode) {
         String name = folder.getFileName().toString();
         if (name.endsWith(SALVAGING_SUFFIX)) {
             ScreenRecorder.deleteRecursivelyQuietly(folder);
@@ -95,15 +97,19 @@ final class CrashSweep {
         try {
             Path marker = claimed.resolve("session.active");
             if (Files.exists(marker)) {
-                trySalvage(claimed, appDataRoot, ffmpegExe);
+                trySalvage(claimed, appDataRoot, ffmpegExe, mode);
             }
         } finally {
             ScreenRecorder.deleteRecursivelyQuietly(claimed);
         }
     }
 
-    private static void trySalvage(Path claimedFolder, Path appDataRoot, Path ffmpegExe) {
-        String sessionId = stripSuffix(claimedFolder.getFileName().toString(), SALVAGING_SUFFIX);
+    private static void trySalvage(Path claimedFolder, Path appDataRoot, Path ffmpegExe,
+                                   EncodingMode mode) {
+        String folderName = claimedFolder.getFileName().toString();
+        String sessionId = folderName.endsWith(SALVAGING_SUFFIX)
+                ? folderName.substring(0, folderName.length() - SALVAGING_SUFFIX.length())
+                : folderName;
         Path metaFile = claimedFolder.resolve("session.meta");
         Path ringDir = claimedFolder.resolve("ring");
 
@@ -123,7 +129,7 @@ final class CrashSweep {
         Path target = resolveTarget(meta, sessionId, appDataRoot);
         try {
             Files.createDirectories(target.getParent());
-            ClipFinalizer.encodeSegmentsToMp4(ffmpegExe, ringDir, target);
+            ClipFinalizer.encodeSegmentsToMp4(ffmpegExe, ringDir, target, mode);
             appendCrashLog(target.getParent(), meta, target);
             LOGGER.info("Salvaged crash recording for session {} -> {}", sessionId, target);
         } catch (InterruptedException e) {
@@ -162,7 +168,4 @@ final class CrashSweep {
         }
     }
 
-    private static String stripSuffix(String name, String suffix) {
-        return name.endsWith(suffix) ? name.substring(0, name.length() - suffix.length()) : name;
-    }
 }

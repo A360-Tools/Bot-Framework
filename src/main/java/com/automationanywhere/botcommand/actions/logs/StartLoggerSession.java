@@ -3,6 +3,7 @@ package com.automationanywhere.botcommand.actions.logs;
 import com.automationanywhere.botcommand.data.impl.SessionValue;
 import com.automationanywhere.botcommand.exception.BotCommandException;
 import com.automationanywhere.botcommand.utilities.logger.CustomLogger;
+import com.automationanywhere.botcommand.utilities.screen.recorder.EncodingMode;
 import com.automationanywhere.commandsdk.annotations.*;
 import com.automationanywhere.commandsdk.annotations.rules.*;
 import com.automationanywhere.commandsdk.model.AttributeType;
@@ -39,6 +40,8 @@ public class StartLoggerSession {
     private static final String CONFIGURABLE_FILE_ALL_LEVEL = "CONFIGURABLE_FILE";
     private static final String NO_VIDEO = "NO_VIDEO";
     private static final String VIDEO_ENABLED = "VIDEO_ENABLED";
+    private static final String ENCODING_FAST = "FAST";
+    private static final String ENCODING_COMPACT = "COMPACT";
 
 
     @Execute
@@ -119,8 +122,21 @@ public class StartLoggerSession {
                     default_value = "30", default_value_type = DataType.NUMBER)
             @NumberInteger
             @GreaterThanEqualTo("5")
-            @LessThanEqualTo("300")
-            Number videoBufferSeconds
+            @LessThanEqualTo("90")
+            Number videoBufferSeconds,
+
+            @Idx(index = "3.2.5", type = AttributeType.SELECT, options = {
+                    @Idx.Option(index = "3.2.5.1",
+                            pkg = @Pkg(label = "Fast (H.264 ultrafast, larger files)", value = ENCODING_FAST)),
+                    @Idx.Option(index = "3.2.5.2",
+                            pkg = @Pkg(label = "Compact (AV1, smaller files but slower)", value = ENCODING_COMPACT))})
+            @Pkg(label = "Encoding mode",
+                    description = "Fast: H.264 ultrafast preset, quick to encode but larger files. "
+                            + "Compact: AV1 cpu-used 8, smaller files but slower encoding.",
+                    default_value = ENCODING_FAST, default_value_type = DataType.STRING)
+            @SelectModes
+            @NotEmpty
+            String encodingMode
 
     ) {
         try {
@@ -133,12 +149,14 @@ public class StartLoggerSession {
             }
             int bufferSec = videoEnabled && videoBufferSeconds != null
                     ? videoBufferSeconds.intValue() : 0;
+            EncodingMode mode = ENCODING_COMPACT.equals(encodingMode)
+                    ? EncodingMode.COMPACT : EncodingMode.FAST;
 
             CustomLogger customLogger;
             switch (logLevelsAndFileOption) {
                 case COMMON_FILE_ALL_LEVEL:
                     customLogger = new CustomLogger("CustomLogger_" + UUID.randomUUID(), logFilePath,
-                            maxLogEntries.intValue(), bufferSec, recordingLevels);
+                            maxLogEntries.intValue(), bufferSec, recordingLevels, mode);
                     break;
                 case CONFIGURABLE_FILE_ALL_LEVEL:
                     Map<Level, String> levelFilePathMap = new HashMap<>();
@@ -146,7 +164,7 @@ public class StartLoggerSession {
                     levelFilePathMap.put(Level.WARN, warnLogFilePath);
                     levelFilePathMap.put(Level.ERROR, errorLogFilePath);
                     customLogger = new CustomLogger("CustomLogger_" + UUID.randomUUID(), levelFilePathMap,
-                            maxLogEntries.intValue(), bufferSec, recordingLevels);
+                            maxLogEntries.intValue(), bufferSec, recordingLevels, mode);
                     break;
                 default:
                     throw new BotCommandException("Invalid log level and file option");

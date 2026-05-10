@@ -158,32 +158,28 @@ public class EntryCountWithExistingFileTest {
         String baseName = FilenameUtils.getBaseName(logFilePath);
         String ext = FilenameUtils.getExtension(logFilePath);
 
-        File originalFile = new File(logFilePath);
         File rolledFile = new File(baseDir + "1_" + baseName + "." + ext);
+        Assert.assertTrue(rolledFile.exists(),
+                "Rollover should have occurred when total entries exceeded " + maxEntries);
 
-        boolean rolloverOccurred = rolledFile.exists();
-        Assert.assertTrue(rolloverOccurred, "Rollover should have occurred when total entries exceeded " + maxEntries);
+        // Verify rolled file has entries up to maxEntries
+        int rolledFileEntries = countLogEntries(rolledFile.getAbsolutePath());
+        Assert.assertTrue(rolledFileEntries <= maxEntries,
+                "Rolled file should have at most " + maxEntries + " entries, found " + rolledFileEntries);
 
-        if (rolloverOccurred) {
-            // Verify rolled file has entries up to maxEntries
-            int rolledFileEntries = countLogEntries(rolledFile.getAbsolutePath());
-            Assert.assertTrue(rolledFileEntries <= maxEntries,
-                    "Rolled file should have at most " + maxEntries + " entries, found " + rolledFileEntries);
+        // Verify new file has remaining entries
+        int newFileEntries = countLogEntries(logFilePath);
+        int expectedNewFileEntries = (existingEntries + newEntriesToTriggerRollover) - rolledFileEntries;
+        Assert.assertEquals(newFileEntries, expectedNewFileEntries,
+                "New file should have remaining entries");
 
-            // Verify new file has remaining entries
-            int newFileEntries = countLogEntries(logFilePath);
-            int expectedNewFileEntries = (existingEntries + newEntriesToTriggerRollover) - rolledFileEntries;
-            Assert.assertEquals(newFileEntries, expectedNewFileEntries,
-                    "New file should have remaining entries");
+        // Verify both files have footers
+        Assert.assertTrue(hasFooter(rolledFile.getAbsolutePath()), "Rolled file should have footer");
+        Assert.assertTrue(hasFooter(logFilePath), "New file should have footer");
 
-            // Verify both files have footers
-            Assert.assertTrue(hasFooter(rolledFile.getAbsolutePath()), "Rolled file should have footer");
-            Assert.assertTrue(hasFooter(logFilePath), "New file should have footer");
-
-            System.out.println("✓ Session 3: Rollover occurred correctly");
-            System.out.println("  - Rolled file (1_session1.html): " + rolledFileEntries + " entries");
-            System.out.println("  - New file (session1.html): " + newFileEntries + " entries");
-        }
+        System.out.println("✓ Session 3: Rollover occurred correctly");
+        System.out.println("  - Rolled file (1_session1.html): " + rolledFileEntries + " entries");
+        System.out.println("  - New file (session1.html): " + newFileEntries + " entries");
     }
 
     @Test(priority = 4, description = "Fresh start - no existing file")

@@ -4,6 +4,8 @@
 /.idea/
 /src/test/target/
 /.claude/settings.local.json
+/.claude/scheduled_tasks.lock
 /temp-exploration
 /docs/superpowers/
+/tools/ffmpeg-build/out/
 gradle.properties

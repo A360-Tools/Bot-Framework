@@ -53,7 +53,7 @@ public final class SessionMeta {
     }
 
     public static SessionMeta read(Path file) throws IOException {
-        String text = new String(Files.readAllBytes(file), StandardCharsets.UTF_8);
+        String text = Files.readString(file, StandardCharsets.UTF_8);
         return new SessionMeta(new JSONObject(text));
     }
 

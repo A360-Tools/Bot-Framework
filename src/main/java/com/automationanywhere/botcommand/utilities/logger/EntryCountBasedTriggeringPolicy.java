@@ -27,7 +27,6 @@ public class EntryCountBasedTriggeringPolicy extends AbstractTriggeringPolicy {
 
     private final int maxEntries;
     private final AtomicInteger currentEntryCount = new AtomicInteger(0);
-    private RollingFileManager manager;
 
     private EntryCountBasedTriggeringPolicy(int maxEntries) {
         this.maxEntries = maxEntries;
@@ -40,13 +39,7 @@ public class EntryCountBasedTriggeringPolicy extends AbstractTriggeringPolicy {
      */
     @Override
     public void initialize(final RollingFileManager manager) {
-        this.manager = manager;
-
-        // Count existing entries in the file if it exists
-        String fileName = manager.getFileName();
-        int existingEntries = countExistingEntries(fileName);
-
-        // Initialize counter to existing entry count
+        int existingEntries = countExistingEntries(manager.getFileName());
         currentEntryCount.set(existingEntries);
     }
 
@@ -69,13 +62,6 @@ public class EntryCountBasedTriggeringPolicy extends AbstractTriggeringPolicy {
         }
 
         return false;
-    }
-
-    /**
-     * Reset the counter after a successful rollover
-     */
-    public void clearCounter() {
-        currentEntryCount.set(0);
     }
 
     /**

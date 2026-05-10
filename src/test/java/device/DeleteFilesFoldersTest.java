@@ -15,15 +15,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
-import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileTime;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Collection;
-import java.util.HashSet;
-import java.util.Objects;
-import java.util.Set;
-import java.util.concurrent.TimeUnit;
 
 /**
  * Comprehensive test suite for the DeleteFilesFolders class
@@ -33,9 +28,7 @@ public class DeleteFilesFoldersTest {
     private static final String PROCESS_ALL_TYPES = "ALL";
     private static final String PROCESS_ONLY_FILE_TYPE = "FILE";
     private static final String THRESHOLD_UNIT_DAY = "DAY";
-    private static final String THRESHOLD_UNIT_HOUR = "HOUR";
     private static final String THRESHOLD_UNIT_MINUTE = "MINUTE";
-    private static final String THRESHOLD_UNIT_SECOND = "SECOND";
     private static final String ERROR_IGNORE = "IGNORE";
     private static final String ERROR_THROW = "THROW";
     private static final String THRESHOLD_CRITERIA_CREATION = "CREATION";
@@ -90,8 +83,6 @@ public class DeleteFilesFoldersTest {
         Files.createFile(path);
 
         if (creationTime != null || modificationTime != null) {
-            BasicFileAttributes attrs = Files.readAttributes(path, BasicFileAttributes.class);
-
             if (creationTime != null) {
                 Files.setAttribute(path, "creationTime", FileTime.from(creationTime));
             }
@@ -115,8 +106,6 @@ public class DeleteFilesFoldersTest {
         Files.createDirectories(path);
 
         if (creationTime != null || modificationTime != null) {
-            BasicFileAttributes attrs = Files.readAttributes(path, BasicFileAttributes.class);
-
             if (creationTime != null) {
                 Files.setAttribute(path, "creationTime", FileTime.from(creationTime));
             }

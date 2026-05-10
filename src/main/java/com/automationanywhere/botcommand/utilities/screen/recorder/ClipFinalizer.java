@@ -1,8 +1,5 @@
 package com.automationanywhere.botcommand.utilities.screen.recorder;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.AtomicMoveNotSupportedException;
@@ -18,23 +15,25 @@ import java.util.stream.Stream;
 /**
  * Stage-2 encoder helper. Takes a directory of ffvhuff .mov segments produced
  * by ScreenRecorder's stage-1 ring buffer, runs ffmpeg with the concat demuxer
- * + libaom-av1, and lands a browser-playable mp4 at the target path. Stateless
- * and synchronous - the caller owns threading.
+ * + the requested encoder, and lands a browser-playable mp4 at the target
+ * path. Stateless and synchronous - the caller owns threading.
  *
  * <p>Used both by {@code RealScreenRecorder}'s per-error encoder pool and by
  * {@link CrashSweep} for orphan ring salvage outside any session.
  *
- * <p>Codec choice is dictated by the bundled ffmpeg, which is the AA-style
- * LGPL stripped 6.0 build with only {@code libaom_av1} and {@code ffvhuff}
- * encoders compiled in. The {@code -cpu-used 8} preset is libaom's fastest;
- * a typical 30 s clip encodes in ~5-15 s. The wall-time cost lives entirely
- * in the per-session encoder pool and never blocks the bot.
+ * <p>{@link EncodingMode#FAST} uses libx264 with {@code -preset ultrafast}
+ * (~0.5-1 s for 30 s of footage, ~3-5x larger files).
+ *
+ * <p>{@link EncodingMode#COMPACT} uses libaom-av1 with {@code -cpu-used 8}
+ * (~5-15 s for 30 s of footage, smaller files). The wall-time cost lives
+ * entirely in the per-session encoder pool and never blocks the bot.
+ *
+ * <p>Both encoders are present in the bundled ffmpeg.exe; see
+ * {@code tools/ffmpeg-build/Dockerfile} for the cross-compile recipe.
  *
  * @author Sumit Kumar
  */
 public final class ClipFinalizer {
-
-    private static final Logger LOGGER = LogManager.getLogger(ClipFinalizer.class);
 
     private static final int ENCODE_TIMEOUT_SECONDS = 120;
 
@@ -42,15 +41,16 @@ public final class ClipFinalizer {
     }
 
     /**
-     * Encodes all .mov files in {@code segmentsDir} into {@code targetMp4}.
-     * Synchronous - blocks the caller's thread for the full duration of the
-     * stage-2 ffmpeg invocation.
+     * Encodes all .mov files in {@code segmentsDir} into {@code targetMp4}
+     * using the chosen encoder. Synchronous - blocks the caller's thread for
+     * the full duration of the stage-2 ffmpeg invocation.
      *
      * @throws IOException          on any io / ffmpeg failure
      * @throws InterruptedException if the calling thread is interrupted while
      *                              waiting for ffmpeg
      */
-    public static void encodeSegmentsToMp4(Path ffmpegExe, Path segmentsDir, Path targetMp4)
+    public static void encodeSegmentsToMp4(Path ffmpegExe, Path segmentsDir, Path targetMp4,
+                                           EncodingMode mode)
             throws IOException, InterruptedException {
         List<Path> segments = listMovFilesByMtimeAsc(segmentsDir);
         if (segments.isEmpty()) {
@@ -63,25 +63,7 @@ public final class ClipFinalizer {
         Path tmpOut = segmentsDir.resolve("out.mp4.tmp");
         Files.deleteIfExists(tmpOut);
 
-        String[] cmd = {
-                ffmpegExe.toAbsolutePath().toString(),
-                "-hide_banner",
-                "-loglevel", "error",
-                "-f", "concat",
-                "-safe", "0",
-                "-fflags", "+igndts+genpts",
-                "-i", concatList.toAbsolutePath().toString(),
-                "-c:v", "libaom-av1",
-                "-b:v", "1500k",
-                "-cpu-used", "8",
-                "-row-mt", "1",
-                "-tile-columns", "2",
-                "-g", "60",
-                "-pix_fmt", "yuv420p",
-                "-movflags", "+faststart",
-                "-f", "mp4",   // explicit; the .tmp suffix prevents inference from extension
-                tmpOut.toAbsolutePath().toString()
-        };
+        String[] cmd = buildEncodeCommand(ffmpegExe, concatList, tmpOut, mode);
 
         Process process = new ProcessBuilder(cmd)
                 .redirectErrorStream(true)
@@ -103,7 +85,7 @@ public final class ClipFinalizer {
         }
 
         if (exitCode != 0) {
-            String tail = readFirstLines(process, 8);
+            String tail = readFirstLines(process);
             throw new IOException("ffmpeg encode exit code " + exitCode
                     + " for " + targetMp4 + (tail.isEmpty() ? "" : "; tail: " + tail));
         }
@@ -121,6 +103,52 @@ public final class ClipFinalizer {
             // filename only appears once the copy completes.
             Files.move(tmpOut, targetMp4, StandardCopyOption.REPLACE_EXISTING);
         }
+    }
+
+    private static String[] buildEncodeCommand(Path ffmpegExe, Path concatList, Path tmpOut,
+                                               EncodingMode mode) {
+        String ff = ffmpegExe.toAbsolutePath().toString();
+        String input = concatList.toAbsolutePath().toString();
+        String output = tmpOut.toAbsolutePath().toString();
+
+        if (mode == EncodingMode.FAST) {
+            return new String[]{
+                    ff,
+                    "-hide_banner",
+                    "-loglevel", "error",
+                    "-f", "concat",
+                    "-safe", "0",
+                    "-fflags", "+igndts+genpts",
+                    "-i", input,
+                    "-c:v", "libx264",
+                    "-preset", "ultrafast",
+                    "-crf", "23",
+                    "-pix_fmt", "yuv420p",
+                    "-movflags", "+faststart",
+                    "-f", "mp4",
+                    output
+            };
+        }
+        // COMPACT (default fallback): libaom-av1.
+        return new String[]{
+                ff,
+                "-hide_banner",
+                "-loglevel", "error",
+                "-f", "concat",
+                "-safe", "0",
+                "-fflags", "+igndts+genpts",
+                "-i", input,
+                "-c:v", "libaom-av1",
+                "-b:v", "1500k",
+                "-cpu-used", "8",
+                "-row-mt", "1",
+                "-tile-columns", "2",
+                "-g", "60",
+                "-pix_fmt", "yuv420p",
+                "-movflags", "+faststart",
+                "-f", "mp4",
+                output
+        };
     }
 
     private static void writeConcatList(List<Path> segments, Path concatList) throws IOException {
@@ -151,7 +179,8 @@ public final class ClipFinalizer {
         }
     }
 
-    private static String readFirstLines(Process process, int max) {
+    private static String readFirstLines(Process process) {
+        final int max = 8;
         try (java.io.BufferedReader reader = new java.io.BufferedReader(
                 new java.io.InputStreamReader(process.getInputStream(), StandardCharsets.UTF_8))) {
             List<String> lines = new ArrayList<>(max);
